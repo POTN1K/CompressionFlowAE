@@ -37,6 +37,7 @@ ax = fig.add_subplot(121)
 ax.contourf(u_all[50, :, :, 0])
 # ax2 = fig.add_subplot(122)
 # ax2.contourf(u_all[0,:,:,1])
+plt.title('Initial Dataset')
 plt.show()
 print('Showed data')
 

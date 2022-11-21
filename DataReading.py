@@ -21,7 +21,7 @@ def read(Re=20.0):
     t = np.array(hf.get('t'))
     u_all = np.zeros((Nx, Nx, len(t), Nu))
     u_all[:, :, :, 0] = np.array(hf.get('u_refined'))
-    # u_all[:,:,:,1] = np.array(hf.get('v_refined'))
+
     u_all = np.transpose(u_all, [2, 0, 1, 3])
     hf.close()
     print(u_all.shape)
@@ -32,6 +32,7 @@ def read(Re=20.0):
     u_max = np.amax(u_all[:, :, :, 0])
     u_all[:, :, :, 0] = (u_all[:, :, :, 0] - u_min) / (u_max - u_min)
     if Nu == 2:
+        u_all[:, :, :, 1] = np.array(hf.get('v_refined'))
         v_min = np.amin(u_all[:, :, :, 1])
         v_max = np.amax(u_all[:, :, :, 1])
         u_all[:, :, :, 1] = (u_all[:, :, :, 1] - v_min) / (v_max - v_min)
