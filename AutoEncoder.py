@@ -1,28 +1,14 @@
-# Import Libraries
 import numpy as np
 import tensorflow as tf
-# from datetime import datetime
 import matplotlib.pyplot as plt
-import h5py
 from tensorflow.keras.layers import Input, Dense, Conv2D, MaxPool2D, AveragePooling2D, UpSampling2D, concatenate, \
     BatchNormalization, Conv2DTranspose, Flatten, Reshape
 from tensorflow.keras.optimizers import Adam
+from DataReading import read
 
 import os
-os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
 
-# -------------------------------------------------------------------------------------------------
-# FILE SELECTION
-Re = 20.0  # choose between Re= 20.0, 30.0, 40.0, 50.0, 60.0, 100.0, 180.0
-
-# T has different values depending on Re
-if Re == 20.0 or Re == 30.0 or Re == 40.0:
-    T = 20000
-else:
-    T = 2000
-
-path_folder = 'Final_Product/'  # path to folder in which flow data is situated
-path = path_folder + f'Kolmogorov_Re{Re}_T{T}_DT01.h5'
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 # -------------------------------------------------------------------------------------------------
 # PARAMETER SELECTION
@@ -40,30 +26,10 @@ if pooling == 'max':
     pooling_function = MaxPool2D
 else:
     pooling_function = AveragePooling2D
+# ------------------------------------------------------------------------------
+# READ DATA
+Nx, Nu, u_all = read()
 
-# -------------------------------------------------------------------------------------------------
-# READ DATASET
-hf = h5py.File(path, 'r')
-Nx = 24
-Nu = 1
-t = np.array(hf.get('t'))
-u_all = np.zeros((Nx, Nx, len(t), Nu))
-u_all[:, :, :, 0] = np.array(hf.get('u_refined'))
-# u_all[:,:,:,1] = np.array(hf.get('v_refined'))
-u_all = np.transpose(u_all, [2, 0, 1, 3])
-hf.close()
-print(u_all.shape)
-print('Read Dataset')
-
-# normalize data
-u_min = np.amin(u_all[:, :, :, 0])
-u_max = np.amax(u_all[:, :, :, 0])
-u_all[:, :, :, 0] = (u_all[:, :, :, 0] - u_min) / (u_max - u_min)
-if Nu == 2:
-    v_min = np.amin(u_all[:, :, :, 1])
-    v_max = np.amax(u_all[:, :, :, 1])
-    u_all[:, :, :, 1] = (u_all[:, :, :, 1] - v_min) / (v_max - v_min)
-print('Normalized Data')
 
 # visualization of the dataset
 fig = plt.figure()

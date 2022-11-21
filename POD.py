@@ -1,35 +1,16 @@
 # IMPORT LIBRARIES
-import os
 import numpy as np
-import argparse
 from numpy import linalg as LA
 import matplotlib.pyplot as plt
-import h5py
+from DataReading import read
+
+import os
+
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 # ------------------------------------------------------------------------------
-# READ DATASET
-hf = h5py.File('/content/drive/MyDrive/Kolmogorov_Re10_T20000_DT01.h5', 'r')
-print(hf)
-Nx = 24
-Nu = 1
-t = np.array(hf.get('t'))
-u_all = np.zeros((Nx, Nx, len(t), Nu))
-u_all[:, :, :, 0] = np.array(hf.get('u_refined'))
-# if Nu ==2:
-#     u_all[:,:,:,1] = np.array(hf.get('v_refined'))
-u_all = np.transpose(u_all, [2, 0, 1, 3])
-hf.close()
-print(u_all.shape)
-
-# normalize data
-u_min = np.amin(u_all[:, :, :, 0])
-u_max = np.amax(u_all[:, :, :, 0])
-u_all[:, :, :, 0] = (u_all[:, :, :, 0] - u_min) / (u_max - u_min)
-# if Nu==2:
-#     v_min = np.amin(u_all[:,:,:,1])
-#     v_max = np.amax(u_all[:,:,:,1])
-#     u_all[:,:,:,1] = (u_all[:,:,:,1] - v_min) / (v_max - v_min)
-
+# READ DATA
+Nx, Nu, u_all = read()
 # ------------------------------------------------------------------------------
 # COMPUTE POD MODES
 Ntrain = 700
@@ -61,6 +42,7 @@ contrib = eig / np.sum(eig)
 
 plt.figure()
 plt.semilogy(contrib)  # plot the contribution of each mode to the overall energy
+plt.show()
 
 # print("size of coefficients")
 # print(a.shape)
@@ -88,6 +70,7 @@ ax = fig.add_subplot(121)
 ax.contourf(np.reshape(recons[isample, :], (dim[1], dim[2])))
 ax = fig.add_subplot(122)
 ax.contourf(np.reshape(UU[isample, :], (dim[1], dim[2])))
+plt.show()
 
 # Mean reconstruction error for different number of retained modes
 # We can compute the reconstruction of a varying number of modes and compute the error with our original data
@@ -99,7 +82,7 @@ for i in range(dim[1] * dim[2]):
 fig = plt.figure()
 ax = fig.add_subplot(111)
 ax.semilogy(err)
-
+plt.show()
 # ------------------------------------------------------------------------------
 # PROJECTION OF VAL DATA ONTO TRUNCATED MODE
 UU_valid = np.reshape(u_all[Ntrain:, :], (dim[0] - Ntrain, dim[1] * dim[2] * dim[3]))
@@ -115,6 +98,7 @@ fig = plt.figure()
 ax = fig.add_subplot(111)
 ax.semilogy(err, 'b')
 ax.semilogy(err_valid, 'r')
+plt.show()
 
 # Error for n modes
 nmodes = 128
