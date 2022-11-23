@@ -2,7 +2,6 @@
 import numpy as np
 from numpy import linalg as LA
 import matplotlib.pyplot as plt
-from DataReading import read
 
 import os
 

@@ -18,9 +18,10 @@ os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 dimensions = [8, 4, 2, 1]
 
 activation_function = 'tanh'  # specify which activation function to use
-learning_rate = 0.1  # change to 0.0001 if using a latent space dimension of 32 and 64
+learning_rate = 0.01  # change to 0.0001 if using a latent space dimension of 32 and 64
 number_epochs = 10  # set high, early stopping function will stop iterations if it sees no visible change after 'patience_early_stopping' number of epochs
-patience_early_stopping = 20  # how many epochs with no significant change before AE stops training
+batch_size = 200
+patience_early_stopping = 5  # how many epochs with no significant change before AE stops training
 pooling = 'max'  # set to 'max' or 'average'
 if pooling == 'max':
     pooling_function = MaxPool2D
@@ -56,7 +57,7 @@ u_test = u_all[test_ratio:, :, :, :].astype('float32')
 # CREATING NETWORK
 input_img = Input(shape=(Nx, Nx, Nu))
 
-#nb_layer = 0
+nb_layer = 0
 
 x = Conv2D(dimensions[0], (3, 3), padding='same', activation=activation_function)(input_img)
 x = pooling_function((2, 2), padding='same')(x)
@@ -96,7 +97,7 @@ print(autoencoder.summary())
 # -------------------------------------------------------------------------------------------------
 # TRAINING NETWORK
 autoencoder.compile(optimizer=Adam(learning_rate=learning_rate), loss='mse')
-checkpoint_filepath = './checkpoint'
+checkpoint_filepath = '../checkpoint'
 model_checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
     filepath=checkpoint_filepath,
     save_weights_only=True,
@@ -106,9 +107,8 @@ model_checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
 early_stop_callback = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=patience_early_stopping)
 
 nb_epochs = number_epochs
-batch_size = 250
 hist = autoencoder.fit(u_train, u_train, epochs=nb_epochs, batch_size=batch_size,
-                       shuffle=False, validation_data=(u_test, u_test),
+                       shuffle=True, validation_data=(u_test, u_test),
                        verbose=1,
                        callbacks=[model_checkpoint_callback, early_stop_callback])
 
@@ -124,7 +124,7 @@ plt.show()
 # -------------------------------------------------------------------------------------------------
 # COMPARISON BETWEEN REAL AND MODEL
 print('-------------------------')
-y_nn = autoencoder.predict(u_test[0:1, :, :, :])
+y_nn = autoencoder.predict(u_test[50:51, :, :, :])
 print(y_nn.shape)
 
 # u velocity
@@ -132,7 +132,7 @@ fig = plt.figure()
 ax = fig.add_subplot(121)
 ax.contourf(y_nn[0, :, :, 0])
 ax = fig.add_subplot(122)
-ax.contourf(u_test[0, :, :, 0])
+ax.contourf(u_test[50, :, :, 0])
 plt.show()
 
 # v velocity
