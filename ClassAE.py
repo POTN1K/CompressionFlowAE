@@ -3,8 +3,7 @@ import h5py
 import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
-from tensorflow.keras.layers import Input, Dense, Conv2D, MaxPool2D, AveragePooling2D, UpSampling2D, concatenate,
-    BatchNormalization, Conv2DTranspose, Flatten, Reshape
+from tensorflow.keras.layers import Input, Dense, Conv2D, MaxPool2D, AveragePooling2D, UpSampling2D, concatenate, BatchNormalization, Conv2DTranspose, Flatten, Reshape
 from tensorflow.keras.optimizers import Adam
 
 import os
@@ -15,7 +14,7 @@ os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 # Model Class
 class Model:
     def __init__(self, dimensions=[8, 4, 2, 1], activation_function='tanh', l_rate=0.01, epochs=10, batch=250,
-                 early_stopping=5, pooling='max', re=20.0, Nu=1, Nx=24, loss='mse'):
+                 early_stopping=5, pooling='max', re=40.0, Nu=1, Nx=24, loss='mse'):
         self.dimensions = dimensions
         self.activation_function = activation_function
         self.l_rate = l_rate
