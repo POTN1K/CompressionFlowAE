@@ -3,7 +3,8 @@ import h5py
 import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
-from tensorflow.keras.layers import Input, Dense, Conv2D, MaxPool2D, AveragePooling2D, UpSampling2D, concatenate, BatchNormalization, Conv2DTranspose, Flatten, Reshape
+from tensorflow.keras.layers import Input, Dense, Conv2D, MaxPool2D, AveragePooling2D, UpSampling2D, concatenate, \
+    BatchNormalization, Conv2DTranspose, Flatten, Reshape
 from tensorflow.keras.optimizers import Adam
 
 import os
@@ -89,7 +90,6 @@ class Model:
             v_min = np.amin(self.u_all[:, :, :, 1])
             v_max = np.amax(self.u_all[:, :, :, 1])
             self.u_all[:, :, :, 1] = (self.u_all[:, :, :, 1] - v_min) / (v_max - v_min)
-        print('Normalized Data')
 
         val_ratio = int(np.round(0.75 * len(self.u_all)))  # Amount of data used for validation
         test_ratio = int(np.round(0.95 * len(self.u_all)))  # Amount of data used for testing
@@ -186,8 +186,11 @@ class Model:
         plt.legend()
         plt.show()
 
+    def performance(self):
+        self.mse = self.autoencoder.evaluate(self.u_test, self.u_test, self.batch, verbose=0)
 
-if __name__ == '__main__':
+
+def run_model():
     model = Model()
     model.data_reading()
     model.preprocess()
@@ -196,3 +199,8 @@ if __name__ == '__main__':
     model.creator()
     model.training()
     model.visual_analysis()
+    model.performance()
+
+
+if __name__ == '__main__':
+    run_model()
