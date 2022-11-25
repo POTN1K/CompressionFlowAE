@@ -11,9 +11,9 @@ import os
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 
-# Model Class
-class Model:
-    def __init__(self, dimensions=[8, 4, 2, 1], activation_function='tanh', l_rate=0.01, epochs=10, batch=250,
+# Autoencoder Model Class
+class AE(Model):
+    def __init__(self, dimensions=[8, 4, 2, 1], activation_function='tanh', l_rate=0.01, epochs=10, batch=200,
                  early_stopping=5, pooling='max', re=40.0, Nu=1, Nx=24, loss='mse'):
         self.dimensions = dimensions
         self.activation_function = activation_function
@@ -96,11 +96,11 @@ class Model:
         # Create the history of the model
         self.hist = self.autoencoder.fit(self.u_train, self.u_train, epochs=self.epochs, batch_size=self.batch,
                                          shuffle=True, validation_data=(self.u_val, self.u_val),
-                                         verbose=1,
+                                         verbose=0,
                                          callbacks=[model_checkpoint_callback, early_stop_callback])
 
     def visual_analysis(self):
-        y_nn = self.autoencoder.predict(self.u_test[0:1, :, :, :])
+        y_nn = self.autoencoder.predict(self.u_test[0:1, :, :, :], verbose=0)
 
         # u velocity
         plt.subplot(121)

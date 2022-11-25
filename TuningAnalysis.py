@@ -4,14 +4,14 @@ import time
 from csv import DictWriter
 import numpy as np
 
-
-hyperparameters = {'learning rate': [1, 0.1, 0.01, 0.001],
+hyperparameters = {'learning rate': [0.1, 0.01, 0.001],
                    'epochs': [10, 50, 100],
                    'batch': [1000, 100, 10],
                    'early_stopping': [5, 10, 20],
-                   'dimensions': [[8, 4, 2, 1], [16, 8, 4, 2], [24, 12, 6, 3]],
-                   }
+                   'dimensions': [[8, 4, 2, 1], [16, 8, 4, 2], [24, 12, 6, 3]]}
 
+u_train, u_val, u_test = ClassAE.AE.preprocess()
+n = 0
 for lr in hyperparameters['learning rate']:
     for epoch in hyperparameters['epochs']:
         for batch in hyperparameters['batch']:
@@ -38,7 +38,8 @@ for lr in hyperparameters['learning rate']:
                               'Learning Rate': lr, 'Epochs': epoch, 'Batch Size': batch,
                               'Early Stopping': early_stopping,
                               'Dimensions': dimensions}
-                    print('done')
-                    with open('tuning.csv', 'a') as f:
+                    print(f'Model {n}')
+                    n += 1
+                    with open('tuning.csv', 'a', newline='') as f:
                         writer = DictWriter(f, columns)
                         writer.writerow(values)
