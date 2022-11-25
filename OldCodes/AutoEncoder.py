@@ -46,12 +46,12 @@ plt.show()
 
 # -------------------------------------------------------------------------------------------------
 # PREPARE DATASET
-val_ratio = int(np.round(0.75 * len(u_all))) # Amount of data used for validation
-test_ratio = int(np.round(0.95 * len(u_all))) # Amount of data used for testing
-
-u_train = u_all[:val_ratio, :, :, :].astype('float32')
-u_val = u_all[val_ratio:test_ratio, :, :, :].astype('float32')
-u_test = u_all[test_ratio:, :, :, :].astype('float32')
+# val_ratio = int(np.round(0.75 * len(u_all))) # Amount of data used for validation
+# test_ratio = int(np.round(0.95 * len(u_all))) # Amount of data used for testing
+#
+# u_train = u_all[:val_ratio, :, :, :].astype('float32')
+# u_val = u_all[val_ratio:test_ratio, :, :, :].astype('float32')
+# u_test = u_all[test_ratio:, :, :, :].astype('float32')
 
 # -------------------------------------------------------------------------------------------------
 # CREATING NETWORK
