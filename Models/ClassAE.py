@@ -1,9 +1,8 @@
 # Libraries
-from ParentClass import Model
+from SampleFlows.ParentClass import Model
 import tensorflow as tf
 import matplotlib.pyplot as plt
-from tensorflow.keras.layers import Input, Dense, Conv2D, MaxPool2D, AveragePooling2D, UpSampling2D, concatenate, \
-    BatchNormalization, Conv2DTranspose, Flatten, Reshape
+from tensorflow.keras.layers import Input, Conv2D, MaxPool2D, AveragePooling2D, UpSampling2D, Conv2DTranspose
 from tensorflow.keras.optimizers import Adam
 
 import os
