@@ -20,7 +20,7 @@ class Model:
         else:
             T = 2000
 
-        path_folder = 'SampleFlows/'  # path to folder in which flow data is situated
+        path_folder = '../SampleFlows/'  # path to folder in which flow data is situated
         path = path_folder + f'Kolmogorov_Re{re}_T{T}_DT01.h5'
 
         # READ DATASET
