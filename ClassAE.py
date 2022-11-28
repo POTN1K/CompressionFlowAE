@@ -153,20 +153,26 @@ class Model:
         y_nn = self.autoencoder.predict(self.u_test[0:1, :, :, :])
 
         # u velocity
-        plt.subplot(121)
-        figure = plt.contourf(y_nn[0, :, :, 0], vmin=0.0, vmax=1.1)
-        plt.subplot(122)
         figure2 = plt.contourf(self.u_test[0, :, :, 0], vmin=0.0, vmax=1.1)
         plt.colorbar(figure2)
-        plt.title("Velocity x-dir")
         plt.show()
+        # plt.subplot(121)
+        # figure = plt.contourf(y_nn[0, :, :, 0], vmin=0.0, vmax=1.1)
+        # plt.title('Reconstructed')
+        # plt.subplot(122)
+        # figure2 = plt.contourf(self.u_test[0, :, :, 0], vmin=0.0, vmax=1.1)
+        # plt.colorbar(figure2)
+        # plt.title("Original")
+        # plt.show()
 
         # v velocity
         if self.nu == 2:
             plt.subplot(121)
             figure = plt.contourf(y_nn[0, :, :, 1], vmin=0.0, vmax=1.1)
+            plt.title('Reconstructed')
             plt.subplot(122)
             figure2 = plt.contourf(self.u_test[0, :, :, 1], vmin=0.0, vmax=1.1)
+            plt.title("Original")
             plt.colorbar(figure2)
             # fig = plt.figure()
             # ax = fig.add_subplot(121)
@@ -185,13 +191,14 @@ class Model:
         plt.ylabel("Loss")
         plt.legend()
         plt.show()
+        print(loss_history[-1])
 
     def performance(self):
         self.mse = self.autoencoder.evaluate(self.u_test, self.u_test, self.batch, verbose=0)
 
 
 def run_model():
-    model = Model()
+    model = Model(batch=100, re=20.0, Nu=1)
     model.data_reading()
     model.preprocess()
     model.input_image()
