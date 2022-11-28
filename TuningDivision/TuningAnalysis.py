@@ -1,10 +1,10 @@
 # Libraries
-import ClassAE
+from Models import ClassAE
 import time
 from csv import DictWriter
 import numpy as np
 
-hyperparameters = {'learning rate': [0.1, 0.01, 0.001],
+hyperparameters = {'learning rate': [0.01, 0.001],
                    'epochs': [10, 50, 100],
                    'batch': [1000, 100, 10],
                    'early_stopping': [5, 10, 20],
