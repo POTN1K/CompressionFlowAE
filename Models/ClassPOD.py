@@ -8,81 +8,64 @@ os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 
 class POD(Model):
-    def __init__(self, n_train=700, ):
-        self.nx = None
-        self.nu = None
-        self.u_all = None
-        self.dim = None
-        self.UU = None
-        self.n_train = n_train
-        self.phi = None
-        self.phi_spat = None
-        self.contrib = None
-        self.a = None
-        self.recons = None
-        self.err = None
+    def __init__(self, u_all: np.array, n_max: int = 20, hot_start: int = False) -> None:
+        """
+        :param u_all: T, i, j, u, v -> time, i_grid, j_grid, vel u, vel v
+        :param n_max: max number of modes to generate
+        :param hot_start: bool -> immediately run self.compute
+        """
+        # TODO: check n int in range
 
-    def computeModes(self, re=20.0, nx=24, nu=1):
-        if self.u_all is None:
-            self.u_all = POD.data_reading(re, nx, nu)
-        self.dim = self.u_all.shape
-        self.UU = np.reshape(self.u_all[:self.n_train, :], (self.n_train, self.dim[1] * self.dim[2] * self.dim[3]))
-        m = self.UU.shape[0]
-        C = np.matmul(np.transpose(self.UU), self.UU) / (m - 1)
+        # TODO: implement attributes from import
 
-        # solve eigenvalue problem
-        eig, self.phi = LA.eigh(C)
+        # TODO: implement attributes to be generated
+        self._decoded = None
+        self._n_decoded = None
 
-        # Sort Eigenvalues and vectors
-        idx = eig.argsort()[::-1]
-        eig = eig[idx]
-        self.phi = self.phi[:, idx]
+        raise NotImplemented
 
-        # project onto modes for temporal coefficients
-        self.a = np.matmul(self.UU, self.phi)  # contains the "code" (modal coefficients)
+    def compute(self) -> None:
+        """
+        Compute and
+        :return: None
+        """
+        raise NotImplemented
 
-        self.phi_spat = np.reshape(self.phi, (self.dim[1], self.dim[2], self.dim[1] * self.dim[2]))  # contains the spatial mode
+    def reconstruct(self) -> np.array:
+        """
+        Return the reconstructed flow data from the proper orthogonal decomposition
+        :return: reconstructed flow data
+        """
+        raise NotImplemented
 
-        # contribution of different eigenvectors
-        self.contrib = eig / np.sum(eig)
+    @property
+    def decoded(self, n: int = None) -> np.array:
+        if n is None:   # set n for decoding
+            if self._n_decoded is not None:
+                n = self._n_decoded
+            else:
+                n = self.n_max
 
-    def contribution_visual(self):
-        # plot the contribution of each mode to the overall energy
+        if self._decoded is None:  # first time decoding
+            self._n_decoded = n
+            self._decoded = self.reconstruct()
 
-        plt.figure()
-        plt.semilogy(self.contrib)
-        plt.show()
+        elif n != self._n_decoded:  # previously decoded for other n -> overwrite
+            self._n_decoded = n
+            self._decoded = self.reconstruct()
 
-    def modes_error_visual(self):
-        imode = 0
-        fig = plt.figure()
-        ax = fig.add_subplot(111)
-        ax.contourf(self.phi_spat[:, :, imode])
+        # _n_decoded is current n and _decoded is generated
 
-        # Visualization of modal reconstruction with truncated number of modes
-        isample = 50
-        nmodes = 1
+        return self._decoded
 
-        # To reconstruct the field ("decode"), we just matrix-multiply the modal coefficients with the spatial modes
-        # but we do that for a truncated number of modes, instead of using the full modes
-        self.recons = np.matmul(self.a[:, :nmodes], np.transpose(self.phi[:, :nmodes]))
+    def save_to_file(self) -> None:
+        """
+        Stretch goal, maybe implement later. Would also need to implement loading properly.
+        """
+        raise NotImplemented
 
-        fig = plt.figure()
-        ax = fig.add_subplot(121)
-        ax.contourf(np.reshape(self.recons[isample, :], (self.dim[1], self.dim[2])))
-        ax = fig.add_subplot(122)
-        ax.contourf(np.reshape(self.UU[isample, :], (self.dim[1], self.dim[2])))
-        plt.show()
 
-        # Mean reconstruction error for different number of retained modes
-        # We can compute the reconstruction of a varying number of modes and compute the error with our original data
-        self.err = np.zeros((self.dim[1] * self.dim[2]))
-        for i in range(self.dim[1] * self.dim[2]):
-            recons = np.matmul(self.a[:, :i], np.transpose(self.phi[:, :i]))
-            self.err[i] = np.mean(np.mean(np.square(self.UU - recons)))
-
-        fig = plt.figure()
-        ax = fig.add_subplot(111)
-        ax.semilogy(self.err)
-        plt.show()
+if __name__ == '__main__':
+    # TODO: Write test
+    raise NotImplemented
 
