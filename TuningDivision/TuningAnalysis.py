@@ -3,12 +3,14 @@ from Models import ClassAE
 import time
 from csv import DictWriter
 import numpy as np
+import os
 
-hyperparameters = {'learning rate': [0.01, 0.001],
-                   'epochs': [10, 50, 100],
-                   'batch': [1000, 100, 10],
-                   'early_stopping': [5, 10, 20],
-                   'dimensions': [[8, 4, 2, 1], [16, 8, 4, 2], [24, 12, 6, 3]]}
+filename = 'tuning_2.csv'
+hyperparameters = {'learning rate': [0.0001, 0.0005],
+                   'epochs': [80, 100, 200],
+                   'batch': [20, 10, 5],
+                   'early_stopping': [10],
+                   'dimensions': [[24, 12, 6, 3], [16, 8, 4, 2], [32, 16, 8, 4], [64, 32, 16, 8], [256, 128, 64, 32]]}
 
 u_train, u_val, u_test = ClassAE.AE.preprocess()
 n = 0
@@ -40,6 +42,8 @@ for lr in hyperparameters['learning rate']:
                               'Dimensions': dimensions}
                     print(f'Model {n}')
                     n += 1
-                    with open('tuning.csv', 'a', newline='') as f:
-                        writer = DictWriter(f, columns)
-                        writer.writerow(values)
+                    if myModel.mse < 1e-3:
+                        with open(filename, 'a', newline='') as f:
+                            writer = DictWriter(f, columns)
+                            writer.writerow(values)
+os.system("shutdown /s /t 1")
