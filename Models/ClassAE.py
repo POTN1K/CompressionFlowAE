@@ -25,7 +25,7 @@ class AE(Model):
         self.re = re
         self.nu = Nu
         self.nx = Nx
-        self._pooling = pooling
+        self.pooling = pooling
         self.loss = loss
         # Instantiating
         self.u_all = None
@@ -97,13 +97,14 @@ class AE(Model):
         # Create the history of the model
         self.hist = self.autoencoder.fit(self.u_train, self.u_train, epochs=self.epochs, batch_size=self.batch,
                                          shuffle=True, validation_data=(self.u_val, self.u_val),
-                                         verbose=0,
+                                         verbose=1,
                                          callbacks=[early_stop_callback])
                                         # callbacks = [model_checkpoint_callback, early_stop_callback])
+        self.y_pred = self.autoencoder.predict(self.u_test[:, :, :, :], verbose=0)
 
     def visual_analysis(self):
         for i in range(10):
-            self.y_pred = self.autoencoder.predict(self.u_test[i:i+1, :, :, :], verbose=0)
+            image_to_plot = self.y_pred[i:i+1, :, :, :]
 
             # u velocity
             plt.subplot(121)
@@ -141,14 +142,16 @@ class AE(Model):
 
     def performance(self):
         self.mse = self.autoencoder.evaluate(self.u_test, self.u_test, self.batch, verbose=0)
-        # self.percentage = np.average(1 - np.abs(self.y_pred-self.u_test)/self.u_test)*100
+        self.percentage = np.average(1 - np.abs(self.y_pred-self.u_test)/self.u_test)*100
+        average_images = np.average((1 - np.abs(self.y_pred-self.u_test)/self.u_test), axis=(1, 2))
+        print(average_images)
 
 
 def run_model():
     print('running')
     u_train, u_val, u_test = AE.preprocess()
 
-    model = AE(l_rate=0.001, epochs=10, batch=10, early_stopping=10, dimensions=[32, 12, 6, 3])
+    model = AE(l_rate=0.001, epochs=100, batch=10, early_stopping=10, dimensions=[24, 12, 6, 3])
     model.u_train = u_train
     model.u_val = u_val
     model.u_test = u_test
