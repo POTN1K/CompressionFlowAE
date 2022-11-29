@@ -1,4 +1,6 @@
 # Libraries
+import numpy as np
+
 from SampleFlows.ParentClass import Model
 import tensorflow as tf
 import matplotlib.pyplot as plt
@@ -96,24 +98,26 @@ class AE(Model):
         self.hist = self.autoencoder.fit(self.u_train, self.u_train, epochs=self.epochs, batch_size=self.batch,
                                          shuffle=True, validation_data=(self.u_val, self.u_val),
                                          verbose=0,
-                                         callbacks=[model_checkpoint_callback, early_stop_callback])
+                                         callbacks=[early_stop_callback])
+                                        # callbacks = [model_checkpoint_callback, early_stop_callback])
 
     def visual_analysis(self):
-        y_nn = self.autoencoder.predict(self.u_test[0:1, :, :, :], verbose=0)
+        for i in range(10):
+            self.y_pred = self.autoencoder.predict(self.u_test[i:i+1, :, :, :], verbose=0)
 
-        # u velocity
-        plt.subplot(121)
-        figure = plt.contourf(y_nn[0, :, :, 0], vmin=0.0, vmax=1.1)
-        plt.subplot(122)
-        figure2 = plt.contourf(self.u_test[0, :, :, 0], vmin=0.0, vmax=1.1)
-        plt.colorbar(figure2)
-        plt.title("Velocity x-dir")
-        plt.show()
+            # u velocity
+            plt.subplot(121)
+            figure = plt.contourf(self.y_pred[0, :, :, 0], vmin=0.0, vmax=1.1)
+            plt.subplot(122)
+            figure2 = plt.contourf(self.u_test[i, :, :, 0], vmin=0.0, vmax=1.1)
+            plt.colorbar(figure2)
+            plt.title("Velocity x-dir")
+            plt.show()
 
         # v velocity
         if self.nu == 2:
             plt.subplot(121)
-            figure = plt.contourf(y_nn[0, :, :, 1], vmin=0.0, vmax=1.1)
+            figure = plt.contourf(self.y_pred[0, :, :, 1], vmin=0.0, vmax=1.1)
             plt.subplot(122)
             figure2 = plt.contourf(self.u_test[0, :, :, 1], vmin=0.0, vmax=1.1)
             plt.colorbar(figure2)
@@ -137,12 +141,14 @@ class AE(Model):
 
     def performance(self):
         self.mse = self.autoencoder.evaluate(self.u_test, self.u_test, self.batch, verbose=0)
+        # self.percentage = np.average(1 - np.abs(self.y_pred-self.u_test)/self.u_test)*100
 
 
 def run_model():
+    print('running')
     u_train, u_val, u_test = AE.preprocess()
 
-    model = AE()
+    model = AE(l_rate=0.001, epochs=10, batch=10, early_stopping=10, dimensions=[32, 12, 6, 3])
     model.u_train = u_train
     model.u_val = u_val
     model.u_test = u_test
@@ -153,7 +159,7 @@ def run_model():
     model.visual_analysis()
     model.performance()
 
-    print(model.autoencoder.summary())
+    print(model.percentage)
 
 
 if __name__ == '__main__':

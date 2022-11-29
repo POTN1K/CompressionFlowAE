@@ -3,6 +3,7 @@ from Models import ClassAE
 import time
 from csv import DictWriter
 import numpy as np
+import os
 
 hyperparameters = {'learning rate': [0.01, 0.001],
                    'epochs': [10, 50, 100],
