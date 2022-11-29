@@ -14,22 +14,23 @@ class POD(Model):
         :param n: max number of modes to generate
         :param hot_start: bool -> immediately run self.compute
         """
-        # TODO: implement attributes from import
         # Parameters
         self.n = n  # max number of modes to consider in generation
 
         # Dimensions
-        # TODO: Finish implementation of dimensions
         self.dim_u = len(np.shape(u_all)) - 3
         if self.dim_u == 1:
-            ... # take frm np.shape
+            self.dim_T, self.dim_x, self.dim_y, self.dim_u = np.shape(u_all)
+            self.dim_v = None
         else:
-            ...
-        # Data
-        ...
+            self.dim_T, self.dim_x, self.dim_y, self.dim_u, self.dim_v = np.shape(u_all)
+        self.dim_M = self.dim_x*self.dim_y
 
         if self.n > self.dim_M:  # check validity of n
             raise Exception('Max number of modes n out of range')
+
+        # Data
+
 
         # POD matrices, to be generated
         self.Sigma = None  # Diagonal n x n energy matrix   : energy by mode
