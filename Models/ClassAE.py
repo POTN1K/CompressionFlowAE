@@ -1,10 +1,8 @@
 # Libraries
-import h5py
-import numpy as np
+from SampleFlows.ParentClass import Model
 import tensorflow as tf
 import matplotlib.pyplot as plt
-from tensorflow.keras.layers import Input, Dense, Conv2D, MaxPool2D, AveragePooling2D, UpSampling2D, concatenate, \
-    BatchNormalization, Conv2DTranspose, Flatten, Reshape
+from tensorflow.keras.layers import Input, Conv2D, MaxPool2D, AveragePooling2D, UpSampling2D, Conv2DTranspose
 from tensorflow.keras.optimizers import Adam
 
 import os
@@ -12,9 +10,9 @@ import os
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 
-# Model Class
-class Model:
-    def __init__(self, dimensions=[8, 4, 2, 1], activation_function='tanh', l_rate=0.01, epochs=10, batch=250,
+# Autoencoder Model Class
+class AE(Model):
+    def __init__(self, dimensions=[8, 4, 2, 1], activation_function='tanh', l_rate=0.01, epochs=10, batch=200,
                  early_stopping=5, pooling='max', re=40.0, Nu=1, Nx=24, loss='mse'):
         self.dimensions = dimensions
         self.activation_function = activation_function
@@ -48,56 +46,6 @@ class Model:
         else:
             self.pooling_function = AveragePooling2D
 
-    def data_reading(self):
-        """Function to read the H5 files, can change Re to run for different flows
-            Re- Reynolds Number
-            Nu- Dimension of Velocity Vector
-            Nx- Size of grid"""
-        # FILE SELECTION
-        # choose between Re= 20.0, 30.0, 40.0, 50.0, 60.0, 100.0, 180.0
-
-        # T has different values depending on Re
-        if self.re == 20.0 or self.re == 30.0 or self.re == 40.0:
-            T = 20000
-        else:
-            T = 2000
-
-        path_folder = 'SampleFlows/'  # path to folder in which flow data is situated
-        path = path_folder + f'Kolmogorov_Re{self.re}_T{T}_DT01.h5'
-
-        # READ DATASET
-        hf = h5py.File(path, 'r')
-        t = np.array(hf.get('t'))
-        u_all = np.zeros((self.nx, self.nx, len(t), self.nu))
-        u_all[:, :, :, 0] = np.array(hf.get('u_refined'))  # Update u_all with data from file
-        if self.nu == 2:
-            u_all[:, :, :, 1] = np.array(hf.get('v_refined'))
-        u_all = np.transpose(u_all, [2, 0, 1, 3])  # Time, Nx, Nx, Nu
-        hf.close()
-        self.u_all = u_all
-        print(f'Shape of initial u dataset: {u_all.shape}')
-        print('Read Dataset')
-
-    def preprocess(self):
-        if self.u_all is None:
-            self.data_reading()
-
-        # normalize data
-        u_min = np.amin(self.u_all[:, :, :, 0])
-        u_max = np.amax(self.u_all[:, :, :, 0])
-        self.u_all[:, :, :, 0] = (self.u_all[:, :, :, 0] - u_min) / (u_max - u_min)
-        if self.nu == 2:
-            v_min = np.amin(self.u_all[:, :, :, 1])
-            v_max = np.amax(self.u_all[:, :, :, 1])
-            self.u_all[:, :, :, 1] = (self.u_all[:, :, :, 1] - v_min) / (v_max - v_min)
-
-        val_ratio = int(np.round(0.75 * len(self.u_all)))  # Amount of data used for validation
-        test_ratio = int(np.round(0.95 * len(self.u_all)))  # Amount of data used for testing
-
-        self.u_train = self.u_all[:val_ratio, :, :, :].astype('float32')
-        self.u_val = self.u_all[val_ratio:test_ratio, :, :, :].astype('float32')
-        self.u_test = self.u_all[test_ratio:, :, :, :].astype('float32')
-
     def input_image(self):
         self.image = Input(shape=(self.nx, self.nx, self.nu))
 
@@ -120,6 +68,7 @@ class Model:
         x = Conv2DTranspose(self.dimensions[0], (3, 3), padding='same', activation=self.activation_function)(x)
         x = UpSampling2D((2, 2))(x)
         self.decoded = Conv2DTranspose(self.nu, (3, 3), activation='linear', padding='same')(x)
+
 
     def creator(self):
         self.autoencoder = tf.keras.models.Model(self.image, self.decoded)
@@ -146,33 +95,27 @@ class Model:
         # Create the history of the model
         self.hist = self.autoencoder.fit(self.u_train, self.u_train, epochs=self.epochs, batch_size=self.batch,
                                          shuffle=True, validation_data=(self.u_val, self.u_val),
-                                         verbose=1,
+                                         verbose=0,
                                          callbacks=[model_checkpoint_callback, early_stop_callback])
 
     def visual_analysis(self):
-        y_nn = self.autoencoder.predict(self.u_test[0:1, :, :, :])
+        y_nn = self.autoencoder.predict(self.u_test[0:1, :, :, :], verbose=0)
 
         # u velocity
+        plt.subplot(121)
+        figure = plt.contourf(y_nn[0, :, :, 0], vmin=0.0, vmax=1.1)
+        plt.subplot(122)
         figure2 = plt.contourf(self.u_test[0, :, :, 0], vmin=0.0, vmax=1.1)
         plt.colorbar(figure2)
+        plt.title("Velocity x-dir")
         plt.show()
-        # plt.subplot(121)
-        # figure = plt.contourf(y_nn[0, :, :, 0], vmin=0.0, vmax=1.1)
-        # plt.title('Reconstructed')
-        # plt.subplot(122)
-        # figure2 = plt.contourf(self.u_test[0, :, :, 0], vmin=0.0, vmax=1.1)
-        # plt.colorbar(figure2)
-        # plt.title("Original")
-        # plt.show()
 
         # v velocity
         if self.nu == 2:
             plt.subplot(121)
             figure = plt.contourf(y_nn[0, :, :, 1], vmin=0.0, vmax=1.1)
-            plt.title('Reconstructed')
             plt.subplot(122)
             figure2 = plt.contourf(self.u_test[0, :, :, 1], vmin=0.0, vmax=1.1)
-            plt.title("Original")
             plt.colorbar(figure2)
             # fig = plt.figure()
             # ax = fig.add_subplot(121)
@@ -191,22 +134,26 @@ class Model:
         plt.ylabel("Loss")
         plt.legend()
         plt.show()
-        print(loss_history[-1])
 
     def performance(self):
         self.mse = self.autoencoder.evaluate(self.u_test, self.u_test, self.batch, verbose=0)
 
 
 def run_model():
-    model = Model(batch=100, re=20.0, Nu=1)
-    model.data_reading()
-    model.preprocess()
+    u_train, u_val, u_test = AE.preprocess()
+
+    model = AE()
+    model.u_train = u_train
+    model.u_val = u_val
+    model.u_test = u_test
     model.input_image()
     model.network()
     model.creator()
     model.training()
     model.visual_analysis()
     model.performance()
+
+    print(model.autoencoder.summary())
 
 
 if __name__ == '__main__':

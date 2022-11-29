@@ -1,26 +1,27 @@
 # Libraries
-import ClassAE
+from Models import ClassAE
 import time
 from csv import DictWriter
+import numpy as np
 
-
-hyperparameters = {'learning rate': [1, 0.1, 0.01, 0.001],
+hyperparameters = {'learning rate': [0.01, 0.001],
                    'epochs': [10, 50, 100],
                    'batch': [1000, 100, 10],
                    'early_stopping': [5, 10, 20],
-                   'dimensions': [[8, 4, 2, 1], [16, 8, 4, 2], [24, 12, 6, 3]],
-                   }
+                   'dimensions': [[8, 4, 2, 1], [16, 8, 4, 2], [24, 12, 6, 3]]}
 
+u_train, u_val, u_test = ClassAE.AE.preprocess()
+n = 0
 for lr in hyperparameters['learning rate']:
     for epoch in hyperparameters['epochs']:
         for batch in hyperparameters['batch']:
             for early_stopping in hyperparameters['early_stopping']:
                 for dimensions in hyperparameters['dimensions']:
-
-                    myModel = ClassAE.Model(dimensions=dimensions, l_rate=lr, epochs=epoch, batch=batch,
-                                            early_stopping=early_stopping)
-                    myModel.data_reading()
-                    myModel.preprocess()
+                    myModel = ClassAE.AE(dimensions=dimensions, l_rate=lr, epochs=epoch, batch=batch,
+                                         early_stopping=early_stopping)
+                    myModel.u_train = np.copy(u_train)
+                    myModel.u_val = np.copy(u_val)
+                    myModel.u_test = np.copy(u_test)
                     myModel.input_image()
                     myModel.network()
                     myModel.creator()
@@ -29,14 +30,16 @@ for lr in hyperparameters['learning rate']:
                     end = time.time()
                     myModel.performance()
 
-                    t_time = end-start
+                    t_time = end - start
                     columns = ['Running Time', 'Loss', 'Compression', 'Learning Rate', 'Epochs', 'Batch Size',
                                'Early Stopping', 'Dimensions']
 
-                    values = {'Running Time': t_time, 'Loss': myModel.mse, 'Compression': dimensions[0] / dimensions[1],
-                              'Learning Rate': lr, 'Epochs': epoch, 'Batch Size': batch, 'Early Stopping': early_stopping,
+                    values = {'Running Time': t_time, 'Loss': myModel.mse, 'Compression': dimensions[-1] / (24 * 24),
+                              'Learning Rate': lr, 'Epochs': epoch, 'Batch Size': batch,
+                              'Early Stopping': early_stopping,
                               'Dimensions': dimensions}
-                    print('done')
-                    with open('tuning.csv', 'a') as f:
+                    print(f'Model {n}')
+                    n += 1
+                    with open('tuning.csv', 'a', newline='') as f:
                         writer = DictWriter(f, columns)
                         writer.writerow(values)
