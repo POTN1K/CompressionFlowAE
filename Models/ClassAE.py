@@ -23,7 +23,7 @@ class AE(Model):
         self.re = re
         self.nu = Nu
         self.nx = Nx
-        self.pooling = pooling
+        self._pooling = pooling
         self.loss = loss
         # Instantiating
         self.u_all = None
