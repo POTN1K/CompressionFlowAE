@@ -10,7 +10,7 @@ os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 class POD(Model):
     def __init__(self, u_all: np.array, n: int = 100, hot_start: int = False) -> None:
         """
-        Compatible with 1D or 2D velocity field
+        Require 2D velocity field
         :param u_all: T, i, j, u, v -> time, i_grid, j_grid, vel u, vel v
         :param n: max number of modes to generate
         :param hot_start: bool -> immediately run self.compute
@@ -34,7 +34,7 @@ class POD(Model):
         self.input_data = u_all
 
         # POD matrices, to be generated
-        self.Sigma = None  # Diagonal n x n energy matrix   : energy by mode
+        self.mode_energy = None  # length n energy vector   : energy by mode
         self.U = None      # M x n x u spatial mode matrix  : spatial modes
         self.V = None      # n x T x u temporal mode matrix : modulate with time
 
@@ -51,16 +51,38 @@ class POD(Model):
         Compute and store the sigma, spacial mode, and temporal mode matrices
         :return: None
         """
-        # TODO: port from POD; consider u_all data
-        raise NotImplemented
+        dim = self.input_data.shape
+        UU = np.reshape(self.input_data[:dim[0], :], (dim[0], dim[1] * dim[2] * dim[3]))
+        m = UU.shape[0]
+        C = np.matmul(np.transpose(UU), UU) / (m - 1)
+
+        # solve eigenvalue problem
+        eig, phi = LA.eigh(C)
+        print(eig.shape)
+
+        # Sort Eigenvalues and vectors
+        idx = eig.argsort()[::-1]
+        eig = eig[idx]
+        phi = phi[:, idx]
+
+        # project onto modes for temporal coefficients
+        self.V = np.matmul(UU, phi)  # contains the "code" (modal coefficients)
+
+        self.U = np.reshape(phi, (dim[1], dim[2], dim[1] * dim[2]))  # contains the spatial mode
+
+        # contribution of different eigenvectors -> energy
+        self.mode_energy = eig / np.sum(eig)
 
     def reconstruct(self) -> np.array:
         """
         Return the reconstructed flow data from the proper orthogonal decomposition
         :return: reconstructed flow data
         """
-        # TODO: reconstruct from POD
-        raise NotImplemented
+        return np.matmul(self.V[:, self._n_decoded], np.transpose(self.U[:, self._n_decoded]))
+
+    @property
+    def encoded(self):
+        return self.V  # modal coefficients modulate the modes in time: this is the encoded data
 
     @property
     def decoded(self, n: int = None) -> np.array:
@@ -87,6 +109,21 @@ class POD(Model):
 
         return self._decoded
 
+    def plot_contributions(self) -> None:
+        """
+        Plot the energy of each mode
+        """
+        plt.figure()
+        plt.semilogy(np.diag(self.mode_energy))
+        plt.show()
+
+    def plot_mode(self, n: int) -> None:
+        """
+        :param n: int, node ID to plot
+        Plot the components of a specific spatial modes
+        """
+        raise NotImplemented
+
     def save_to_file(self) -> None:
         """
         Stretch goal, maybe implement later. Would also need to implement loading properly.
@@ -95,11 +132,8 @@ class POD(Model):
 
 
 if __name__ == '__main__':
-    u_all = np.concatenate(POD.preprocess(nu=2))
-    print(np.shape(u_all))
-    print(u_all[0][:][:][0])
-    # print(u_all[0])
-    # print('......')
-    # print(u_all[1])
+    u_all = np.concatenate(POD.preprocess(nu=1))
     Model = POD(u_all, hot_start=True)
+    Model.plot_contributions()
+
 
