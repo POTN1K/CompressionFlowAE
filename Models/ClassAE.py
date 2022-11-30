@@ -36,6 +36,7 @@ class AE(Model):
         self.image = None
         self.encoded = None
         self.decoded = None
+        self.image = Input(shape=(self.nx, self.nx, self.nu))
 
     @property
     def pooling(self):
@@ -48,8 +49,7 @@ class AE(Model):
         else:
             self.pooling_function = AveragePooling2D
 
-    def input_image(self):
-        self.image = Input(shape=(self.nx, self.nx, self.nu))
+
 
     def network(self):
         x = Conv2D(self.dimensions[0], (3, 3), padding='same', activation=self.activation_function)(self.image)
@@ -74,7 +74,7 @@ class AE(Model):
 
     def creator(self):
         self.autoencoder = tf.keras.models.Model(self.image, self.decoded)
-        # self.encoder = tf.keras.models.Model(self.image, self.encoded)
+        self.encoder = tf.keras.models.Model(self.image, self.encoded)
         encoded_input = Input(shape=(1, 1, self.encoded.shape[3]))  # encoded_input == latent vector
         deco = self.autoencoder.layers[-7](encoded_input)  # we re-use the same layers as the ones of the autoencoder
         for i in range(6):
@@ -108,7 +108,7 @@ class AE(Model):
 
             # u velocity
             plt.subplot(121)
-            figure = plt.contourf(self.y_pred[0, :, :, 0], vmin=0.0, vmax=1.1)
+            figure = plt.contourf(image_to_plot[0, :, :, 0], vmin=0.0, vmax=1.1)
             plt.subplot(122)
             figure2 = plt.contourf(self.u_test[i, :, :, 0], vmin=0.0, vmax=1.1)
             plt.colorbar(figure2)
@@ -116,19 +116,19 @@ class AE(Model):
             plt.show()
 
         # v velocity
-        if self.nu == 2:
-            plt.subplot(121)
-            figure = plt.contourf(self.y_pred[0, :, :, 1], vmin=0.0, vmax=1.1)
-            plt.subplot(122)
-            figure2 = plt.contourf(self.u_test[0, :, :, 1], vmin=0.0, vmax=1.1)
-            plt.colorbar(figure2)
-            # fig = plt.figure()
-            # ax = fig.add_subplot(121)
-            # ax.contourf(y_nn[0, :, :, 1], vmin=0.0, vmax=1.5)
-            # ax = fig.add_subplot(122)
-            # ax.contourf(self.u_test[0, :, :, 1], vmin=0.0, vmax=1.5)
-            plt.title("Velocity y-dir")
-            plt.show()
+            if self.nu == 2:
+                plt.subplot(121)
+                figure = plt.contourf(image_to_plot[0, :, :, 1], vmin=0.0, vmax=1.1)
+                plt.subplot(122)
+                figure2 = plt.contourf(self.u_test[0, :, :, 1], vmin=0.0, vmax=1.1)
+                plt.colorbar(figure2)
+                # fig = plt.figure()
+                # ax = fig.add_subplot(121)
+                # ax.contourf(y_nn[0, :, :, 1], vmin=0.0, vmax=1.5)
+                # ax = fig.add_subplot(122)
+                # ax.contourf(self.u_test[0, :, :, 1], vmin=0.0, vmax=1.5)
+                plt.title("Velocity y-dir")
+                plt.show()
 
         loss_history = self.hist.history['loss']
         val_history = self.hist.history['val_loss']
@@ -143,8 +143,8 @@ class AE(Model):
     def performance(self):
         self.mse = self.autoencoder.evaluate(self.u_test, self.u_test, self.batch, verbose=0)
         self.percentage = np.average(1 - np.abs(self.y_pred-self.u_test)/self.u_test)*100
-        average_images = np.average((1 - np.abs(self.y_pred-self.u_test)/self.u_test), axis=(1, 2))
-        print(average_images)
+        self.average_images = np.average((1 - np.abs(self.y_pred-self.u_test)/self.u_test), axis=(1, 2))
+        print(self.average_images)
 
 
 def run_model():
@@ -155,7 +155,6 @@ def run_model():
     model.u_train = u_train
     model.u_val = u_val
     model.u_test = u_test
-    model.input_image()
     model.network()
     model.creator()
     model.training()

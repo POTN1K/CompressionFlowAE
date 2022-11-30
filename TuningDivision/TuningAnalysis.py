@@ -24,7 +24,6 @@ for lr in hyperparameters['learning rate']:
                     myModel.u_train = np.copy(u_train)
                     myModel.u_val = np.copy(u_val)
                     myModel.u_test = np.copy(u_test)
-                    myModel.input_image()
                     myModel.network()
                     myModel.creator()
                     start = time.time()
@@ -33,16 +32,16 @@ for lr in hyperparameters['learning rate']:
                     myModel.performance()
 
                     t_time = end - start
-                    columns = ['Running Time', 'Loss', 'Compression', 'Learning Rate', 'Epochs', 'Batch Size',
+                    columns = ['Accuracy', 'Running Time', 'Loss', 'Compression', 'Learning Rate', 'Epochs', 'Batch Size',
                                'Early Stopping', 'Dimensions']
 
-                    values = {'Running Time': t_time, 'Loss': myModel.mse, 'Compression': dimensions[-1] / (24 * 24),
+                    values = {'Accuracy': myModel.percentage, 'Running Time': t_time, 'Loss': myModel.mse, 'Compression': dimensions[-1] / (24 * 24),
                               'Learning Rate': lr, 'Epochs': epoch, 'Batch Size': batch,
                               'Early Stopping': early_stopping,
                               'Dimensions': dimensions}
                     print(f'Model {n}')
                     n += 1
-                    if myModel.mse < 1e-3:
+                    if myModel.mse < 10e-3:
                         with open(filename, 'a', newline='') as f:
                             writer = DictWriter(f, columns)
                             writer.writerow(values)
