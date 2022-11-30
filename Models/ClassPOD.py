@@ -8,8 +8,9 @@ os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 
 class POD(Model):
-    def __init__(self, u_all: np.array, n: int = 20, hot_start: int = False) -> None:
+    def __init__(self, u_all: np.array, n: int = 100, hot_start: int = False) -> None:
         """
+        Compatible with 1D or 2D velocity field
         :param u_all: T, i, j, u, v -> time, i_grid, j_grid, vel u, vel v
         :param n: max number of modes to generate
         :param hot_start: bool -> immediately run self.compute
@@ -30,7 +31,7 @@ class POD(Model):
             raise Exception('Max number of modes n out of range')
 
         # Data
-
+        self.input_data = u_all
 
         # POD matrices, to be generated
         self.Sigma = None  # Diagonal n x n energy matrix   : energy by mode
@@ -42,13 +43,15 @@ class POD(Model):
         self._n_decoded = None
 
         # hot start: generate POD matrices
-        self.compute()
+        if hot_start:
+            self.compute()
 
     def compute(self) -> None:
         """
         Compute and store the sigma, spacial mode, and temporal mode matrices
         :return: None
         """
+        # TODO: port from POD; consider u_all data
         raise NotImplemented
 
     def reconstruct(self) -> np.array:
@@ -56,10 +59,16 @@ class POD(Model):
         Return the reconstructed flow data from the proper orthogonal decomposition
         :return: reconstructed flow data
         """
+        # TODO: reconstruct from POD
         raise NotImplemented
 
     @property
     def decoded(self, n: int = None) -> np.array:
+        """
+        Returns the reconstructed flow data using the n most energetic modes
+        :param n: int, number of modes to use in reconstruction
+        :return: reconstructed flow data
+        """
         if n is None:   # set n for decoding
             if self._n_decoded is not None:
                 n = self._n_decoded
@@ -86,6 +95,11 @@ class POD(Model):
 
 
 if __name__ == '__main__':
-    # TODO: Write test
-    raise NotImplemented
+    u_all = np.concatenate(POD.preprocess(nu=2))
+    print(np.shape(u_all))
+    print(u_all[0][:][:][0])
+    # print(u_all[0])
+    # print('......')
+    # print(u_all[1])
+    Model = POD(u_all, hot_start=True)
 
