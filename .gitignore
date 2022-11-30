@@ -10,3 +10,5 @@ __pycache__/DataReading.cpython-310.pyc
 /Models/checkpoint.index
 /Models/checkpoint.data-00000-of-00001
 /Models/checkpoint
+/TuningDivision/tuning.csv
+.gitignore
