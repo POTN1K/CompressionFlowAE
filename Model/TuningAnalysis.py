@@ -40,6 +40,6 @@ for lr in hyperparameters['learning rate']:
                               'Dimensions': dimensions}
                     print(f'Model {n}')
                     n += 1
-                    with open('tuning.csv', 'a', newline='') as f:
+                    with open('TuningDivision/tuning.csv', 'a', newline='') as f:
                         writer = DictWriter(f, columns)
                         writer.writerow(values)

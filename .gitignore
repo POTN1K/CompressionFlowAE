@@ -7,8 +7,8 @@ __pycache__/ClassAE.cpython-310.pyc
 __pycache__/ClassAE.cpython-39.pyc
 __pycache__/DataReading.cpython-310.pyc
 *.pyc
-/Models/checkpoint.index
-/Models/checkpoint.data-00000-of-00001
-/Models/checkpoint
-/TuningDivision/tuning.csv
+/Model/Models/checkpoint.index
+/Model/Models/checkpoint.data-00000-of-00001
+/Model/Models/checkpoint
+/Model/TuningDivision/tuning.csv
 .gitignore

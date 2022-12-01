@@ -1,5 +1,5 @@
 # Libraries
-from SampleFlows.ParentClass import Model
+from Model.ParentClass import Model
 import tensorflow as tf
 import matplotlib.pyplot as plt
 from tensorflow.keras.layers import Input, Conv2D, MaxPool2D, AveragePooling2D, UpSampling2D, Conv2DTranspose

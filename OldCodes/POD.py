@@ -2,7 +2,7 @@
 import numpy as np
 from numpy import linalg as LA
 import matplotlib.pyplot as plt
-from SampleFlows.ParentClass import Model
+from Model.ParentClass import Model
 
 import os
 
