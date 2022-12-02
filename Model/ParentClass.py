@@ -1,11 +1,10 @@
 # Libraries
 import h5py
 import numpy as np
-from Models import ClassAE
 import time
 from csv import DictWriter
-import numpy as np
-from sklearn.model_selection import ParameterGrid, mean_squared_error  # pip3.10 install scikit-learn
+from sklearn.model_selection import ParameterGrid
+from sklearn.metrics import mean_squared_error  # pip3.10 install scikit-learn NOT sklearn
 
 
 # Generic Model
@@ -117,26 +116,29 @@ class Model:
         return u_all
 
     @staticmethod
-    def preprocess(u_all=None, re=20.0, nx=24, nu=1):
+    def preprocess(u_all=None, re=20.0, nx=24, nu=1, split=True, norm=True):
         if u_all is None:
             u_all = Model.data_reading(re, nx, nu)
 
         # normalize data
-        u_min = np.amin(u_all[:, :, :, 0])
-        u_max = np.amax(u_all[:, :, :, 0])
-        u_all[:, :, :, 0] = (u_all[:, :, :, 0] - u_min) / (u_max - u_min)
-        if nu == 2:
-            v_min = np.amin(u_all[:, :, :, 1])
-            v_max = np.amax(u_all[:, :, :, 1])
-            u_all[:, :, :, 1] = (u_all[:, :, :, 1] - v_min) / (v_max - v_min)
+        if norm:
+            u_min = np.amin(u_all[:, :, :, 0])
+            u_max = np.amax(u_all[:, :, :, 0])
+            u_all[:, :, :, 0] = (u_all[:, :, :, 0] - u_min) / (u_max - u_min)
+            if nu == 2:
+                v_min = np.amin(u_all[:, :, :, 1])
+                v_max = np.amax(u_all[:, :, :, 1])
+                u_all[:, :, :, 1] = (u_all[:, :, :, 1] - v_min) / (v_max - v_min)
 
-        val_ratio = int(np.round(0.75 * len(u_all)))  # Amount of data used for validation
-        test_ratio = int(np.round(0.95 * len(u_all)))  # Amount of data used for testing
+        if split:
+            val_ratio = int(np.round(0.75 * len(u_all)))  # Amount of data used for validation
+            test_ratio = int(np.round(0.95 * len(u_all)))  # Amount of data used for testing
 
-        u_train = u_all[:val_ratio, :, :, :].astype('float32')
-        u_val = u_all[val_ratio:test_ratio, :, :, :].astype('float32')
-        u_test = u_all[test_ratio:, :, :, :].astype('float32')
-        return u_train, u_val, u_test
+            u_train = u_all[:val_ratio, :, :, :].astype('float32')
+            u_val = u_all[val_ratio:test_ratio, :, :, :].astype('float32')
+            u_test = u_all[test_ratio:, :, :, :].astype('float32')
+            return u_train, u_val, u_test
+        return u_all
 
     def loss(self) -> float:
         """
@@ -184,5 +186,5 @@ class Model:
 
 
 if __name__ == '__main__':
-    # u_all = Model.preprocess()
+    u_all = Model.preprocess()
     # print(u_all)

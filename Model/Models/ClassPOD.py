@@ -8,27 +8,28 @@ os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 
 class POD(Model):
-    def __init__(self, u_all: np.array, n: int = 100, hot_start: int = False) -> None:
+    def __init__(self, u_all: np.array or None, n: int = 100) -> None:
         """
         Require 2D velocity field
         :param u_all: T, i, j, u, v -> time, i_grid, j_grid, vel u, vel v
         :param n: max number of modes to generate
         :param hot_start: bool -> immediately run self.compute
         """
+
         # Parameters
         self.n = n  # max number of modes to consider in generation
 
-        # Dimensions
-        self.dim_u = len(np.shape(u_all)) - 3
-        if self.dim_u == 1:
-            self.dim_T, self.dim_x, self.dim_y, self.dim_u = np.shape(u_all)
-            self.dim_v = None
-        else:
-            self.dim_T, self.dim_x, self.dim_y, self.dim_u, self.dim_v = np.shape(u_all)
-        self.dim_M = self.dim_x*self.dim_y
-
-        if self.n > self.dim_M:  # check validity of n
-            raise Exception('Max number of modes n out of range')
+        # Dimensions       # Commented for now; unused in inherited implementation, useful if rewritten
+        # self.dim_u = len(np.shape(u_all)) - 3
+        # if self.dim_u == 1:
+        #     self.dim_T, self.dim_x, self.dim_y, self.dim_u = np.shape(u_all)
+        #     self.dim_v = None
+        # else:
+        #     self.dim_T, self.dim_x, self.dim_y, self.dim_u, self.dim_v = np.shape(u_all)
+        # self.dim_M = self.dim_x*self.dim_y
+        #
+        # if self.n > self.dim_M:  # check validity of n
+        #     raise Exception('Max number of modes n out of range')
 
         # Data
         self.input_data = u_all
@@ -42,9 +43,7 @@ class POD(Model):
         self._decoded = None
         self._n_decoded = None
 
-        # hot start: generate POD matrices
-        if hot_start:
-            self.compute()
+        super().__init__(u_all)
 
     def compute(self) -> None:
         """
@@ -58,7 +57,6 @@ class POD(Model):
 
         # solve eigenvalue problem
         eig, phi = LA.eigh(C)
-        print(eig.shape)
 
         # Sort Eigenvalues and vectors
         idx = eig.argsort()[::-1]
@@ -84,8 +82,7 @@ class POD(Model):
     def encoded(self):
         return self.V  # modal coefficients modulate the modes in time: this is the encoded data
 
-    @property
-    def decoded(self, n: int = None) -> np.array:
+    def decode(self, n: int = None) -> np.array:
         """
         Returns the reconstructed flow data using the n most energetic modes
         :param n: int, number of modes to use in reconstruction
@@ -130,10 +127,35 @@ class POD(Model):
         """
         raise NotImplemented
 
+    # SKELETON FUNCTIONS: FILL (OVERWRITE) IN SUBCLASS
+    def fit_model(self, input_: np.array) -> None:  # skeleton
+        """
+        Fits the model on the training data: skeleton, overwrite
+        :param input_: time series of inputs
+        """
+        self.input_data = input_
+        self.compute()
+
+    def get_code(self) -> np.array: # skeleton
+        """
+        Passes self.input through the model, returns code
+        :return: codes time series
+        """
+        return self.encoded
+
+    def get_output(self) -> np.array: # skeleton
+        """
+        Passes self.code through the model, returns output
+        :return: output time series
+        """
+        return self.decode()
+
+    # END SKELETONS
+
 
 if __name__ == '__main__':
     u_all = np.concatenate(POD.preprocess(nu=1))
-    Model = POD(u_all, hot_start=True)
+    Model = POD(u_all)
     Model.plot_contributions()
 
 

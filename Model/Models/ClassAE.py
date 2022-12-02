@@ -2,6 +2,7 @@
 from Model.ParentClass import Model
 import tensorflow as tf
 import matplotlib.pyplot as plt
+import numpy as np
 from tensorflow.keras.layers import Input, Conv2D, MaxPool2D, AveragePooling2D, UpSampling2D, Conv2DTranspose
 from tensorflow.keras.optimizers import Adam
 
@@ -12,9 +13,10 @@ os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 # Autoencoder Model Class
 class AE(Model):
-    def __init__(self, dimensions=[8, 4, 2, 1], activation_function='tanh', l_rate=0.01, epochs=10, batch=200,
+    def __init__(self, input_, dimensions=(8, 4, 2, 1), activation_function='tanh', l_rate=0.01, epochs=10, batch=200,
                  early_stopping=5, pooling='max', re=40.0, Nu=1, Nx=24, loss='mse'):
-        self.dimensions = dimensions
+
+        self.dimensions = list(dimensions)
         self.activation_function = activation_function
         self.l_rate = l_rate
         self.epochs = epochs
@@ -23,7 +25,7 @@ class AE(Model):
         self.re = re
         self.nu = Nu
         self.nx = Nx
-        self.pooling = pooling
+        self._pooling = pooling
         self.loss = loss
         # Instantiating
         self.u_all = None
@@ -34,6 +36,13 @@ class AE(Model):
         self.image = None
         self.encoded = None
         self.decoded = None
+
+        # Generate structure
+        self.input_image()
+        self.network()
+        self.creator()
+
+        super().__init__(input_)
 
     @property
     def pooling(self):
@@ -68,7 +77,6 @@ class AE(Model):
         x = Conv2DTranspose(self.dimensions[0], (3, 3), padding='same', activation=self.activation_function)(x)
         x = UpSampling2D((2, 2))(x)
         self.decoded = Conv2DTranspose(self.nu, (3, 3), activation='linear', padding='same')(x)
-
 
     def creator(self):
         self.autoencoder = tf.keras.models.Model(self.image, self.decoded)
@@ -138,22 +146,34 @@ class AE(Model):
     def performance(self):
         self.mse = self.autoencoder.evaluate(self.u_test, self.u_test, self.batch, verbose=0)
 
+    # SKELETON FUNCTIONS
+    def fit_model(self, input_: np.array) -> None:  # skeleton
+        """
+        Fits the model on the training data: skeleton, overwrite
+        :param input_: time series of inputs
+        """
+        self.u_train, self.u_val, self.u_test = Model.preprocess(u_all=input_, norm=False) # split the input
+        self.training()
+
+    def get_code(self) -> np.array:  # skeleton
+        """
+        Passes self.input through the model, returns code
+        :return: codes time series
+        """
+        raise NotImplementedError("Skeleton not filled by subclass")
+
+    def get_output(self) -> np.array:  # skeleton
+        """
+        Passes self.code through the model, returns output
+        :return: output time series
+        """
+        raise NotImplementedError("Skeleton not filled by subclass")
+    # END SKELETONS
+
 
 def run_model():
-    u_train, u_val, u_test = AE.preprocess()
-
-    model = AE()
-    model.u_train = u_train
-    model.u_val = u_val
-    model.u_test = u_test
-    model.input_image()
-    model.network()
-    model.creator()
-    model.training()
-    model.visual_analysis()
-    model.performance()
-
-    print(model.autoencoder.summary())
+    data = Model.preprocess(split=False)
+    model = AE(data)
 
 
 if __name__ == '__main__':
