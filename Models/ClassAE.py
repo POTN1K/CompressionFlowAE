@@ -75,7 +75,7 @@ class AE(Model):
 
     def creator(self):
         self.autoencoder = tf.keras.models.Model(self.image, self.decoded)
-        # self.encoder = tf.keras.models.Model(self.image, self.encoded)
+        self.encoder = tf.keras.models.Model(self.image, self.encoded)
         encoded_input = Input(shape=(1, 1, self.encoded.shape[3]))  # encoded_input == latent vector
         deco = self.autoencoder.layers[-7](encoded_input)  # we re-use the same layers as the ones of the autoencoder
         for i in range(6):
@@ -142,6 +142,9 @@ class AE(Model):
         plt.show()
 
     def performance(self):
+        """Here we transform the mse into an accuracy value. Two different metrics are used, the absolute
+        error and the squared error. With those values, two different stds are calculated"""
+
         self.mse = self.autoencoder.evaluate(self.u_test, self.u_test, self.batch, verbose=0)
         # Absolute percentage metric, along with its std
         self.abs_percentage = np.average(1 - np.abs(self.y_pred - self.u_test) / self.u_test) * 100
@@ -168,7 +171,11 @@ def run_model():
     model.visual_analysis()
     model.performance()
 
-    print(model.percentage)
+    print(f'Absolute %: {round(model.abs_percentage, 3)} +- {round(model.abs_std, 3)}')
+    print(f'Squared %: {round(model.sqr_percentage, 3)} +- {round(model.sqr_std, 3)}')
+
+    model.encoder.save('encoder.h5')
+    model.decoder.save('decoder.h5')
 
 
 if __name__ == '__main__':
