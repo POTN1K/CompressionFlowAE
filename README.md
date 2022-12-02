@@ -7,12 +7,4 @@ send a pull request.
 Nikolaus.
 
 
-To use Google.Colab follow this instructions:
-1. Open anaconda or python prompt
-2. Run the following code lines separately: <br>
-pip install jupyter_http_over_ws <br>
-jupyter serverextension enable --py jupyter_http_over_ws <br>
-jupyter notebook --NotebookApp.allow_origin='https://colab.research.google.com'
-3. The server will start, go back to prompt and copy the link of the server
-4. Open Google Colab online, on the upper right click connect and introduce link.
-5. Done
+To use Google.Colab, ask me, its too complex.

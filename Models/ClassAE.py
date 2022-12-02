@@ -7,9 +7,11 @@ import matplotlib.pyplot as plt
 from tensorflow.keras.layers import Input, Conv2D, MaxPool2D, AveragePooling2D, UpSampling2D, Conv2DTranspose
 from tensorflow.keras.optimizers import Adam
 
-import os
+# import os
+# os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
-os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+
+print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
 
 
 # Autoencoder Model Class
@@ -71,7 +73,6 @@ class AE(Model):
         x = UpSampling2D((2, 2))(x)
         self.decoded = Conv2DTranspose(self.nu, (3, 3), activation='linear', padding='same')(x)
 
-
     def creator(self):
         self.autoencoder = tf.keras.models.Model(self.image, self.decoded)
         # self.encoder = tf.keras.models.Model(self.image, self.encoded)
@@ -99,28 +100,28 @@ class AE(Model):
                                          shuffle=True, validation_data=(self.u_val, self.u_val),
                                          verbose=1,
                                          callbacks=[early_stop_callback])
-                                        # callbacks = [model_checkpoint_callback, early_stop_callback])
+        # callbacks = [model_checkpoint_callback, early_stop_callback])
         self.y_pred = self.autoencoder.predict(self.u_test[:, :, :, :], verbose=0)
 
     def visual_analysis(self):
-        for i in range(10):
-            image_to_plot = self.y_pred[i:i+1, :, :, :]
-
-            # u velocity
-            plt.subplot(121)
-            figure = plt.contourf(self.y_pred[0, :, :, 0], vmin=0.0, vmax=1.1)
-            plt.subplot(122)
-            figure2 = plt.contourf(self.u_test[i, :, :, 0], vmin=0.0, vmax=1.1)
-            plt.colorbar(figure2)
-            plt.title("Velocity x-dir")
-            plt.show()
+        # for i in range(10):
+        #     image_to_plot = self.y_pred[i:i + 1, :, :, :]
+        #
+        #     # u velocity
+        #     plt.subplot(121)
+        #     figure = plt.contourf(self.y_pred[i, :, :, 0], vmin=0.0, vmax=1.1)
+        #     plt.subplot(122)
+        #     figure2 = plt.contourf(self.u_test[i, :, :, 0], vmin=0.0, vmax=1.1)
+        #     plt.colorbar(figure2)
+        #     plt.title("Velocity x-dir")
+        #     plt.show()
 
         # v velocity
         if self.nu == 2:
             plt.subplot(121)
-            figure = plt.contourf(self.y_pred[0, :, :, 1], vmin=0.0, vmax=1.1)
+            figure = plt.contourf(self.y_pred[i, :, :, 1], vmin=0.0, vmax=1.1)
             plt.subplot(122)
-            figure2 = plt.contourf(self.u_test[0, :, :, 1], vmin=0.0, vmax=1.1)
+            figure2 = plt.contourf(self.u_test[i, :, :, 1], vmin=0.0, vmax=1.1)
             plt.colorbar(figure2)
             # fig = plt.figure()
             # ax = fig.add_subplot(121)
@@ -142,16 +143,21 @@ class AE(Model):
 
     def performance(self):
         self.mse = self.autoencoder.evaluate(self.u_test, self.u_test, self.batch, verbose=0)
-        self.percentage = np.average(1 - np.abs(self.y_pred-self.u_test)/self.u_test)*100
-        average_images = np.average((1 - np.abs(self.y_pred-self.u_test)/self.u_test), axis=(1, 2))
-        print(average_images)
+        # Absolute percentage metric, along with its std
+        self.abs_percentage = np.average(1 - np.abs(self.y_pred - self.u_test) / self.u_test) * 100
+        abs_average_images = np.average((1 - np.abs(self.y_pred - self.u_test) / self.u_test), axis=(1, 2)) * 100
+        self.abs_std = np.std(abs_average_images)
+        # Squared percentage metric, along with std
+        self.sqr_percentage = np.average(1 - (self.y_pred - self.u_test) ** 2 / self.u_test) * 100
+        sqr_average_images = np.average((1 - (self.y_pred - self.u_test) ** 2 / self.u_test), axis=(1, 2)) * 100
+        self.sqr_std = np.std(sqr_average_images)
 
 
 def run_model():
     print('running')
     u_train, u_val, u_test = AE.preprocess()
 
-    model = AE(l_rate=0.001, epochs=100, batch=10, early_stopping=10, dimensions=[24, 12, 6, 3])
+    model = AE(l_rate=0.0005, epochs=200, batch=10, early_stopping=20, dimensions=[64, 32, 16, 8])
     model.u_train = u_train
     model.u_val = u_val
     model.u_test = u_test
