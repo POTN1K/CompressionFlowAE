@@ -1,7 +1,7 @@
 # Libraries
 import h5py
 import numpy as np
-
+from sklearn.utils import shuffle
 
 # Generic Model
 class Model:
@@ -32,6 +32,7 @@ class Model:
             u_all[:, :, :, 1] = np.array(hf.get('v_refined'))
         u_all = np.transpose(u_all, [2, 0, 1, 3])  # Time, Nx, Nx, Nu
         hf.close()
+        u_all = shuffle(u_all, random_state=42)
         return u_all
 
     @staticmethod
