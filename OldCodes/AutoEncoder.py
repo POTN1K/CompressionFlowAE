@@ -114,13 +114,13 @@ hist = autoencoder.fit(u_train, u_train, epochs=nb_epochs, batch_size=batch_size
 
 loss_history = hist.history['loss']
 val_history = hist.history['val_loss']
-plt.plot(loss_history, 'b', label='Training loss')
-plt.plot(val_history, 'r', label='Validation loss')
-plt.title("Loss History")
-plt.xlabel("Epoch")
-plt.ylabel("Loss")
-plt.legend()
-plt.show()
+# plt.plot(loss_history, 'b', label='Training loss')
+# plt.plot(val_history, 'r', label='Validation loss')
+# plt.title("Loss History")
+# plt.xlabel("Epoch")
+# plt.ylabel("Loss")
+# plt.legend()
+# plt.show()
 # -------------------------------------------------------------------------------------------------
 # COMPARISON BETWEEN REAL AND MODEL
 print('-------------------------')
