@@ -176,7 +176,7 @@ class Model:
             write.update(params)
 
             columns = write.keys()
-            with open('TuningDivision/tuning.csv', 'a', newline='') as f:
+            with open(f'TuningDivision/tuning{time.time()}.csv', 'a', newline='') as f:
                 writer = DictWriter(f, columns)
                 writer.writerow(write)
             print(f'Model {n}')
