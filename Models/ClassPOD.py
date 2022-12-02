@@ -8,81 +8,132 @@ os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 
 class POD(Model):
-    def __init__(self, n_train=700, ):
-        self.nx = None
-        self.nu = None
-        self.u_all = None
-        self.dim = None
-        self.UU = None
-        self.n_train = n_train
-        self.phi = None
-        self.phi_spat = None
-        self.contrib = None
-        self.a = None
-        self.recons = None
-        self.err = None
+    def __init__(self, u_all: np.array, n: int = 100, hot_start: int = False) -> None:
+        """
+        Require 2D velocity field
+        :param u_all: T, i, j, u, v -> time, i_grid, j_grid, vel u, vel v
+        :param n: max number of modes to generate
+        :param hot_start: bool -> immediately run self.compute
+        """
+        # Parameters
+        self.n = n  # max number of modes to consider in generation
 
-    def computeModes(self, re=20.0, nx=24, nu=1):
-        if self.u_all is None:
-            self.u_all = POD.data_reading(re, nx, nu)
-        self.dim = self.u_all.shape
-        self.UU = np.reshape(self.u_all[:self.n_train, :], (self.n_train, self.dim[1] * self.dim[2] * self.dim[3]))
-        m = self.UU.shape[0]
-        C = np.matmul(np.transpose(self.UU), self.UU) / (m - 1)
+        # Dimensions
+        self.dim_u = len(np.shape(u_all)) - 3
+        if self.dim_u == 1:
+            self.dim_T, self.dim_x, self.dim_y, self.dim_u = np.shape(u_all)
+            self.dim_v = None
+        else:
+            self.dim_T, self.dim_x, self.dim_y, self.dim_u, self.dim_v = np.shape(u_all)
+        self.dim_M = self.dim_x*self.dim_y
+
+        if self.n > self.dim_M:  # check validity of n
+            raise Exception('Max number of modes n out of range')
+
+        # Data
+        self.input_data = u_all
+
+        # POD matrices, to be generated
+        self.mode_energy = None  # length n energy vector   : energy by mode
+        self.U = None      # M x n x u spatial mode matrix  : spatial modes
+        self.V = None      # n x T x u temporal mode matrix : modulate with time
+
+        # decoding: _decoded can be generated from variable n modes
+        self._decoded = None
+        self._n_decoded = None
+
+        # hot start: generate POD matrices
+        if hot_start:
+            self.compute()
+
+    def compute(self) -> None:
+        """
+        Compute and store the sigma, spacial mode, and temporal mode matrices
+        :return: None
+        """
+        dim = self.input_data.shape
+        UU = np.reshape(self.input_data[:dim[0], :], (dim[0], dim[1] * dim[2] * dim[3]))
+        m = UU.shape[0]
+        C = np.matmul(np.transpose(UU), UU) / (m - 1)
 
         # solve eigenvalue problem
-        eig, self.phi = LA.eigh(C)
+        eig, phi = LA.eigh(C)
+        print(eig.shape)
 
         # Sort Eigenvalues and vectors
         idx = eig.argsort()[::-1]
         eig = eig[idx]
-        self.phi = self.phi[:, idx]
+        phi = phi[:, idx]
 
         # project onto modes for temporal coefficients
-        self.a = np.matmul(self.UU, self.phi)  # contains the "code" (modal coefficients)
+        self.V = np.matmul(UU, phi)  # contains the "code" (modal coefficients)
 
-        self.phi_spat = np.reshape(self.phi, (self.dim[1], self.dim[2], self.dim[1] * self.dim[2]))  # contains the spatial mode
+        self.U = np.reshape(phi, (dim[1], dim[2], dim[1] * dim[2]))  # contains the spatial mode
 
-        # contribution of different eigenvectors
-        self.contrib = eig / np.sum(eig)
+        # contribution of different eigenvectors -> energy
+        self.mode_energy = eig / np.sum(eig)
 
-    def contribution_visual(self):
-        # plot the contribution of each mode to the overall energy
+    def reconstruct(self) -> np.array:
+        """
+        Return the reconstructed flow data from the proper orthogonal decomposition
+        :return: reconstructed flow data
+        """
+        return np.matmul(self.V[:, self._n_decoded], np.transpose(self.U[:, self._n_decoded]))
 
+    @property
+    def encoded(self):
+        return self.V  # modal coefficients modulate the modes in time: this is the encoded data
+
+    @property
+    def decoded(self, n: int = None) -> np.array:
+        """
+        Returns the reconstructed flow data using the n most energetic modes
+        :param n: int, number of modes to use in reconstruction
+        :return: reconstructed flow data
+        """
+        if n is None:   # set n for decoding
+            if self._n_decoded is not None:
+                n = self._n_decoded
+            else:
+                n = self.n
+
+        if self._decoded is None:  # first time decoding
+            self._n_decoded = n
+            self._decoded = self.reconstruct()
+
+        elif n != self._n_decoded:  # previously decoded for other n -> overwrite
+            self._n_decoded = n
+            self._decoded = self.reconstruct()
+
+        # _n_decoded is current n and _decoded is generated
+
+        return self._decoded
+
+    def plot_contributions(self) -> None:
+        """
+        Plot the energy of each mode
+        """
         plt.figure()
-        plt.semilogy(self.contrib)
+        plt.semilogy(np.diag(self.mode_energy))
         plt.show()
 
-    def modes_error_visual(self):
-        imode = 0
-        fig = plt.figure()
-        ax = fig.add_subplot(111)
-        ax.contourf(self.phi_spat[:, :, imode])
+    def plot_mode(self, n: int) -> None:
+        """
+        :param n: int, node ID to plot
+        Plot the components of a specific spatial modes
+        """
+        raise NotImplemented
 
-        # Visualization of modal reconstruction with truncated number of modes
-        isample = 50
-        nmodes = 1
+    def save_to_file(self) -> None:
+        """
+        Stretch goal, maybe implement later. Would also need to implement loading properly.
+        """
+        raise NotImplemented
 
-        # To reconstruct the field ("decode"), we just matrix-multiply the modal coefficients with the spatial modes
-        # but we do that for a truncated number of modes, instead of using the full modes
-        self.recons = np.matmul(self.a[:, :nmodes], np.transpose(self.phi[:, :nmodes]))
 
-        fig = plt.figure()
-        ax = fig.add_subplot(121)
-        ax.contourf(np.reshape(self.recons[isample, :], (self.dim[1], self.dim[2])))
-        ax = fig.add_subplot(122)
-        ax.contourf(np.reshape(self.UU[isample, :], (self.dim[1], self.dim[2])))
-        plt.show()
+if __name__ == '__main__':
+    u_all = np.concatenate(POD.preprocess(nu=1))
+    Model = POD(u_all, hot_start=True)
+    Model.plot_contributions()
 
-        # Mean reconstruction error for different number of retained modes
-        # We can compute the reconstruction of a varying number of modes and compute the error with our original data
-        self.err = np.zeros((self.dim[1] * self.dim[2]))
-        for i in range(self.dim[1] * self.dim[2]):
-            recons = np.matmul(self.a[:, :i], np.transpose(self.phi[:, :i]))
-            self.err[i] = np.mean(np.mean(np.square(self.UU - recons)))
-
-        fig = plt.figure()
-        ax = fig.add_subplot(111)
-        ax.semilogy(self.err)
-        plt.show()
 

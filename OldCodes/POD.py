@@ -2,6 +2,7 @@
 import numpy as np
 from numpy import linalg as LA
 import matplotlib.pyplot as plt
+from SampleFlows.ParentClass import Model
 
 import os
 
@@ -9,12 +10,11 @@ os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 # ------------------------------------------------------------------------------
 # READ DATA
-Nx, Nu, u_all = read()
+u_all = np.concatenate(Model.preprocess(nu=1))
 # ------------------------------------------------------------------------------
 # COMPUTE POD MODES
 Ntrain = 700
 dim = u_all.shape
-
 UU = np.reshape(u_all[:Ntrain, :], (Ntrain, dim[1] * dim[2] * dim[3]))
 
 m = UU.shape[0]
@@ -22,7 +22,7 @@ C = np.matmul(np.transpose(UU), UU) / (m - 1)
 
 # solve eigenvalue problem
 eig, phi = LA.eigh(C)
-
+print(phi.shape)
 # Sort Eigenvalues and vectors
 idx = eig.argsort()[::-1]
 eig = eig[idx]
