@@ -1,4 +1,4 @@
-# COde that cdefines the Autoencoder object. It has n principal methods:
+# Code that defines the Autoencoder object. It has n principal methods:
 #               - network: creates the architecture of the NN
 #               - creator: which creates the encoder, decoder and autoencoder attributes
 #               - training: to train the autoencoder (it automatically trains the decoder and encoder too)
