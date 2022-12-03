@@ -18,7 +18,6 @@ class Model:
         valid_re = [20.0, 30.0, 40.0, 50.0, 60.0, 100.0, 180.0]
         valid_nu = [1, 2]
         valid_nx = np.arange(0,25)
-        print(valid_nx)
 
         if re not in valid_re:
             raise ValueError('Invalid reynolds number')
@@ -38,7 +37,7 @@ class Model:
         else:
             T = 2000
 
-        path_folder = '../SampleFlows/'  # path to folder in which flow data is situated
+        path_folder = '/Users/merlijnbroekers/PycharmProjects/CompressionFlowAE/SampleFlows/'  # path to folder in which flow data is situated
         path = path_folder + f'Kolmogorov_Re{re}_T{T}_DT01.h5'
 
         # READ DATASET
