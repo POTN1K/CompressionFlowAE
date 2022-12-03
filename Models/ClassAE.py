@@ -34,6 +34,33 @@ class AE(Model):
         self.encoded = None
         self.decoded = None
 
+        ### Verification ###
+        # Check if inputs match expected values/shape
+
+        valid_activation = ['tanh', 'relu', 'sigmoid', 'softmax', 'softplus', 'softsign','selu', 'elu', 'exponential']
+        valid_loss = ['mse'] #add others when they are known
+
+        if self.dimensions[1] > self.nx:
+            raise ValueError('Dimension of neural network is larger than size of input image') # Dubble check if this is actualy the case
+
+        if self.activation_function not in valid_activation:
+            raise ValueError('Invalid activation function')
+
+        if self.l_rate < 0:
+            raise ValueError('Learning rate must be greater than zero')
+
+        if self.epochs < 0:
+            raise ValueError('Epochs must be greater than zero')
+
+        if self.batch < 0:
+            raise ValueError('Batch must be greater than zero')
+
+        if self.loss not in valid_loss:
+            raise ValueError('Invalid loss function')
+
+        if self.early_stopping > self.epochs:
+            raise ValueError('Invalid early stopping criteria. Early stopping criteria is greater than total number of epochs')
+
     @property
     def pooling(self):
         return self._pooling

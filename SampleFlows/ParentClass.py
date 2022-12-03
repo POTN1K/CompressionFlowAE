@@ -11,6 +11,24 @@ class Model:
             Re- Reynolds Number
             Nu- Dimension of Velocity Vector
             Nx- Size of grid"""
+
+        ### VERIFICATION ####
+        # check if inputs are satisfactory
+
+        valid_re = [20.0, 30.0, 40.0, 50.0, 60.0, 100.0, 180.0]
+        valid_nu = [1, 2]
+        valid_nx = np.arange(0,25)
+        print(valid_nx)
+
+        if re not in valid_re:
+            raise ValueError('Invalid reynolds number')
+
+        if nu not in valid_nu:
+            raise ValueError('Invalid dimension of velocity vector')
+
+        if nx not in valid_nx:
+            raise ValueError('Invalid size of grid')
+
         # FILE SELECTION
         # choose between Re= 20.0, 30.0, 40.0, 50.0, 60.0, 100.0, 180.0
 
@@ -24,15 +42,19 @@ class Model:
         path = path_folder + f'Kolmogorov_Re{re}_T{T}_DT01.h5'
 
         # READ DATASET
-        hf = h5py.File(path, 'r')
-        t = np.array(hf.get('t'))
-        u_all = np.zeros((nx, nx, len(t), nu))
-        u_all[:, :, :, 0] = np.array(hf.get('u_refined'))  # Update u_all with data from file
-        if nu == 2:
-            u_all[:, :, :, 1] = np.array(hf.get('v_refined'))
-        u_all = np.transpose(u_all, [2, 0, 1, 3])  # Time, Nx, Nx, Nu
-        hf.close()
-        return u_all
+        try:
+            hf = h5py.File(path, 'r')
+            t = np.array(hf.get('t'))
+        except FileNotFoundError:
+            raise FileNotFoundError('Path does not exist')
+        else:
+            u_all = np.zeros((nx, nx, len(t), nu))
+            u_all[:, :, :, 0] = np.array(hf.get('u_refined'))  # Update u_all with data from file
+            if nu == 2:
+                u_all[:, :, :, 1] = np.array(hf.get('v_refined'))
+            u_all = np.transpose(u_all, [2, 0, 1, 3])  # Time, Nx, Nx, Nu
+            hf.close()
+            return u_all
 
     @staticmethod
     def preprocess(u_all=None, re=20.0, nx=24, nu=1):
@@ -43,6 +65,16 @@ class Model:
         u_min = np.amin(u_all[:, :, :, 0])
         u_max = np.amax(u_all[:, :, :, 0])
         u_all[:, :, :, 0] = (u_all[:, :, :, 0] - u_min) / (u_max - u_min)
+
+        ### VERIFICATION ###
+        # Check if normalization is done correctly
+
+        u_min = np.amin(u_all[:, :, :, 0])
+        u_max = np.amax(u_all[:, :, :, 0])
+
+        if not (u_min == 0 and u_max == 1):
+            raise ValueError('Normalization done incorrectly')
+
         if nu == 2:
             v_min = np.amin(u_all[:, :, :, 1])
             v_max = np.amax(u_all[:, :, :, 1])
