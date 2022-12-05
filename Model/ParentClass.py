@@ -10,12 +10,30 @@ from sklearn.metrics import mean_squared_error  # pip3.10 install scikit-learn N
 # Generic Model
 class Model:
     def __init__(self, input_: np.array or None = None) -> None:
-        self._input = np.copy(input_)
-        self._code = None
-        self._output = None
+        self._input = np.copy(input_)  # tracks the input array
+        self._encoded = None           # tracks the encoded array
+        self._output = None            # tracks the output array
 
         if input_ is not None:  # Hot start
             self.fit()
+
+    # BEGIN LOGIC METHODS
+    def fit(self, input_: np.array or None = None) -> None:
+        """
+        Train the model, sets the input
+        """
+        if input_ is None:  # get stored input
+            if self.input is None:  # input not specified before fit
+                raise ValueError("Input data not found before fit")
+            input_ = self.input
+        else:  # store input
+            self.input = input_
+
+        self.fit_model(input_)
+
+    # TODO: IMPLEMENT ENCODE, DECODE, PASSTHROUGH LOGIC
+    # TODO: Check all Logic method logic
+    # END LOGIC METHODS
 
     # SKELETON FUNCTIONS: FILL (OVERWRITE) IN SUBCLASS
     def fit_model(self, input_: np.array) -> None:  # skeleton
@@ -37,22 +55,10 @@ class Model:
         Passes self.code through the model, returns output
         :return: output time series
         """
-
+        raise NotImplementedError("Skeleton not filled by subclass")
     # END SKELETONS
 
-    def fit(self, input_: np.array or None = None) -> None:
-        """
-        Train the model, sets the input
-        """
-        if input_ is None:  # get stored input
-            if self.input is None:  # input not specified before fit
-                raise ValueError("Input data not specified before fit")
-            input_ = self.input
-        else:  # store input
-            self.input = input_
-
-        self.fit_model(input_)
-
+    # BEGIN PROPERTIES
     @property
     def input(self) -> np.array:  # skeleton
         """
@@ -65,27 +71,42 @@ class Model:
         """
         Overwrite input
         """
+        if len(input_.shape) != 4:
+            input_ = np.reshape(input_, (1, *input_.shape))
         self._input = np.copy(input_)
         self.code = self.get_code()
 
     @property
-    def code(self) -> np.array:  # skeleton
+    def encoded(self) -> np.array:  # skeleton
         """
         Return the encoded data from the model, calling input as data
         """
-        return self.get_code()
+        return self._encoded
 
-    @code.setter
-    def code(self, input_code: np.array):
-        self._code = np.copy(input_code)
+    @encoded.setter
+    def encoded(self, input_: np.array):
+        if len(input_.shape) != 4:
+            input_ = np.reshape(input_, (1, *input_.shape))
+        self._encoded = np.copy(input_)
 
     @property
     def output(self):
         """
-        Returns the output, using code
+        Returns the output
         """
-        return self.get_output()
+        return self.output
 
+    @output.setter
+    def output(self, input_):
+        """
+        Sets the output, removes outer dim for singular result
+        """
+        if input_.shape[0] == 1:
+            input_ = input_[0]
+        self.output = input_
+    # END PROPERTIES
+
+    # BEGIN GENERAL METHODS
     @staticmethod
     def data_reading(re, nx, nu):
         """Function to read the H5 files, can change Re to run for different flows
@@ -183,8 +204,4 @@ class Model:
                 writer.writerow(write)
             print(f'Model {n}')
             n += 1
-
-
-if __name__ == '__main__':
-    u_all = Model.preprocess()
-    # print(u_all)
+    # END GENERAL METHODS
