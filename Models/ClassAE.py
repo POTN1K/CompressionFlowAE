@@ -6,8 +6,6 @@
 #               - performance: calclates mse of every image and transforms it into a percentage of accuracy
 
 
-
-
 # Libraries
 import numpy as np
 import tensorflow as tf
@@ -16,6 +14,7 @@ from tensorflow.keras.layers import Input, Conv2D, MaxPool2D, AveragePooling2D, 
 from tensorflow.keras.optimizers import Adam
 # Local codes
 from SampleFlows.ParentClass import Model
+
 
 # Uncomment if keras does not run
 # import os
@@ -41,7 +40,6 @@ class AE(Model):
         self.nx = Nx
         self.pooling = pooling
         self.loss = loss
-        self.image = Input(shape=(self.nx, self.nx, self.nu))
         # Instantiating
         self.u_all = None
         self.u_train = None
@@ -56,7 +54,7 @@ class AE(Model):
         self.decoder = None
         self.hist = None
         self.y_pred = None
-        
+        self.image = None
 
     @property
     def pooling(self):
@@ -83,6 +81,7 @@ class AE(Model):
             - padding (check Conv2D)
             """
         # Beginning of Autoencoder and Encoder
+        self.image = Input(shape=(self.nx, self.nx, self.nu))
         x = Conv2D(self.dimensions[0], (3, 3), padding='same', activation=self.activation_function)(self.image)
         x = self.pooling_function((2, 2), padding='same')(x)
         x = Conv2D(self.dimensions[1], (3, 3), padding='same', activation=self.activation_function)(x)
@@ -126,7 +125,7 @@ class AE(Model):
         """Function to train autoencoder, with checkpoints for checkpoints and early stopping"""
         # Compile model for training
         self.autoencoder.compile(optimizer=Adam(learning_rate=self.l_rate), loss=self.loss)
-        
+
         # Checkpoint callback creation
         # checkpoint_filepath = './checkpoint'
         # model_checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
@@ -136,7 +135,7 @@ class AE(Model):
         #     mode='min',
         #     save_best_only=True)       
         # callbacks = [model_checkpoint_callback, early_stop_callback])     <-Add in fit
-        
+
         # Early stop callback creation
         early_stop_callback = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=self.early_stopping)
 
@@ -145,16 +144,18 @@ class AE(Model):
                                          shuffle=True, validation_data=(self.u_val, self.u_val),
                                          verbose=1,
                                          callbacks=[early_stop_callback])
-        
+
         # Predict model using test data
         self.y_pred = self.autoencoder.predict(self.u_test[:, :, :, :], verbose=0)
+        np.save('predictions_2D.npy', self.y_pred)
+        np.save('original_2D.npy', self.u_test)
 
-    def visual_analysis(self):
+    def visual_analysis(self, n_images=1):
         """Function to visualize some samples of predictions in order to visually compare with the test set. Moreover,
             the evolution of the error throughout the epochs is plotted"""
-        
-        for i in range(10):
-            
+
+        for i in range(n_images):
+
             # Set of predictions we are going to plot. We decided on the first 10 frames but it could be whatever
             image_to_plot = self.y_pred[i:i + 1, :, :, :]
 
@@ -176,7 +177,7 @@ class AE(Model):
                 plt.colorbar(figure2y)
                 plt.title("Velocity y-dir")
                 plt.show()
-        
+
         # Creation of a loss graph, comparing validation and training data.
         loss_history = self.hist.history['loss']
         val_history = self.hist.history['val_loss']
@@ -191,25 +192,27 @@ class AE(Model):
     def performance(self):
         """Here we transform the mse into an accuracy value. Two different metrics are used, the absolute
         error and the squared error. With those values, two different stds are calculated"""
-        
+
         # Calculation of MSE
         self.mse = self.autoencoder.evaluate(self.u_test, self.u_test, self.batch, verbose=0)
-        
+
         # Absolute percentage metric, along with its std
         self.abs_percentage = np.average(1 - np.abs(self.y_pred - self.u_test) / self.u_test) * 100
         abs_average_images = np.average((1 - np.abs(self.y_pred - self.u_test) / self.u_test), axis=(1, 2)) * 100
         self.abs_std = np.std(abs_average_images)
-        
+
         # Squared percentage metric, along with std
         self.sqr_percentage = np.average(1 - (self.y_pred - self.u_test) ** 2 / self.u_test) * 100
         sqr_average_images = np.average((1 - (self.y_pred - self.u_test) ** 2 / self.u_test), axis=(1, 2)) * 100
         self.sqr_std = np.std(sqr_average_images)
 
+
 def run_model():
     """General function to run one model"""
 
-    model = AE(l_rate=0.0005, epochs=200, batch=10, early_stopping=20, dimensions=[64, 32, 16, 8])
-    model.u_train, model.u_val, model.u_test = AE.preprocess()
+    nu = 2
+    model = AE(l_rate=0.0005, epochs=200, batch=10, early_stopping=20, dimensions=[64, 32, 16, 8], Nu=nu)
+    model.u_train, model.u_val, model.u_test = AE.preprocess(Nu=nu)
     model.network()
     model.creator()
     model.training()
@@ -219,8 +222,9 @@ def run_model():
     print(f'Absolute %: {round(model.abs_percentage, 3)} +- {round(model.abs_std, 3)}')
     print(f'Squared %: {round(model.sqr_percentage, 3)} +- {round(model.sqr_std, 3)}')
 
-    model.encoder.save('encoder.h5')
-    model.decoder.save('decoder.h5')
+    model.autoencoder.save('autoencoder_2D.h5')
+    model.encoder.save('encoder_2D.h5')
+    model.decoder.save('decoder_2D.h5')
 
 
 if __name__ == '__main__':
