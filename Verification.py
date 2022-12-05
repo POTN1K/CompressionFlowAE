@@ -60,14 +60,7 @@ def navier_stokes(grid_time, t):
         temp = [[math.sin(4 * 2 * np.pi * i / (24)), 0] for i in range(24)]
         new = np.array([temp for i in range(24)])
 
-        return np.moveaxis(new, -1, 0)
-
-
-def force():
-    temp = [[math.sin(4 * 2 * np.pi * i / (24)), 0] for i in range(24)]
-    new = np.array([temp for i in range(24)])
-
-    return np.moveaxis(new, 0, 1)
+        return np.moveaxis(new, 0, 1)
 
 # Testing for np.gradient function
 #
