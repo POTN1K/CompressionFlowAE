@@ -59,4 +59,4 @@ def navier_stokes(_3x3x2, f):
 
     return abs(kinetic_viscosity_x - kinetic_viscosity_y)
 
-print(data[100,0:3,0:3,:])
+#print(data[100,0:3,0:3,:])
