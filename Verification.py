@@ -1,6 +1,7 @@
 from SampleFlows.ParentClass import Model
 import numpy as np
 from matplotlib import pyplot as plt
+import math
 
 train, val, test = Model.preprocess(nu=2)
 
@@ -26,6 +27,8 @@ def navier_stokes(grid_time, t):
     v = grid_time[:, :, :, 1]
 
     du_dx = np.gradient(u, 1, edge_order=2, axis=2)
+    du_dy = np.gradient(u, 1, edge_order=2, axis=1)
+    dv_dx = np.gradient(v, 1, edge_order=2, axis=2)
     dv_dy = np.gradient(v, 1, edge_order=2, axis=1)
 
     du_dt = np.gradient(u, 1, edge_order=2, axis=0)
@@ -34,15 +37,37 @@ def navier_stokes(grid_time, t):
     d2u_d2x = np.gradient(du_dx, 1, edge_order=2, axis=2)
     d2v_d2y = np.gradient(dv_dy, 1, edge_order=2, axis=1)
 
-    velocity_2 = np.dot(u[t,:,:], v[t,:,:])
+    velocity_2 = np.dot(u[t,:,:], v[t,:,:]) * 0.5
 
     dvelocity_2_dx = np.gradient(velocity_2, 1, edge_order=2, axis=1)
     dvelocity_2_dy = np.gradient(velocity_2, 1, edge_order=2, axis=0)
 
-    
+    def convection(u, du_dx, v, du_dy, dy_dx, dv_dy):
+        return np.array([np.add(np.multiply(u, du_dx), np.multiply(v, du_dy)),
+                        np.add(np.multiply(u, dv_dx), np.multiply(v, dv_dy))])
 
-navier_stokes(train, 100)
+    def diffusion(d2u_d2x, d2u_d2y, d2v_d2x, d2v_d2y):
+        return np.array([np.add(d2u_d2x, d2u_d2y),
+                         np.add(d2v_d2x, d2v_d2y)])
 
+    def internal(dvelocity_2_dx, dvelocity_2_dy):
+        return -1 * np.array([dvelocity_2_dx, dvelocity_2_dy])
+
+    def temporal(du_dt, dv_dt):
+        return np.array(du_dt, dv_dt)
+
+    def force():
+        temp = [[math.sin(4 * 2 * np.pi * i / (24)), 0] for i in range(24)]
+        new = np.array([temp for i in range(24)])
+
+        return np.moveaxis(new, -1, 0)
+
+
+def force():
+    temp = [[math.sin(4 * 2 * np.pi * i / (24)), 0] for i in range(24)]
+    new = np.array([temp for i in range(24)])
+
+    return np.moveaxis(new, 0, 1)
 
 # Testing for np.gradient function
 #
