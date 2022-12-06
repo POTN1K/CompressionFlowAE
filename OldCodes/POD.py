@@ -2,7 +2,7 @@
 import numpy as np
 from numpy import linalg as LA
 import matplotlib.pyplot as plt
-from Model.ParentClass import Model
+from Main.ParentClass import Model
 
 import os
 

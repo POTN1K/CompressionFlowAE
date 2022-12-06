@@ -1,5 +1,5 @@
 # Libraries
-from Models import ClassAE
+from ClassAE import AE
 import time
 from csv import DictWriter
 import numpy as np
@@ -15,12 +15,12 @@ param_ranges_dict = {'l_rate': [0.01, 0.001],
 param_grid = ParameterGrid(param_ranges_dict)  # Flattened grid of all combinations
 
 
-u_train, u_val, u_test = ClassAE.AE.preprocess()
+u_train, u_val, u_test = AE.preprocess()
 
 
 n = 0
 for params in param_grid:
-    myModel = ClassAE.AE(**params)
+    myModel = AE(**params)
     myModel.u_train = np.copy(u_train)
     myModel.u_val = np.copy(u_val)
     myModel.u_test = np.copy(u_test)

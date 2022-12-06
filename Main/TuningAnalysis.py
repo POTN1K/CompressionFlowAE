@@ -1,5 +1,5 @@
 # Libraries
-from Models import ClassAE
+from ClassAE import AE
 import time
 from csv import DictWriter
 import numpy as np
@@ -10,14 +10,14 @@ hyperparameters = {'learning rate': [0.01, 0.001],
                    'early_stopping': [5, 10, 20],
                    'dimensions': [[8, 4, 2, 1], [16, 8, 4, 2], [24, 12, 6, 3]]}
 
-u_train, u_val, u_test = ClassAE.AE.preprocess()
+u_train, u_val, u_test = AE.preprocess()
 n = 0
 for lr in hyperparameters['learning rate']:
     for epoch in hyperparameters['epochs']:
         for batch in hyperparameters['batch']:
             for early_stopping in hyperparameters['early_stopping']:
                 for dimensions in hyperparameters['dimensions']:
-                    myModel = ClassAE.AE(dimensions=dimensions, l_rate=lr, epochs=epoch, batch=batch,
+                    myModel = AE(dimensions=dimensions, l_rate=lr, epochs=epoch, batch=batch,
                                          early_stopping=early_stopping)
                     myModel.u_train = np.copy(u_train)
                     myModel.u_val = np.copy(u_val)
