@@ -19,3 +19,12 @@ def run_parent():
 if __name__ == '__main__':
     run_parent()
 
+#
+# import os
+#
+# dir_curr = os.getcwd()
+# path_rel = ('Main', 'SampleFlows')
+#
+# path = os.path.join(dir_curr, *path_rel)
+#
+# print(os.listdir(path))

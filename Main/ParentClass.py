@@ -5,6 +5,7 @@ import time
 from csv import DictWriter
 from sklearn.model_selection import ParameterGrid
 from sklearn.metrics import mean_squared_error  # pip3.10 install scikit-learn NOT sklearn
+import os
 
 
 # Generic Model
@@ -158,8 +159,11 @@ class Model:
         else:
             T = 2000
 
-        path_folder = 'SampleFlows/'  # path to folder in which flow data is situated
-        path = path_folder + f'Kolmogorov_Re{re}_T{T}_DT01.h5'
+        dir_curr = os.path.split(__file__)[0]
+        path_rel = ('SampleFlows', f'Kolmogorov_Re{re}_T{T}_DT01.h5')
+
+        path = os.path.join(dir_curr, *path_rel)
+        print(path)
 
         # READ DATASET
         hf = h5py.File(path, 'r')
