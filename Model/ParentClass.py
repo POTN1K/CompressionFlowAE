@@ -11,7 +11,9 @@ from sklearn.metrics import mean_squared_error  # pip3.10 install scikit-learn N
 class Model:
     def __init__(self, input_: np.array or None = None) -> None:
         self._input = np.copy(input_)  # tracks the input array
+        self.trained = False           # tracks if the model has been trained
         self._encoded = None           # tracks the encoded array
+        self.code_artificial = False   # tracks if the code follows from an input
         self._output = None            # tracks the output array
 
         if input_ is not None:  # Hot start
@@ -21,6 +23,7 @@ class Model:
     def fit(self, input_: np.array or None = None) -> None:
         """
         Train the model, sets the input
+        :input_: singular or time series to train the model on
         """
         if input_ is None:  # get stored input
             if self.input is None:  # input not specified before fit
@@ -30,9 +33,38 @@ class Model:
             self.input = input_
 
         self.fit_model(input_)
+        self.trained = True
 
-    # TODO: IMPLEMENT ENCODE, DECODE, PASSTHROUGH LOGIC
-    # TODO: Check all Logic method logic
+    def encode(self, input_: np.array) -> np.array:
+        """
+        Encodes the input array with the trained model
+        :param input_: singular or time series input
+        :return: singular or time series code
+        """
+        if not self.trained:
+            raise Exception('Called encode before fit')
+
+        self.input = input_
+        self.encoded = self.get_code(self.input)
+        self.code_artificial = False
+        return self.encoded
+
+    def decode(self, input_: np.array) -> np.array:
+        if not self.trained:
+            raise Exception('Called decode before fit')
+
+        self.encoded = input_
+        self.output = self.get_output(self.encoded)
+        return self.output
+
+    def passthrough(self, input_: np.array) -> np.array:
+        """
+        Passes the singular or time series input through the encoder and decoder
+        Returns the reconstructed form of the input
+        :param input_: singular or time series input
+        :return: singular or time series output
+        """
+        return self.decode(self.encode(input_))
     # END LOGIC METHODS
 
     # SKELETON FUNCTIONS: FILL (OVERWRITE) IN SUBCLASS
@@ -43,17 +75,19 @@ class Model:
         """
         raise NotImplementedError("Skeleton not filled by subclass")
 
-    def get_code(self) -> np.array: # skeleton
+    def get_code(self, input_: np.array) -> np.array: # skeleton
         """
         Passes self.input through the model, returns code
-        :return: codes time series
+        :input_: time series input
+        :return: time series code
         """
         raise NotImplementedError("Skeleton not filled by subclass")
 
-    def get_output(self) -> np.array: # skeleton
+    def get_output(self, input_: np.array) -> np.array: # skeleton
         """
         Passes self.code through the model, returns output
-        :return: output time series
+        :input_: time series code
+        :return: time series output
         """
         raise NotImplementedError("Skeleton not filled by subclass")
     # END SKELETONS
@@ -74,7 +108,6 @@ class Model:
         if len(input_.shape) != 4:
             input_ = np.reshape(input_, (1, *input_.shape))
         self._input = np.copy(input_)
-        self.code = self.get_code()
 
     @property
     def encoded(self) -> np.array:  # skeleton
@@ -94,15 +127,18 @@ class Model:
         """
         Returns the output
         """
-        return self.output
+        output = np.copy(self._output)
+        if output.shape[0] == 1:
+            output = output[0]
+        return output
 
     @output.setter
     def output(self, input_):
         """
-        Sets the output, removes outer dim for singular result
+        Sets the output
         """
-        if input_.shape[0] == 1:
-            input_ = input_[0]
+        # if input_.shape[0] == 1:
+        #     input_ = input_[0]
         self.output = input_
     # END PROPERTIES
 
@@ -170,8 +206,15 @@ class Model:
         mse = mean_squared_error(self.input, self.output)
         return mse
 
-    def train_test_batch(self, param_ranges: dict, model) -> None:
-        u_train, u_val, u_test = self.preprocess()  # get split data
+    @staticmethod
+    def train_test_batch(param_ranges: dict, model) -> None:
+        """
+        Trains, evaluates and writes results to file for a model and with hyperparameter ranges
+        :param param_ranges: dict with hyperparameters as keys, ranges as items
+        :param model: subclass model
+        :return: None; results written to timestamped file
+        """
+        u_train, u_val, u_test = Model.preprocess()  # get split data
 
         param_grid = ParameterGrid(param_ranges)  # Flattened grid of all combinations
 
@@ -180,16 +223,14 @@ class Model:
         for params in param_grid:
             start_time = time.time()  # get start time
 
-            # initialise model with parameters, specify training set for hotstart
+            # initialise model with parameters, specify training set for hot start
             model_ = model(**params, input_=u_train)
+            model_.passthrough(u_val)  # sets input and output
 
             end_time = time.time()  # get end time
 
-            # overwrite input, this propagates automatically
-            model_.input = u_test
-
             # compute loss
-            loss = self.loss()
+            loss = model_.loss()
 
             # write to file
             write = {'Running Time': end_time-start_time,
