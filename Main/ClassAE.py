@@ -22,7 +22,7 @@ from Main import Model
 
 # Autoencoder Model Class
 class AE(Model):
-    def __init__(self, dimensions=[8, 4, 2, 1], activation_function='tanh', l_rate=0.01, epochs=10, batch=200,
+    def __init__(self, input_, dimensions=[8, 4, 2, 1], activation_function='tanh', l_rate=0.01, epochs=10, batch=200,
                  early_stopping=5, pooling='max', re=40.0, Nu=1, Nx=24, loss='mse'):
         """ Ambiguous Inputs-
             dimensions: Number of features per convolution layer, dimensions[-1] is dimension of latent space.
@@ -55,6 +55,37 @@ class AE(Model):
         self.decoder = None
         self.hist = None
         self.y_pred = None
+
+        super().__init__(input_)
+        # TODO: Initialise structure
+
+    # SKELETON FUNCTIONS: FILL (OVERWRITE) IN SUBCLASS
+    def fit_model(self, input_: np.array) -> None:  # skeleton
+        """
+        Fits the model on the training data: skeleton, overwrite
+        :param input_: time series of inputs
+        """
+        # TODO Fill function
+        raise NotImplementedError("Skeleton not filled by subclass")
+
+    def get_code(self, input_: np.array) -> np.array:  # skeleton
+        """
+        Passes self.input through the model, returns code
+        :input_: time series input
+        :return: time series code
+        """
+        # TODO Fill function
+        raise NotImplementedError("Skeleton not filled by subclass")
+
+    def get_output(self, input_: np.array) -> np.array:  # skeleton
+        """
+        Passes self.code through the model, returns output
+        :input_: time series code
+        :return: time series output
+        """
+        # TODO Fill function
+        raise NotImplementedError("Skeleton not filled by subclass")
+    # END SKELETONS
 
     @property
     def pooling(self):
