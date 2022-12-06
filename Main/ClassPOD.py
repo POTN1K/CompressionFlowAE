@@ -1,6 +1,6 @@
 import numpy as np
 from numpy import linalg as LA
-from ParentClass import Model
+from Main import Model
 import matplotlib.pyplot as plt
 
 import os

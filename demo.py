@@ -15,6 +15,7 @@ def run_parent():
     data = AE.preprocess()
     print(data[0])
 
+
 if __name__ == '__main__':
     run_parent()
 

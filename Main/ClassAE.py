@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 from tensorflow.keras.layers import Input, Conv2D, MaxPool2D, AveragePooling2D, UpSampling2D, Conv2DTranspose
 from tensorflow.keras.optimizers import Adam
 # Local codes
-from ParentClass import Model
+from Main import Model
 
 
 # Uncomment if keras does not run
