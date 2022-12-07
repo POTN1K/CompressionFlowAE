@@ -8,50 +8,59 @@ os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 
 class POD(Model):
-    def __init__(self, u_all: np.array or None, n: int = 100) -> None:
+    def __init__(self, input_: np.array or None, n: int = 5) -> None:
         """
         Require 2D velocity field
-        :param u_all: T, i, j, u, v -> time, i_grid, j_grid, vel u, vel v
-        :param n: max number of modes to generate
-        :param hot_start: bool -> immediately run self.compute
+        :param input_: T, i, j, u -> time, i_grid, j_grid, vel u, vel v
+        :param n: number of modes to include in reconstruction
         """
 
         # Parameters
-        self.n = n  # max number of modes to consider in generation
-
-        # Dimensions       # Commented for now; unused in inherited implementation, useful if rewritten
-        # self.dim_u = len(np.shape(u_all)) - 3
-        # if self.dim_u == 1:
-        #     self.dim_T, self.dim_x, self.dim_y, self.dim_u = np.shape(u_all)
-        #     self.dim_v = None
-        # else:
-        #     self.dim_T, self.dim_x, self.dim_y, self.dim_u, self.dim_v = np.shape(u_all)
-        # self.dim_M = self.dim_x*self.dim_y
-        #
-        # if self.n > self.dim_M:  # check validity of n
-        #     raise Exception('Max number of modes n out of range')
-
-        # Data
-        self.input_data = u_all
+        self.n = n  # modes to consider in reconstruction
 
         # POD matrices, to be generated
         self.mode_energy = None  # length n energy vector   : energy by mode
         self.U = None      # M x n x u spatial mode matrix  : spatial modes
         self.V = None      # n x T x u temporal mode matrix : modulate with time
 
-        # decoding: _decoded can be generated from variable n modes
-        self._decoded = None
-        self._n_decoded = None
+        super().__init__(input_)
 
-        super().__init__(u_all)
+    # SKELETON FUNCTIONS: FILL (OVERWRITE) IN SUBCLASS
+    def fit_model(self, input_: np.array) -> None:  # skeleton
+        """
+        Fits the model on the training data: skeleton, overwrite
+        :param input_: time series of inputs
+        """
+        self.compute(input_)
 
-    def compute(self) -> None:
+    def get_code(self, input_: np.array) -> np.array: # skeleton
+        """
+        Passes self.input through the model, returns code
+        :input_: time series input
+        :return: time series code
+        """
+        # TODO: Implement this properly; need to get new V, compatible with old mode matrix but new data
+        return self.V
+
+    def get_output(self, input_: np.array) -> np.array: # skeleton
+        """
+        Passes self.code through the model, returns output
+        :input_: time series code
+        :return: time series output
+        """
+        self.V = input_
+        return self.reconstruct()
+    # END SKELETONS
+
+    def compute(self, input_: np.array) -> None:
         """
         Compute and store the sigma, spacial mode, and temporal mode matrices
         :return: None
         """
-        dim = self.input_data.shape
-        UU = np.reshape(self.input_data[:dim[0], :], (dim[0], dim[1] * dim[2] * dim[3]))
+        dim = input_.shape  # get dimensions
+        # project data; each frame is flattened into 1 vector giving T x (i*j*u) matrix
+        UU = np.reshape(input_, (dim[0], dim[1] * dim[2] * dim[3]))
+
         m = UU.shape[0]
         C = np.matmul(np.transpose(UU), UU) / (m - 1)
 
@@ -66,45 +75,19 @@ class POD(Model):
         # project onto modes for temporal coefficients
         self.V = np.matmul(UU, phi)  # contains the "code" (modal coefficients)
 
-        self.U = np.reshape(phi, (dim[1], dim[2], dim[1] * dim[2]))  # contains the spatial mode
+        print(np.shape(phi), (dim[1], dim[2], dim[1] * dim[2], dim[3]))
+        self.U = np.reshape(phi, (dim[1], dim[2], dim[1] * dim[2] * dim[3], dim[3]))  # contains the spatial mode
 
         # contribution of different eigenvectors -> energy
         self.mode_energy = eig / np.sum(eig)
 
     def reconstruct(self) -> np.array:
         """
-        Return the reconstructed flow data from the proper orthogonal decomposition
+        Return the reconstructed flow data from the proper orthogonal decomposition, considering n most energetic modes
         :return: reconstructed flow data
         """
-        return np.matmul(self.V[:, self._n_decoded], np.transpose(self.U[:, self._n_decoded]))
-
-    @property
-    def encoded(self):
-        return self.V  # modal coefficients modulate the modes in time: this is the encoded data
-
-    def decode(self, n: int = None) -> np.array:
-        """
-        Returns the reconstructed flow data using the n most energetic modes
-        :param n: int, number of modes to use in reconstruction
-        :return: reconstructed flow data
-        """
-        if n is None:   # set n for decoding
-            if self._n_decoded is not None:
-                n = self._n_decoded
-            else:
-                n = self.n
-
-        if self._decoded is None:  # first time decoding
-            self._n_decoded = n
-            self._decoded = self.reconstruct()
-
-        elif n != self._n_decoded:  # previously decoded for other n -> overwrite
-            self._n_decoded = n
-            self._decoded = self.reconstruct()
-
-        # _n_decoded is current n and _decoded is generated
-
-        return self._decoded
+        n = min(self.n, np.shape(self.V)[0])
+        return np.matmul(self.V[:, n-1], np.transpose(self.U[:, n-1]))
 
     def plot_contributions(self) -> None:
         """
@@ -121,41 +104,14 @@ class POD(Model):
         """
         raise NotImplemented
 
-    def save_to_file(self) -> None:
-        """
-        Stretch goal, maybe implement later. Would also need to implement loading properly.
-        """
-        raise NotImplemented
-
-    # SKELETON FUNCTIONS: FILL (OVERWRITE) IN SUBCLASS
-    def fit_model(self, input_: np.array) -> None:  # skeleton
-        """
-        Fits the model on the training data: skeleton, overwrite
-        :param input_: time series of inputs
-        """
-        self.input_data = input_
-        self.compute()
-
-    def get_code(self) -> np.array: # skeleton
-        """
-        Passes self.input through the model, returns code
-        :return: codes time series
-        """
-        return self.encoded
-
-    def get_output(self) -> np.array: # skeleton
-        """
-        Passes self.code through the model, returns output
-        :return: output time series
-        """
-        return self.decode()
-
-    # END SKELETONS
-
 
 if __name__ == '__main__':
-    u_all = np.concatenate(POD.preprocess(nu=1))
-    Model = POD(u_all)
-    Model.plot_contributions()
+    u_all_1 = POD.preprocess(nu=1, split=False)
+    u_all_2 = POD.preprocess(nu=2, split=False)
+    Model = POD(u_all_1)
+    Model2 = POD(u_all_2)
+    Model2.encode(Model2.input)
+    Model2.decode(Model2.encoded)
+    print(Model2.output)
 
 

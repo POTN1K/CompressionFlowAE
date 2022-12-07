@@ -51,6 +51,8 @@ class Model:
         return self.encoded
 
     def decode(self, input_: np.array) -> np.array:
+        if input_ is not self.encoded:
+            self.code_artificial = True
         if not self.trained:
             raise Exception('Called decode before fit')
 
@@ -140,7 +142,7 @@ class Model:
         """
         # if input_.shape[0] == 1:
         #     input_ = input_[0]
-        self.output = input_
+        self._output = input_
     # END PROPERTIES
 
     # BEGIN GENERAL METHODS

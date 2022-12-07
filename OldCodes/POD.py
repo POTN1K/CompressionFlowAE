@@ -2,7 +2,7 @@
 import numpy as np
 from numpy import linalg as LA
 import matplotlib.pyplot as plt
-from Main.ParentClass import Model
+from Main import Model
 
 import os
 
@@ -10,12 +10,13 @@ os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 # ------------------------------------------------------------------------------
 # READ DATA
-u_all = np.concatenate(Model.preprocess(nu=1))
+u_all = np.concatenate(Model.preprocess(nu=2))
 # ------------------------------------------------------------------------------
 # COMPUTE POD MODES
 Ntrain = 700
 dim = u_all.shape
 UU = np.reshape(u_all[:Ntrain, :], (Ntrain, dim[1] * dim[2] * dim[3]))
+
 
 m = UU.shape[0]
 C = np.matmul(np.transpose(UU), UU) / (m - 1)
@@ -31,7 +32,7 @@ phi = phi[:, idx]
 # project onto modes for temporal coefficients
 a = np.matmul(UU, phi)  # contains the "code" (modal coefficients)
 
-phi_spat = np.reshape(phi, (dim[1], dim[2], dim[1] * dim[2]))  # contains the spatial mode
+phi_spat = np.reshape(phi, (dim[1], dim[2], dim[1] * dim[2] * dim[3], dim[3]))  # contains the spatial mode
 
 print("check orthogonality")
 print(np.matmul(np.transpose(phi), phi))
