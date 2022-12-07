@@ -6,7 +6,7 @@ from sklearn.utils import shuffle
 # Generic Model
 class Model:
     @staticmethod
-    def data_reading(re, nx, nu):
+    def data_reading(Re, Nx, Nu):
         """Function to read the H5 files, can change Re to run for different flows
             Re- Reynolds Number
             Nu- Dimension of Velocity Vector
@@ -16,23 +16,23 @@ class Model:
         # File selection
         # Re= 20.0, 30.0, 40.0, 50.0, 60.0, 100.0, 180.0
         # T has different values depending on Re
-        if re == 20.0 or re == 30.0 or re == 40.0:
+        if Re == 20.0 or Re == 30.0 or Re == 40.0:
             T = 20000
         else:
             T = 2000
 
         path_folder = '../SampleFlows/'  # path to folder in which flow data is situated
-        path = path_folder + f'Kolmogorov_Re{re}_T{T}_DT01.h5'
+        path = path_folder + f'Kolmogorov_Re{Re}_T{T}_DT01.h5'
 
         # READ DATASET
         hf = h5py.File(path, 'r')
         t = np.array(hf.get('t'))
         # Instantiating the velocities array with zeros
-        u_all = np.zeros((nx, nx, len(t), nu))
+        u_all = np.zeros((Nx, Nx, len(t), Nu))
 
         # Update u_all with data from file
         u_all[:, :, :, 0] = np.array(hf.get('u_refined'))
-        if nu == 2:
+        if Nu == 2:
             u_all[:, :, :, 1] = np.array(hf.get('v_refined'))
 
         # Transpose of u_all in order to make it easier to work with it
@@ -49,20 +49,20 @@ class Model:
         return u_all
 
     @staticmethod
-    def preprocess(u_all=None, re=40.0, nx=24, nu=1):
+    def preprocess(u_all=None, Re=40.0, Nx=24, Nu=1):
         """ Function to scale the data set and split it into train, validation and test sets.
             nx: Size of the grid side
             nu: Number of velocity components, 1-> 'x', 2 -> 'x','y'"""
 
         # Run data reading to avoid errors
         if u_all is None:
-            u_all = Model.data_reading(re, nx, nu)
+            u_all = Model.data_reading(Re, Nx, Nu)
 
         # Normalize data
         u_min = np.amin(u_all[:, :, :, 0])
         u_max = np.amax(u_all[:, :, :, 0])
         u_all[:, :, :, 0] = (u_all[:, :, :, 0] - u_min) / (u_max - u_min)
-        if nu == 2:
+        if Nu == 2:
             # Code to run if using velocities in 'y' direction as well
             v_min = np.amin(u_all[:, :, :, 1])
             v_max = np.amax(u_all[:, :, :, 1])
