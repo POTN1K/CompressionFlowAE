@@ -48,6 +48,8 @@ class Model:
         u_all = shuffle(u_all, random_state=42)
         return u_all
 
+    
+
     @staticmethod
     def preprocess(u_all=None, Re=40.0, Nx=24, Nu=1):
         """ Function to scale the data set and split it into train, validation and test sets.
