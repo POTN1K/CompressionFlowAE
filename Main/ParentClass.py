@@ -7,33 +7,30 @@ from sklearn.model_selection import ParameterGrid
 from sklearn.metrics import mean_squared_error  # pip3.10 install scikit-learn NOT sklearn
 import os
 
+# TODO: finalise docstrings
 
 # Generic Model
 class Model:
-    def __init__(self, input_: np.array or None = None) -> None:
-        self._input = np.copy(input_)  # tracks the input array
+    def __init__(self, train_array: np.array or None = None, val_array: np.array or None = None) -> None:
+        self._input = None  # tracks the input array
         self.trained = False           # tracks if the model has been trained
         self._encoded = None           # tracks the encoded array
         self.code_artificial = False   # tracks if the code follows from an input
         self._output = None            # tracks the output array
 
-        if input_ is not None:  # Hot start
-            self.fit()
+        if train_array is not None:  # Hot start
+            self.fit(train_array, val_array)
 
     # BEGIN LOGIC METHODS
-    def fit(self, input_: np.array or None = None) -> None:
+    def fit(self, train_array: np.array or None, val_array: np.array or None = None) -> None:
         """
         Train the model, sets the input
         :input_: singular or time series to train the model on
         """
-        if input_ is None:  # get stored input
-            if self.input is None:  # input not specified before fit
-                raise ValueError("Input data not found before fit")
-            input_ = self.input
-        else:  # store input
-            self.input = input_
+        if train_array is None:  # get stored input
+            raise ValueError("Training data not given")
 
-        self.fit_model(input_)
+        self.fit_model(train_array, val_array)
         self.trained = True
 
     def encode(self, input_: np.array) -> np.array:
@@ -51,6 +48,8 @@ class Model:
         return self.encoded
 
     def decode(self, input_: np.array) -> np.array:
+        if input_ is not self.encoded:
+            self.code_artificial = True
         if not self.trained:
             raise Exception('Called decode before fit')
 
@@ -69,10 +68,11 @@ class Model:
     # END LOGIC METHODS
 
     # SKELETON FUNCTIONS: FILL (OVERWRITE) IN SUBCLASS
-    def fit_model(self, input_: np.array) -> None:  # skeleton
+    def fit_model(self, train_array: np.array, val_array: np.array or None = None) -> None:  # skeleton
         """
         Fits the model on the training data: skeleton, overwrite
-        :param input_: time series of inputs
+        :param train_array: time series
+        :param val_array: optional, time series
         """
         raise NotImplementedError("Skeleton not filled by subclass")
 
@@ -106,9 +106,10 @@ class Model:
         """
         Overwrite input
         """
-        if len(input_.shape) != 4:
-            input_ = np.reshape(input_, (1, *input_.shape))
-        self._input = np.copy(input_)
+        if input_ is not None:
+            if len(input_.shape) != 4:
+                input_ = np.reshape(input_, (1, *input_.shape))
+            self._input = np.copy(input_)
 
     @property
     def encoded(self) -> np.array:  # skeleton
@@ -119,8 +120,6 @@ class Model:
 
     @encoded.setter
     def encoded(self, input_: np.array):
-        if len(input_.shape) != 4:
-            input_ = np.reshape(input_, (1, *input_.shape))
         self._encoded = np.copy(input_)
 
     @property
@@ -140,7 +139,7 @@ class Model:
         """
         # if input_.shape[0] == 1:
         #     input_ = input_[0]
-        self.output = input_
+        self._output = input_
     # END PROPERTIES
 
     # BEGIN GENERAL METHODS
