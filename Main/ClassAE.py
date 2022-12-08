@@ -47,7 +47,6 @@ class AE(Model):
         self.u_test = None
         self.hist = None
         self.image = None
-        self.decoded = None
         self.autoencoder = None
         self.encoder = None
         self.decoder = None
