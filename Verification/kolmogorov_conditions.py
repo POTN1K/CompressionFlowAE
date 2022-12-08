@@ -3,7 +3,7 @@ import sys
 sys.path.append('..')
 from SampleFlows.ParentClass import Model
 
-data = Model.data_reading(re=40, nx=24, nu=2)
+#data = Model.data_reading(re=40, nx=24, nu=2)
 
 def incompressibility(_3x3x2):
     def central_difference(before, after):
@@ -58,5 +58,3 @@ def navier_stokes(_3x3x2, f):
     kinetic_viscosity_y = (convection(_3x3x2)[1] - internal_source(_3x3x2)[1] - f[1]) / diffusion_over_kinetic_viscosity(_3x3x2)[1]
 
     return abs(kinetic_viscosity_x - kinetic_viscosity_y)
-
-#print(data[100,0:3,0:3,:])
