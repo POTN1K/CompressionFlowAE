@@ -10,31 +10,35 @@ import os
 
 # Generic Model
 class Model:
-    def __init__(self, input_: np.array or None = None) -> None:
-        self._input = np.copy(input_)  # tracks the input array
-        self.trained = False           # tracks if the model has been trained
-        self._encoded = None           # tracks the encoded array
-        self.code_artificial = False   # tracks if the code follows from an input
-        self._output = None            # tracks the output array
+    def __init__(self, train=None, val=None, test=None) -> None:
+        self.u_train = np.copy(train)  # tracks the input array
+        self.u_val = np.copy(val)
+        self.u_test = np.copy(test)
+        self.trained = False  # tracks if the model has been trained
+        self._encoded = None  # tracks the encoded array
+        self.code_artificial = False  # tracks if the code follows from an input
+        self._output = None  # tracks the output array
 
-        if input_ is not None:  # Hot start
-            self.fit()
+        if train is not None:  # Hot start
+            self.fit(self.u_train, self.u_val)
 
     # BEGIN LOGIC METHODS
-    def fit(self, input_: np.array or None = None) -> None:
+    def fit(self, train=None, val=None) -> None:
         """
         Train the model, sets the input
         :input_: singular or time series to train the model on
         """
-        if input_ is None:  # get stored input
-            if self.input is None:  # input not specified before fit
-                raise ValueError("Input data not found before fit")
-            input_ = self.input
-        else:  # store input
-            self.input = input_
-
-        self.fit_model(input_)
-        self.trained = True
+        if train is None:  # get stored input
+            raise ValueError("Input data not found before fit")
+        elif val is None:
+            self.u_train = train
+            self.fit_model(train)
+            self.trained = True
+        else:
+            self.u_train = train
+            self.u_val = val
+            self.fit_model(self.u_train, self.u_val)
+            self.trained = True
 
     def encode(self, input_: np.array) -> np.array:
         """
@@ -45,8 +49,7 @@ class Model:
         if not self.trained:
             raise Exception('Called encode before fit')
 
-        self.input = input_
-        self.encoded = self.get_code(self.input)
+        self.encoded = self.get_encode(input_)
         self.code_artificial = False
         return self.encoded
 
@@ -54,8 +57,7 @@ class Model:
         if not self.trained:
             raise Exception('Called decode before fit')
 
-        self.encoded = input_
-        self.output = self.get_output(self.encoded)
+        self.output = self.get_flow(input_)
         return self.output
 
     def passthrough(self, input_: np.array) -> np.array:
@@ -65,7 +67,9 @@ class Model:
         :param input_: singular or time series input
         :return: singular or time series output
         """
+        self.u_test = input_
         return self.decode(self.encode(input_))
+
     # END LOGIC METHODS
 
     # SKELETON FUNCTIONS: FILL (OVERWRITE) IN SUBCLASS
@@ -76,7 +80,7 @@ class Model:
         """
         raise NotImplementedError("Skeleton not filled by subclass")
 
-    def get_code(self, input_: np.array) -> np.array: # skeleton
+    def get_encode(self, input_: np.array) -> np.array:  # skeleton
         """
         Passes self.input through the model, returns code
         :input_: time series input
@@ -84,13 +88,14 @@ class Model:
         """
         raise NotImplementedError("Skeleton not filled by subclass")
 
-    def get_output(self, input_: np.array) -> np.array: # skeleton
+    def get_flow(self, input_: np.array) -> np.array:  # skeleton
         """
         Passes self.code through the model, returns output
         :input_: time series code
         :return: time series output
         """
         raise NotImplementedError("Skeleton not filled by subclass")
+
     # END SKELETONS
 
     # BEGIN PROPERTIES
@@ -140,7 +145,8 @@ class Model:
         """
         # if input_.shape[0] == 1:
         #     input_ = input_[0]
-        self.output = input_
+        self._output = input_
+
     # END PROPERTIES
 
     # BEGIN GENERAL METHODS
@@ -237,7 +243,7 @@ class Model:
             loss = model_.loss()
 
             # write to file
-            write = {'Running Time': end_time-start_time,
+            write = {'Running Time': end_time - start_time,
                      'Loss': loss
                      # , 'Compression': params['dimensions'][-1] / (24 * 24) # this will not generalise well
                      }

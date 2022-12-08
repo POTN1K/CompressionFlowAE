@@ -10,8 +10,8 @@
 import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
-from tensorflow.keras.layers import Input, Conv2D, MaxPool2D, AveragePooling2D, UpSampling2D, Conv2DTranspose
-from tensorflow.keras.optimizers import Adam
+from keras.layers import Input, Conv2D, MaxPool2D, AveragePooling2D, UpSampling2D, Conv2DTranspose
+from keras.optimizers import Adam
 # Local codes
 from Main import Model
 
@@ -22,7 +22,7 @@ from Main import Model
 
 # Autoencoder Model Class
 class AE(Model):
-    def __init__(self, input_, dimensions=[8, 4, 2, 1], activation_function='tanh', l_rate=0.01, epochs=10, batch=200,
+    def __init__(self, dimensions=[8, 4, 2, 1], activation_function='tanh', l_rate=0.01, epochs=10, batch=200,
                  early_stopping=5, pooling='max', re=40.0, Nu=1, Nx=24, loss='mse'):
         """ Ambiguous Inputs-
             dimensions: Number of features per convolution layer, dimensions[-1] is dimension of latent space.
@@ -40,7 +40,6 @@ class AE(Model):
         self.nx = Nx
         self.pooling = pooling
         self.loss = loss
-        self.image = Input(shape=(self.nx, self.nx, self.nu))
         # Instantiating
         self.u_all = None
         self.u_train = None
@@ -48,7 +47,6 @@ class AE(Model):
         self.u_test = None
         self.hist = None
         self.image = None
-        self.encoded = None
         self.decoded = None
         self.autoencoder = None
         self.encoder = None
@@ -56,28 +54,28 @@ class AE(Model):
         self.hist = None
         self.y_pred = None
 
-        super().__init__(input_)
-        # TODO: Initialise structure
+        super().__init__(None)
+        self.network()
 
     # SKELETON FUNCTIONS: FILL (OVERWRITE) IN SUBCLASS
-    def fit_model(self, input_: np.array) -> None:  # skeleton
+    def fit_model(self, train, val) -> None:  # skeleton
         """
         Fits the model on the training data: skeleton, overwrite
         :param input_: time series of inputs
         """
         # TODO Fill function
-        raise NotImplementedError("Skeleton not filled by subclass")
+        self.training()
 
-    def get_code(self, input_: np.array) -> np.array:  # skeleton
+    def get_encode(self, input_: np.array) -> np.array:  # skeleton
         """
         Passes self.input through the model, returns code
         :input_: time series input
         :return: time series code
         """
         # TODO Fill function
-        raise NotImplementedError("Skeleton not filled by subclass")
+        return self.encoder.predict(input_)
 
-    def get_output(self, input_: np.array) -> np.array:  # skeleton
+    def get_flow(self, input_: np.array) -> np.array:  # skeleton
         """
         Passes self.code through the model, returns output
         :input_: time series code
@@ -109,6 +107,7 @@ class AE(Model):
             - size of the area of frame where the pooling is performed
             - padding (check Conv2D)
             """
+        self.image = Input(shape=(self.nx, self.nx, self.nu))
         # Beginning of Autoencoder and Encoder
         x = Conv2D(self.dimensions[0], (3, 3), padding='same', activation=self.activation_function)(self.image)
         x = self.pooling_function((2, 2), padding='same')(x)
@@ -117,7 +116,7 @@ class AE(Model):
         x = Conv2D(self.dimensions[2], (3, 3), padding='same', activation=self.activation_function)(x)
         x = self.pooling_function((2, 2), padding='same')(x)
         x = Conv2D(self.dimensions[3], (3, 3), padding='same', activation=self.activation_function)(x)
-        self.encoded = self.pooling_function((3, 3), padding='same')(x)
+        encoded = self.pooling_function((3, 3), padding='same')(x)
         # End of Encoder
 
         # Beginning of Decoder
@@ -130,23 +129,22 @@ class AE(Model):
         x = UpSampling2D((2, 2))(x)
         x = Conv2DTranspose(self.dimensions[0], (3, 3), padding='same', activation=self.activation_function)(x)
         x = UpSampling2D((2, 2))(x)
-        self.decoded = Conv2DTranspose(self.nu, (3, 3), activation='linear', padding='same')(x)
+        decoded = Conv2DTranspose(self.nu, (3, 3), activation='linear', padding='same')(x)
         # End of Decoder and Autoencoder
 
-    def creator(self):
         """ Use previously defined architecture to build an untrained model.
             It will create an autoencoder, encoder, and decoder. All three trained together."""
         # Creation of autoencoder
-        self.autoencoder = tf.keras.models.Model(self.image, self.decoded)
+        self.autoencoder = tf.keras.models.Model(self.image, decoded)
 
         # Creation of enconder
-        self.encoder = tf.keras.models.Model(self.image, self.encoded)
+        self.encoder = tf.keras.models.Model(self.image, encoded)
 
         # Creation of decoder
-        encoded_input = Input(shape=(1, 1, self.encoded.shape[3]))  # latent vector definition
-        deco = self.autoencoder.layers[-7](encoded_input)  # re-use the same layers as the ones of the autoencoder
-        for i in range(6):
-            deco = self.autoencoder.layers[-6 + i](deco)
+        encoded_input = Input(shape=(1, 1, encoded.shape[3]))  # latent vector definition
+        deco = self.autoencoder.layers[-9](encoded_input)  # re-use the same layers as the ones of the autoencoder
+        for i in range(8):
+            deco = self.autoencoder.layers[-8 + i](deco)
         self.decoder = tf.keras.models.Model(encoded_input, deco)
 
     def training(self):
@@ -174,13 +172,13 @@ class AE(Model):
                                          callbacks=[early_stop_callback])
 
         # Predict model using test data
-        self.y_pred = self.autoencoder.predict(self.u_test[:, :, :, :], verbose=0)
+        #self.y_pred = self.autoencoder.predict(self.u_test[:, :, :, :], verbose=0)
 
     def visual_analysis(self):
         """Function to visualize some samples of predictions in order to visually compare with the test set. Moreover,
             the evolution of the error throughout the epochs is plotted"""
 
-        for i in range(10):
+        for i in range(1):
 
             # Set of predictions we are going to plot. We decided on the first 10 frames but it could be whatever
             image_to_plot = self.y_pred[i:i + 1, :, :, :]
@@ -236,11 +234,10 @@ class AE(Model):
 def run_model():
     """General function to run one model"""
 
-    model = AE(l_rate=0.0005, epochs=200, batch=10, early_stopping=20, dimensions=[64, 32, 16, 8])
-    model.u_train, model.u_val, model.u_test = AE.preprocess()
-    model.network()
-    model.creator()
-    model.training()
+    model = AE(l_rate=0.0005, epochs=10, batch=10, early_stopping=20, dimensions=[64, 32, 16, 8])
+    u_train, u_val, u_test = AE.preprocess()
+    model.fit(u_train, u_val)
+    model.y_pred = model.passthrough(u_test)
     model.visual_analysis()
     model.performance()
 
