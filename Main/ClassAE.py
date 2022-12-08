@@ -3,7 +3,7 @@
 #               - creator: which creates the encoder, decoder and autoencoder attributes
 #               - training: to train the autoencoder (it automatically trains the decoder and encoder too)
 #               - visual analysis: plots the first 10 reconstructed flows and the error evolution throught the epochs
-#               - performance: calclates mse of every image and transforms it into a percentage of accuracy
+#               - performance: calculates mse of every image and transforms it into a percentage of accuracy
 
 
 # Libraries
@@ -82,7 +82,7 @@ class AE(Model):
         :return: time series output
         """
         # TODO Fill function
-        raise NotImplementedError("Skeleton not filled by subclass")
+        return self.decoder.predict(input_)
     # END SKELETONS
 
     @property
@@ -120,8 +120,7 @@ class AE(Model):
         # End of Encoder
 
         # Beginning of Decoder
-        x = Conv2DTranspose(self.dimensions[3], (3, 3), padding='same', activation=self.activation_function)(
-            self.encoded)
+        x = Conv2DTranspose(self.dimensions[3], (3, 3), padding='same', activation=self.activation_function)(encoded)
         x = UpSampling2D((3, 3))(x)
         x = Conv2DTranspose(self.dimensions[2], (3, 3), padding='same', activation=self.activation_function)(x)
         x = UpSampling2D((2, 2))(x)
