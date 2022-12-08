@@ -10,10 +10,11 @@
 import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
-from tensorflow.keras.layers import Input, Conv2D, MaxPool2D, AveragePooling2D, UpSampling2D, Conv2DTranspose
-from tensorflow.keras.optimizers import Adam
+from keras.layers import Input, Conv2D, MaxPool2D, AveragePooling2D, UpSampling2D, Conv2DTranspose
+from keras.optimizers import Adam
 # Local codes
-from SampleFlows.ParentClass import Model
+from Models.ParentClass import Model
+from ExperimentsAE.CustomLibraries import MixedPooling2D
 
 
 # Uncomment if keras does not run
@@ -211,7 +212,7 @@ def run_model():
     """General function to run one model"""
 
     nu = 1
-    model = AE(l_rate=0.0005, epochs=200, batch=10, early_stopping=20, dimensions=[64,32,16,8], Nu=nu)
+    model = AE(l_rate=0.0005, epochs=2, batch=10, early_stopping=20, dimensions=[64,32,16,8], Nu=nu)
     model.u_train, model.u_val, model.u_test = AE.preprocess(Nu=nu)
     model.network()
     model.creator()

@@ -2,6 +2,7 @@
 import h5py
 import numpy as np
 from sklearn.utils import shuffle
+import os
 
 # Generic Model
 class Model:
@@ -21,8 +22,10 @@ class Model:
         else:
             T = 2000
 
-        path_folder = '../SampleFlows/'  # path to folder in which flow data is situated
-        path = path_folder + f'Kolmogorov_Re{Re}_T{T}_DT01.h5'
+        dir_curr = os.path.split(__file__)[0]
+        path_rel = ('../SampleFlows', f'Kolmogorov_Re{Re}_T{T}_DT01.h5')
+
+        path = os.path.join(dir_curr, *path_rel)
 
         # READ DATASET
         hf = h5py.File(path, 'r')

@@ -1,6 +1,6 @@
 import numpy as np
 from numpy import linalg as LA
-from SampleFlows.ParentClass import Model
+from Models.ParentClass import Model
 import matplotlib.pyplot as plt
 
 import os
