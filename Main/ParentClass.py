@@ -120,10 +120,7 @@ class Model:
 
     @encoded.setter
     def encoded(self, input_: np.array):
-        if input_ is not None:
-            if len(input_.shape) != 4:
-                input_ = np.reshape(input_, (1, *input_.shape))
-            self._encoded = np.copy(input_)
+        self._encoded = np.copy(input_)
 
     @property
     def output(self):

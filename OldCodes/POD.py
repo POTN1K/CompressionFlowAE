@@ -13,8 +13,9 @@ os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 u_all = np.concatenate(Model.preprocess(nu=2))
 # ------------------------------------------------------------------------------
 # COMPUTE POD MODES
-Ntrain = 700
+
 dim = u_all.shape
+Ntrain = dim[0]
 UU = np.reshape(u_all[:Ntrain, :], (Ntrain, dim[1] * dim[2] * dim[3]))
 
 
@@ -23,7 +24,6 @@ C = np.matmul(np.transpose(UU), UU) / (m - 1)
 
 # solve eigenvalue problem
 eig, phi = LA.eigh(C)
-print(phi.shape)
 # Sort Eigenvalues and vectors
 idx = eig.argsort()[::-1]
 eig = eig[idx]
@@ -49,27 +49,29 @@ plt.show()
 
 # print("size of input")
 # print(UU.shape)
-
+print(phi.shape, a.shape, dim)
 # ------------------------------------------------------------------------------
 # VISUALIZATION OF MODES AND ERROR
-imode = 0
-fig = plt.figure()
-ax = fig.add_subplot(111)
-ax.contourf(phi_spat[:, :, imode])
+# imode = 0
+# fig = plt.figure()
+# ax = fig.add_subplot(111)
+# ax.contourf(phi_spat[:, :, imode])
 
 # Visualization of modal reconstruction with truncated number of modes
 isample = 50
-nmodes = 1
+nmodes = 128
 
 # To reconstruct the field ("decode"), we just matrix-multiply the modal coefficients with the spatial modes
 # but we do that for a truncated number of modes, instead of using the full modes
 recons = np.matmul(a[:, :nmodes], np.transpose(phi[:, :nmodes]))
+recons_reshape = np.reshape(recons, (dim[0], dim[1], dim[2], dim[3]))
+diff = u_all-recons_reshape
 
 fig = plt.figure()
 ax = fig.add_subplot(121)
-ax.contourf(np.reshape(recons[isample, :], (dim[1], dim[2])))
+ax.contourf(np.reshape(recons[isample, :], (dim[1], dim[2], dim[3]))[:,:,0])
 ax = fig.add_subplot(122)
-ax.contourf(np.reshape(UU[isample, :], (dim[1], dim[2])))
+ax.contourf(np.reshape(UU[isample, :], (dim[1], dim[2], dim[3]))[:,:,0])
 plt.show()
 
 # Mean reconstruction error for different number of retained modes
