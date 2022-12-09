@@ -63,25 +63,29 @@ class AE(Model):
         :param input_: time series of inputs
         """
         # TODO Fill function
+        self.u_train = train
+        self.u_val = val
         self.training()
 
-    def get_encode(self, input_: np.array) -> np.array:  # skeleton
+    def get_code(self, input_: np.array) -> np.array:  # skeleton
         """
         Passes self.input through the model, returns code
         :input_: time series input
         :return: time series code
         """
         # TODO Fill function
+        self.u_test = input_
         return self.encoder.predict(input_)
 
-    def get_flow(self, input_: np.array) -> np.array:  # skeleton
+    def get_output(self, input_: np.array) -> np.array:  # skeleton
         """
         Passes self.code through the model, returns output
         :input_: time series code
         :return: time series output
         """
         # TODO Fill function
-        return self.decoder.predict(input_)
+        self.y_pred = self.decoder.predict(input_)
+        return self.y_pred
     # END SKELETONS
 
     @property
@@ -172,11 +176,11 @@ class AE(Model):
         # Predict model using test data
         #self.y_pred = self.autoencoder.predict(self.u_test[:, :, :, :], verbose=0)
 
-    def visual_analysis(self):
+    def visual_analysis(self, n=1):
         """Function to visualize some samples of predictions in order to visually compare with the test set. Moreover,
             the evolution of the error throughout the epochs is plotted"""
 
-        for i in range(1):
+        for i in range(n):
 
             # Set of predictions we are going to plot. We decided on the first 10 frames but it could be whatever
             image_to_plot = self.y_pred[i:i + 1, :, :, :]
@@ -215,35 +219,39 @@ class AE(Model):
         """Here we transform the mse into an accuracy value. Two different metrics are used, the absolute
         error and the squared error. With those values, two different stds are calculated"""
 
+        d = dict()
         # Calculation of MSE
-        self.mse = self.autoencoder.evaluate(self.u_test, self.u_test, self.batch, verbose=0)
+        d['mse'] = self.autoencoder.evaluate(self.u_test, self.u_test, self.batch, verbose=0)
 
         # Absolute percentage metric, along with its std
-        self.abs_percentage = np.average(1 - np.abs(self.y_pred - self.u_test) / self.u_test) * 100
+        d['abs_percentage'] = np.average(1 - np.abs(self.y_pred - self.u_test) / self.u_test) * 100
         abs_average_images = np.average((1 - np.abs(self.y_pred - self.u_test) / self.u_test), axis=(1, 2)) * 100
-        self.abs_std = np.std(abs_average_images)
+        d['abs_std'] = np.std(abs_average_images)
 
         # Squared percentage metric, along with std
-        self.sqr_percentage = np.average(1 - (self.y_pred - self.u_test) ** 2 / self.u_test) * 100
+        d['sqr_percentage'] = np.average(1 - (self.y_pred - self.u_test) ** 2 / self.u_test) * 100
         sqr_average_images = np.average((1 - (self.y_pred - self.u_test) ** 2 / self.u_test), axis=(1, 2)) * 100
-        self.sqr_std = np.std(sqr_average_images)
+        d['sqr_std'] = np.std(sqr_average_images)
+        self.dict_perf = d
+        return d
 
 
 def run_model():
     """General function to run one model"""
 
-    model = AE(l_rate=0.0005, epochs=10, batch=10, early_stopping=20, dimensions=[64, 32, 16, 8])
-    u_train, u_val, u_test = AE.preprocess()
+    n = 2
+    model = AE(l_rate=0.01, epochs=10, batch=10, early_stopping=20, dimensions=[64, 32, 16, 8], Nu=n)
+    u_train, u_val, u_test = AE.preprocess(Nu=n)
     model.fit(u_train, u_val)
-    model.y_pred = model.passthrough(u_test)
+    model.passthrough(u_test)
     model.visual_analysis()
-    model.performance()
+    perf = model.performance()
 
-    print(f'Absolute %: {round(model.abs_percentage, 3)} +- {round(model.abs_std, 3)}')
-    print(f'Squared %: {round(model.sqr_percentage, 3)} +- {round(model.sqr_std, 3)}')
+    print(f'Absolute %: {round(perf["abs_percentage"], 3)} +- {round(perf["abs_std"], 3)}')
+    print(f'Squared %: {round(perf["sqr_percentage"], 3)} +- {round(perf["sqr_std"], 3)}')
 
-    model.encoder.save('encoder.h5')
-    model.decoder.save('decoder.h5')
+    # model.encoder.save('encoder.h5')
+    # model.decoder.save('decoder.h5')
 
 
 if __name__ == '__main__':
