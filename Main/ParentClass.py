@@ -7,38 +7,31 @@ from sklearn.model_selection import ParameterGrid
 from sklearn.metrics import mean_squared_error  # pip3.10 install scikit-learn NOT sklearn
 import os
 
+# TODO: finalise docstrings
 
 # Generic Model
 class Model:
-    def __init__(self, train=None, val=None, test=None) -> None:
-        self.u_train = np.copy(train)  # tracks the input array
-        self.u_val = np.copy(val)
-        self.u_test = np.copy(test)
+    def __init__(self, train_array: np.array or None = None, val_array: np.array or None = None) -> None:
+        self._input = None  # tracks the input array
         self.trained = False  # tracks if the model has been trained
         self._encoded = None  # tracks the encoded array
         self.code_artificial = False  # tracks if the code follows from an input
         self._output = None  # tracks the output array
 
-        if train is not None:  # Hot start
-            self.fit(self.u_train, self.u_val)
+        if train_array is not None:  # Hot start
+            self.fit(train_array, val_array)
 
     # BEGIN LOGIC METHODS
-    def fit(self, train=None, val=None) -> None:
+    def fit(self, train_array: np.array or None, val_array: np.array or None = None) -> None:
         """
         Train the model, sets the input
         :input_: singular or time series to train the model on
         """
-        if train is None:  # get stored input
-            raise ValueError("Input data not found before fit")
-        elif val is None:
-            self.u_train = train
-            self.fit_model(train)
-            self.trained = True
-        else:
-            self.u_train = train
-            self.u_val = val
-            self.fit_model(self.u_train, self.u_val)
-            self.trained = True
+        if train_array is None:  # get stored input
+            raise ValueError("Training data not given")
+
+        self.fit_model(train_array, val_array)
+        self.trained = True
 
     def encode(self, input_: np.array) -> np.array:
         """
@@ -49,15 +42,19 @@ class Model:
         if not self.trained:
             raise Exception('Called encode before fit')
 
-        self.encoded = self.get_encode(input_)
+        self.input = input_
+        self.encoded = self.get_code(self.input)
         self.code_artificial = False
         return self.encoded
 
     def decode(self, input_: np.array) -> np.array:
+        if input_ is not self.encoded:
+            self.code_artificial = True
         if not self.trained:
             raise Exception('Called decode before fit')
 
-        self.output = self.get_flow(input_)
+        self.encoded = input_
+        self.output = self.get_output(self.encoded)
         return self.output
 
     def passthrough(self, input_: np.array) -> np.array:
@@ -67,20 +64,19 @@ class Model:
         :param input_: singular or time series input
         :return: singular or time series output
         """
-        self.u_test = input_
         return self.decode(self.encode(input_))
-
     # END LOGIC METHODS
 
     # SKELETON FUNCTIONS: FILL (OVERWRITE) IN SUBCLASS
-    def fit_model(self, input_: np.array) -> None:  # skeleton
+    def fit_model(self, train_array: np.array, val_array: np.array or None = None) -> None:  # skeleton
         """
         Fits the model on the training data: skeleton, overwrite
-        :param input_: time series of inputs
+        :param train_array: time series
+        :param val_array: optional, time series
         """
         raise NotImplementedError("Skeleton not filled by subclass")
 
-    def get_encode(self, input_: np.array) -> np.array:  # skeleton
+    def get_code(self, input_: np.array) -> np.array: # skeleton
         """
         Passes self.input through the model, returns code
         :input_: time series input
@@ -88,14 +84,13 @@ class Model:
         """
         raise NotImplementedError("Skeleton not filled by subclass")
 
-    def get_flow(self, input_: np.array) -> np.array:  # skeleton
+    def get_output(self, input_: np.array) -> np.array: # skeleton
         """
         Passes self.code through the model, returns output
         :input_: time series code
         :return: time series output
         """
         raise NotImplementedError("Skeleton not filled by subclass")
-
     # END SKELETONS
 
     # BEGIN PROPERTIES
@@ -111,9 +106,10 @@ class Model:
         """
         Overwrite input
         """
-        if len(input_.shape) != 4:
-            input_ = np.reshape(input_, (1, *input_.shape))
-        self._input = np.copy(input_)
+        if input_ is not None:
+            if len(input_.shape) != 4:
+                input_ = np.reshape(input_, (1, *input_.shape))
+            self._input = np.copy(input_)
 
     @property
     def encoded(self) -> np.array:  # skeleton
@@ -124,8 +120,6 @@ class Model:
 
     @encoded.setter
     def encoded(self, input_: np.array):
-        if len(input_.shape) != 4:
-            input_ = np.reshape(input_, (1, *input_.shape))
         self._encoded = np.copy(input_)
 
     @property
@@ -146,7 +140,6 @@ class Model:
         # if input_.shape[0] == 1:
         #     input_ = input_[0]
         self._output = input_
-
     # END PROPERTIES
 
     # BEGIN GENERAL METHODS
@@ -243,7 +236,7 @@ class Model:
             loss = model_.loss()
 
             # write to file
-            write = {'Running Time': end_time - start_time,
+            write = {'Running Time': end_time-start_time,
                      'Loss': loss
                      # , 'Compression': params['dimensions'][-1] / (24 * 24) # this will not generalise well
                      }
