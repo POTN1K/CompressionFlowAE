@@ -3,24 +3,34 @@ import numpy as np
 from matplotlib import pyplot as plt
 import math
 
+# LOAD DATA
 train, val, test = Model.preprocess(nu=2)
 
 def conv_mass(grid_time, t):
+    ''' Function to check conservation of mass
+    grid_time: time series 2D velocity grid
+    t: time
+    output: divergence of velocity with control volume as entire grid'''
 
+    # Isolate time components
     grid = grid_time[t,:,:,:]
 
+    #Isolate velocity components
     u_vel = grid[:,:,0]
     v_vel = grid[:,:,1]
 
+    # Partial derivatives (du/dx, dv/dy)
     u_vel_grad = np.gradient(u_vel, 0.262, edge_order=2, axis=1)
     v_vel_grad = np.gradient(v_vel, 0.262, edge_order=2, axis=0)
 
     divergence = u_vel_grad + v_vel_grad
 
+    # Optional plotting of divergence
     # plt.contourf(divergence)
     # plt.show()
 
     return np.sum(divergence)
+
 
 all_conv = []
 
