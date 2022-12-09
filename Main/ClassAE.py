@@ -14,7 +14,7 @@ from keras.layers import Input, Conv2D, MaxPool2D, AveragePooling2D, UpSampling2
 from keras.optimizers import Adam
 # Local codes
 from Main import Model
-
+from ExperimentsAE.CustomLibraries import MixedPooling2D
 
 # Uncomment if keras does not run
 # import os
@@ -96,6 +96,8 @@ class AE(Model):
     def pooling(self, value):
         if value == 'max':
             self.pooling_function = MaxPool2D
+        elif value == 'mix':
+            self.pooling_function = MixedPooling2D
         else:
             self.pooling_function = AveragePooling2D
 
@@ -240,7 +242,7 @@ def run_model():
     """General function to run one model"""
 
     n = 2
-    model = AE(l_rate=0.01, epochs=10, batch=10, early_stopping=20, dimensions=[64, 32, 16, 8], Nu=n)
+    model = AE(l_rate=0.01, epochs=10, batch=10, early_stopping=20, dimensions=[64, 32, 16, 8], Nu=n, pooling='mix')
     u_train, u_val, u_test = AE.preprocess(Nu=n)
     model.fit(u_train, u_val)
     model.passthrough(u_test)
