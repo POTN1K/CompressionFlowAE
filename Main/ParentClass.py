@@ -266,4 +266,39 @@ class Model:
                 writer.writerow(write)
             print(f'Model {n}')
             n += 1
+
+    def verification(self, data):
+        ''' Function to check conservation of mass
+            data: time series 2D velocity grid
+            output: max, min, and avg of divergence of velocity with control volume as entire grid'''
+
+        # List to store values of divergence
+        all_conv = []
+
+        for time in range(np.shape(data)[0]):
+
+            # Isolate time components
+            grid = data[time, :, :, :]
+
+            # Isolate velocity components
+            u_vel = grid[:, :, 0]
+            v_vel = grid[:, :, 1]
+
+            # Partial derivatives (du/dx, dv/dy) step size set to 0.262 based on grid size
+            u_vel_grad = np.gradient(u_vel, 0.262, edge_order=2, axis=1)
+            v_vel_grad = np.gradient(v_vel, 0.262, edge_order=2, axis=0)
+
+            divergence = u_vel_grad + v_vel_grad
+
+            all_conv.append(np.sum(divergence))
+
+        max_div = max(all_conv)
+        min_div = min(all_conv)
+        avg_div = sum(all_conv) / len(all_conv)
+
+        print(f'max: {max_div}')
+        print(f'min: {min_div}')
+        print(f'avg: {avg_div}')
+
+        return max_div, min_div, avg_div
     # END GENERAL METHODS

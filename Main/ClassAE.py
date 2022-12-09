@@ -242,12 +242,15 @@ def run_model():
     """General function to run one model"""
 
     n = 2
-    model = AE(l_rate=0.01, epochs=10, batch=10, early_stopping=20, dimensions=[64, 32, 16, 8], Nu=n, pooling='mix')
+    model = AE(l_rate=0.01, epochs=10, batch=10, early_stopping=20, dimensions=[64, 32, 16, 8], Nu=n)
     u_train, u_val, u_test = AE.preprocess(Nu=n)
     model.fit(u_train, u_val)
     model.passthrough(u_test)
     model.visual_analysis()
     perf = model.performance()
+    if n == 2:
+        model.verification(u_test)
+        model.verification(model.y_pred)
 
     print(f'Absolute %: {round(perf["abs_percentage"], 3)} +- {round(perf["abs_std"], 3)}')
     print(f'Squared %: {round(perf["sqr_percentage"], 3)} +- {round(perf["sqr_std"], 3)}')
