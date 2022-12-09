@@ -243,6 +243,7 @@ def run_model():
 
     n = 2
     model = AE(l_rate=0.01, epochs=10, batch=10, early_stopping=20, dimensions=[64, 32, 16, 8], Nu=n)
+
     u_train, u_val, u_test = AE.preprocess(Nu=n)
     model.fit(u_train, u_val)
     model.passthrough(u_test)
@@ -255,8 +256,9 @@ def run_model():
     print(f'Absolute %: {round(perf["abs_percentage"], 3)} +- {round(perf["abs_std"], 3)}')
     print(f'Squared %: {round(perf["sqr_percentage"], 3)} +- {round(perf["sqr_std"], 3)}')
 
-    # model.encoder.save('encoder.h5')
-    # model.decoder.save('decoder.h5')
+    model.autoencoder.save('autoencoder_2D.h5')
+    model.encoder.save('encoder_2D.h5')
+    model.decoder.save('decoder_2D.h5')
 
 
 if __name__ == '__main__':
