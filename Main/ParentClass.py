@@ -267,7 +267,7 @@ class Model:
             print(f'Model {n}')
             n += 1
 
-    def verification(self, data):
+    def verification(self, data, print_res=True):
         ''' Function to check conservation of mass
             data: time series 2D velocity grid
             output: max, min, and avg of divergence of velocity with control volume as entire grid'''
@@ -295,10 +295,10 @@ class Model:
         max_div = max(all_conv)
         min_div = min(all_conv)
         avg_div = sum(all_conv) / len(all_conv)
-
-        print(f'max: {max_div}')
-        print(f'min: {min_div}')
-        print(f'avg: {avg_div}')
+        if print_res:
+            print(f'max: {max_div}')
+            print(f'min: {min_div}')
+            print(f'avg: {avg_div}')
 
         return max_div, min_div, avg_div
     # END GENERAL METHODS

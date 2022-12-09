@@ -12,6 +12,7 @@ import tensorflow as tf
 import matplotlib.pyplot as plt
 from keras.layers import Input, Conv2D, MaxPool2D, AveragePooling2D, UpSampling2D, Conv2DTranspose
 from keras.optimizers import Adam
+from keras.models import load_model
 # Local codes
 from Main import Model
 from ExperimentsAE.CustomLibraries import MixedPooling2D
@@ -178,7 +179,7 @@ class AE(Model):
         # Predict model using test data
         #self.y_pred = self.autoencoder.predict(self.u_test[:, :, :, :], verbose=0)
 
-    def visual_analysis(self, n=1):
+    def visual_analysis(self, n=1, plot_error=False):
         """Function to visualize some samples of predictions in order to visually compare with the test set. Moreover,
             the evolution of the error throughout the epochs is plotted"""
 
@@ -206,16 +207,17 @@ class AE(Model):
                 plt.title("Velocity y-dir")
                 plt.show()
 
-        # Creation of a loss graph, comparing validation and training data.
-        loss_history = self.hist.history['loss']
-        val_history = self.hist.history['val_loss']
-        plt.plot(loss_history, 'b', label='Training loss')
-        plt.plot(val_history, 'r', label='Validation loss')
-        plt.title("Loss History")
-        plt.xlabel("Epoch")
-        plt.ylabel("Loss")
-        plt.legend()
-        plt.show()
+        if plot_error:
+            # Creation of a loss graph, comparing validation and training data.
+            loss_history = self.hist.history['loss']
+            val_history = self.hist.history['val_loss']
+            plt.plot(loss_history, 'b', label='Training loss')
+            plt.plot(val_history, 'r', label='Validation loss')
+            plt.title("Loss History")
+            plt.xlabel("Epoch")
+            plt.ylabel("Loss")
+            plt.legend()
+            plt.show()
 
     def performance(self):
         """Here we transform the mse into an accuracy value. Two different metrics are used, the absolute
@@ -238,11 +240,11 @@ class AE(Model):
         return d
 
 
-def run_model():
+def create_run_model():
     """General function to run one model"""
 
     n = 2
-    model = AE(l_rate=0.01, epochs=10, batch=10, early_stopping=20, dimensions=[64, 32, 16, 8], Nu=n)
+    model = AE(l_rate=0.001, epochs=30, batch=10, early_stopping=10, dimensions=[32, 16, 8, 4], Nu=n)
 
     u_train, u_val, u_test = AE.preprocess(Nu=n)
     model.fit(u_train, u_val)
@@ -256,10 +258,35 @@ def run_model():
     print(f'Absolute %: {round(perf["abs_percentage"], 3)} +- {round(perf["abs_std"], 3)}')
     print(f'Squared %: {round(perf["sqr_percentage"], 3)} +- {round(perf["sqr_std"], 3)}')
 
-    model.autoencoder.save('autoencoder_2D.h5')
-    model.encoder.save('encoder_2D.h5')
-    model.decoder.save('decoder_2D.h5')
+    # model.autoencoder.save('autoencoder_2D.h5')
+    # model.encoder.save('encoder_2D.h5')
+    # model.decoder.save('decoder_2D.h5')
 
+
+def run_trained_model():
+    # Load Models
+    autoencoder = load_model("C:\\Users\\ricke\\Documents\\Code\\GitHub\\CompressionFlowAE\\Main\\KerasModels\\autoencoder_2D.h5")
+    encoder = load_model(
+        "C:\\Users\\ricke\\Documents\\Code\\GitHub\\CompressionFlowAE\\Main\\KerasModels\\encoder_2D.h5")
+    decoder = load_model(
+        "C:\\Users\\ricke\\Documents\\Code\\GitHub\\CompressionFlowAE\\Main\\KerasModels\\decoder_2D.h5")
+    # Save to object
+    model = AE()
+    model.autoencoder = autoencoder
+    model.encoder = encoder
+    model.decoder = decoder
+    model.trained = True
+
+    # Predict
+    u_train, u_val, u_test = AE.preprocess(Nu=2)
+    model.passthrough(u_test)
+    model.verification(u_test)
+    model.verification(model.y_pred)
+
+    model.visual_analysis(3)
+    perf = model.performance()
+    print(f'Absolute %: {round(perf["abs_percentage"], 3)} +- {round(perf["abs_std"], 3)}')
+    print(f'Squared %: {round(perf["sqr_percentage"], 3)} +- {round(perf["sqr_std"], 3)}')
 
 if __name__ == '__main__':
-    run_model()
+    run_trained_model()
