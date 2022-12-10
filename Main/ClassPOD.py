@@ -6,14 +6,15 @@ import matplotlib.pyplot as plt
 import os
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
-# TODO: finalise docstrings
 
 class POD(Model):
     def __init__(self, train_array: np.array or None, val_array:  None = None, n: int = 5) -> None:
         """
-        Require 2D velocity field
-        :param input_: T, i, j, u -> time, i_grid, j_grid, vel u, vel v
-        :param n: number of modes to include in reconstruction
+        Initialise an instance of the POD model inheriting from the Model superclass.
+        val_array should always be none for the POD; passed only for method compatability.
+        :param train_array: input data (time series) to fit the model on
+        :param val_array: None
+        :param n: sets the number of modes to consider in reconstruction, mutable after init
         """
 
         # Parameters
@@ -25,13 +26,18 @@ class POD(Model):
         self.a = None      # T x n temporal mode matrix : modulate with time
         self.dim = None     # dimensions
 
+        if val_array is not None:  # Heads up, you're wasting data
+            print('Unnecessary input in POD: val_array')
+
         super().__init__(train_array, val_array)
 
     # SKELETON FUNCTIONS: FILL (OVERWRITE) IN SUBCLASS
     def fit_model(self, train_array: np.array, val_array: np.array or None = None) -> None:  # skeleton
         """
         Fits the model on the training data: skeleton, overwrite
-        :param input_: time series of inputs
+        val_array is optional; required by Keras for training
+        :param train_array: time series training data
+        :param val_array: optional, time series validation data
         """
         self.compute(train_array)
 
@@ -125,7 +131,7 @@ class POD(Model):
 
 
 if __name__ == '__main__':
-    u_all_2 = POD.preprocess(Nu=2, split=False)
+    u_all_2 = POD.preprocess(nu=2, split=False)
     Model2 = POD(u_all_2, n=128)
     out2 = Model2.passthrough(Model2.input)
 
