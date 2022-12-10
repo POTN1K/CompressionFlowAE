@@ -8,7 +8,6 @@ from sklearn.metrics import mean_squared_error  # pip3.10 install scikit-learn N
 from sklearn.utils import shuffle
 import os
 
-# TODO: finalise docstrings
 
 # Generic Model
 class Model:
@@ -26,7 +25,7 @@ class Model:
     # BEGIN LOGIC METHODS
     def fit(self, train_array: np.array or None, val_array: np.array or None = None) -> None:
         """
-        Train the model, sets the input
+        Train the model on the input data; val_array is optional, see fit_model docstring
         :input_: singular or time series to train the model on
         """
         if train_array is None:  # get stored input
@@ -37,7 +36,7 @@ class Model:
 
     def encode(self, input_: np.array) -> np.array:
         """
-        Encodes the input array with the trained model
+        Encodes the input array; requires a trained model
         :param input_: singular or time series input
         :return: singular or time series code
         """
@@ -50,6 +49,11 @@ class Model:
         return self.encoded
 
     def decode(self, input_: np.array) -> np.array:
+        """
+        Returns the decoded input code
+        :param input_: singular or time series code
+        :return: result of decoding operations, singular or time series depending on input
+        """
         if input_ is not self.encoded:
             self.code_artificial = True
         if not self.trained:
@@ -73,22 +77,23 @@ class Model:
     def fit_model(self, train_array: np.array, val_array: np.array or None = None) -> None:  # skeleton
         """
         Fits the model on the training data: skeleton, overwrite
-        :param train_array: time series
-        :param val_array: optional, time series
+        val_array is optional; required by Keras for training
+        :param train_array: time series training data
+        :param val_array: optional, time series validation data
         """
         raise NotImplementedError("Skeleton not filled by subclass")
 
-    def get_code(self, input_: np.array) -> np.array: # skeleton
+    def get_code(self, input_: np.array) -> np.array:  # skeleton
         """
-        Passes self.input through the model, returns code
+        Returns the encoded signal given data to encode
         :input_: time series input
         :return: time series code
         """
         raise NotImplementedError("Skeleton not filled by subclass")
 
-    def get_output(self, input_: np.array) -> np.array: # skeleton
+    def get_output(self, input_: np.array) -> np.array:  # skeleton
         """
-        Passes self.code through the model, returns output
+        Returns the decoded data given the encoded signal
         :input_: time series code
         :return: time series output
         """
@@ -100,18 +105,22 @@ class Model:
     def input(self) -> np.array:  # skeleton
         """
         Return the input data
+        :return: input time series
         """
         return self._input
 
     @input.setter
     def input(self, input_: np.array) -> None:
         """
-        Overwrite input
+        Overwrite or set model input layer
+        :param input_: singular or time series input
         """
         if input_ is not None:
             if len(input_.shape) != 4:
                 input_ = np.reshape(input_, (1, *input_.shape))
             self._input = np.copy(input_)
+
+    # TODO: Check compatability with singular inputs (not a priority, but partially implemented)
 
     @property
     def encoded(self) -> np.array:  # skeleton
@@ -121,13 +130,18 @@ class Model:
         return self._encoded
 
     @encoded.setter
-    def encoded(self, input_: np.array):
+    def encoded(self, input_: np.array) -> None:
+        """
+        Sets the encoded attribute to the provided array
+        :param input_: code time series
+        """
         self._encoded = np.copy(input_)
 
     @property
-    def output(self):
+    def output(self) -> np.array:
         """
         Returns the output
+        :return: copy of the stored output
         """
         output = np.copy(self._output)
         if output.shape[0] == 1:
@@ -135,33 +149,39 @@ class Model:
         return output
 
     @output.setter
-    def output(self, input_):
+    def output(self, input_: np.array) -> None:
         """
         Sets the output
+        :param input_: sets the output attribute to the given array
         """
         # if input_.shape[0] == 1:
         #     input_ = input_[0]
         self._output = input_
+
+    # TODO: Add output.getter to return 4D array([singular]) as 3D array(singular)
+
     # END PROPERTIES
 
     # BEGIN GENERAL METHODS
     @staticmethod
-    def data_reading(Re, Nx, Nu):
-        """Function to read the H5 files, can change Re to run for different flows
-            Re- Reynolds Number
-            Nu- Dimension of Velocity Vector
-            Nx- Size of grid
-            Final dimensions of output: [Time (number of frames), Nx, Nx, Nu]"""
+    def data_reading(re, nx, nu):
+        """
+        Function to read the H5 files, can change Re to run for different flows
+        Re- Reynolds Number
+        Nu- Dimension of Velocity Vector
+        Nx- Size of grid
+        Final dimensions of output: [Time (number of frames), Nx, Nx, Nu]
+        """
         # File selection
         # Re= 20.0, 30.0, 40.0, 50.0, 60.0, 100.0, 180.0
         # T has different values depending on Re
-        if Re == 20.0 or Re == 30.0 or Re == 40.0:
+        if re == 20.0 or re == 30.0 or re == 40.0:
             T = 20000
         else:
             T = 2000
 
         dir_curr = os.path.split(__file__)[0]
-        path_rel = ('SampleFlows', f'Kolmogorov_Re{Re}_T{T}_DT01.h5')
+        path_rel = ('SampleFlows', f'Kolmogorov_Re{re}_T{T}_DT01.h5')
 
         path = os.path.join(dir_curr, *path_rel)
 
@@ -169,11 +189,11 @@ class Model:
         hf = h5py.File(path, 'r')
         t = np.array(hf.get('t'))
         # Instantiating the velocities array with zeros
-        u_all = np.zeros((Nx, Nx, len(t), Nu))
+        u_all = np.zeros((nx, nx, len(t), nu))
 
         # Update u_all with data from file
         u_all[:, :, :, 0] = np.array(hf.get('u_refined'))
-        if Nu == 2:
+        if nu == 2:
             u_all[:, :, :, 1] = np.array(hf.get('v_refined'))
 
         # Transpose of u_all in order to make it easier to work with it
@@ -190,21 +210,23 @@ class Model:
         return u_all
 
     @staticmethod
-    def preprocess(u_all=None, Re=40.0, Nx=24, Nu=1, split=False, norm=False):
-        """ Function to scale the data set and split it into train, validation and test sets.
-            nx: Size of the grid side
-            nu: Number of velocity components, 1-> 'x', 2 -> 'x','y'"""
+    def preprocess(u_all=None, re=40.0, nx=24, nu=1, split=False, norm=False):
+        """
+        Function to scale the data set and split it into train, validation and test sets.
+        nx: Size of the grid side
+        nu: Number of velocity components, 1-> 'x', 2 -> 'x','y'
+        """
 
         # Run data reading to avoid errors
         if u_all is None:
-            u_all = Model.data_reading(Re, Nx, Nu)
+            u_all = Model.data_reading(re, nx, nu)
 
         # Normalize data
         if norm:
             u_min = np.amin(u_all[:, :, :, 0])
             u_max = np.amax(u_all[:, :, :, 0])
             u_all[:, :, :, 0] = (u_all[:, :, :, 0] - u_min) / (u_max - u_min)
-            if Nu == 2:
+            if nu == 2:
                 # Code to run if using velocities in 'y' direction as well
                 v_min = np.amin(u_all[:, :, :, 1])
                 v_max = np.amax(u_all[:, :, :, 1])
@@ -270,18 +292,22 @@ class Model:
             print(f'Model {n}')
             n += 1
 
-    def verification(self, data, print_res=True):
-        ''' Function to check conservation of mass
-            data: time series 2D velocity grid
-            output: max, min, and avg of divergence of velocity with control volume as entire grid'''
+    @staticmethod
+    def verification(data: np.array, print_res: bool = True) -> tuple:
+        """
+        Function to check conservation of mass
+        :param data: time series 2D velocity grid
+        :param print_res: bool; true to print results
+        :return: max, min, and avg of divergence of velocity with control volume as entire grid
+        """
 
         # List to store values of divergence
         all_conv = []
 
-        for time in range(np.shape(data)[0]):
+        for t in range(np.shape(data)[0]):
 
             # Isolate time components
-            grid = data[time, :, :, :]
+            grid = data[t, :, :, :]
 
             # Isolate velocity components
             u_vel = grid[:, :, 0]
