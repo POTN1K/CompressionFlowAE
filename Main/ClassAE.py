@@ -15,7 +15,7 @@ from keras.optimizers import Adam
 from keras.models import load_model
 # Local codes
 from Main import Model
-from ExperimentsAE.CustomLibraries import MixedPooling2D
+from .ExperimentsAE.CustomLibraries import MixedPooling2D
 
 # Uncomment if keras does not run
 # import os
@@ -25,7 +25,7 @@ from ExperimentsAE.CustomLibraries import MixedPooling2D
 # Autoencoder Model Class
 class AE(Model):
     def __init__(self, dimensions=(8, 4, 2, 1), activation_function='tanh', l_rate=0.01, epochs=10, batch=200,
-                 early_stopping=5, pooling='max', re=40.0, nu=1, nx=24, loss='mse'):
+                 early_stopping=5, pooling='max', re=40.0, nu=1, nx=24, loss='mse', train_array=None, val_array=None):
         """ Ambiguous Inputs-
             dimensions: Number of features per convolution layer, dimensions[-1] is dimension of latent space.
             pooling: 'max' or 'ave', function to combine pixels.
@@ -55,8 +55,8 @@ class AE(Model):
         self.hist = None
         self.y_pred = None
 
-        super().__init__(None)
         self.network()
+        super().__init__(train_array=train_array, val_array=val_array)
 
     # SKELETON FUNCTIONS: FILL (OVERWRITE) IN SUBCLASS
     def fit_model(self, train_array: np.array, val_array: np.array or None = None) -> None:  # skeleton
