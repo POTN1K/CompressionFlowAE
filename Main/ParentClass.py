@@ -6,6 +6,7 @@ from csv import DictWriter
 from sklearn.model_selection import ParameterGrid
 from sklearn.metrics import mean_squared_error  # pip3.10 install scikit-learn NOT sklearn
 from sklearn.utils import shuffle
+from datetime import datetime
 import os
 
 
@@ -210,7 +211,7 @@ class Model:
         return u_all
 
     @staticmethod
-    def preprocess(u_all=None, re=40.0, nx=24, nu=1, split=False, norm=False):
+    def preprocess(u_all=None, re=40.0, nx=24, nu=1, split=True, norm=True):
         """
         Function to scale the data set and split it into train, validation and test sets.
         nx: Size of the grid side
@@ -272,7 +273,7 @@ class Model:
             start_time = time.time()  # get start time
 
             # initialise model with parameters, specify training set for hot start
-            model_ = model(**params, input_=u_train)
+            model_ = model(**params, train_array=u_train, val_array=u_val)
             model_.passthrough(u_val)  # sets input and output
 
             end_time = time.time()  # get end time
@@ -286,7 +287,9 @@ class Model:
             write.update(params)
 
             columns = write.keys()
-            with open(f'TuningDivision/tuning{time.time()}.csv', 'a', newline='') as f:
+            dir_ = os.path.join(os.path.split(__file__)[0], 'TuningDivision')
+            with open(os.path.join(dir_, f'{model_.__class__.__name__} at {str(datetime.now())[:-7]}.csv')
+                      , 'a', newline='') as f:
                 writer = DictWriter(f, columns)
                 writer.writerow(write)
             print(f'Model {n}')
