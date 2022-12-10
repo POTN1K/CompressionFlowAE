@@ -1,5 +1,5 @@
 # Libraries
-from ClassAE import AE
+from Main import AE
 import time
 from csv import DictWriter
 import numpy as np
@@ -43,7 +43,7 @@ for params in param_grid:
 
     print(f'Model {n}')
     n += 1
-    with open('TuningDivision/tuning.csv', 'a', newline='') as f:
+    with open('tuning.csv', 'a', newline='') as f:
         writer = DictWriter(f, columns)
         writer.writerow(values)
 

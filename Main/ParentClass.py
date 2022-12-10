@@ -5,6 +5,7 @@ import time
 from csv import DictWriter
 from sklearn.model_selection import ParameterGrid
 from sklearn.metrics import mean_squared_error  # pip3.10 install scikit-learn NOT sklearn
+from sklearn.utils import shuffle
 import os
 
 # TODO: finalise docstrings
@@ -13,10 +14,11 @@ import os
 class Model:
     def __init__(self, train_array: np.array or None = None, val_array: np.array or None = None) -> None:
         self._input = None  # tracks the input array
-        self.trained = False           # tracks if the model has been trained
-        self._encoded = None           # tracks the encoded array
-        self.code_artificial = False   # tracks if the code follows from an input
-        self._output = None            # tracks the output array
+        self.trained = False  # tracks if the model has been trained
+        self._encoded = None  # tracks the encoded array
+        self.code_artificial = False  # tracks if the code follows from an input
+        self._output = None  # tracks the output array
+        self.dict_perf = None   # dictionary of performance for model
 
         if train_array is not None:  # Hot start
             self.fit(train_array, val_array)
@@ -144,70 +146,88 @@ class Model:
 
     # BEGIN GENERAL METHODS
     @staticmethod
-    def data_reading(re, nx, nu):
+    def data_reading(Re, Nx, Nu):
         """Function to read the H5 files, can change Re to run for different flows
             Re- Reynolds Number
             Nu- Dimension of Velocity Vector
-            Nx- Size of grid"""
-        # FILE SELECTION
-        # choose between Re= 20.0, 30.0, 40.0, 50.0, 60.0, 100.0, 180.0
-
+            Nx- Size of grid
+            Final dimensions of output: [Time (number of frames), Nx, Nx, Nu]"""
+        # File selection
+        # Re= 20.0, 30.0, 40.0, 50.0, 60.0, 100.0, 180.0
         # T has different values depending on Re
-        if re == 20.0 or re == 30.0 or re == 40.0:
+        if Re == 20.0 or Re == 30.0 or Re == 40.0:
             T = 20000
         else:
             T = 2000
 
         dir_curr = os.path.split(__file__)[0]
-        path_rel = ('SampleFlows', f'Kolmogorov_Re{re}_T{T}_DT01.h5')
+        path_rel = ('SampleFlows', f'Kolmogorov_Re{Re}_T{T}_DT01.h5')
 
         path = os.path.join(dir_curr, *path_rel)
-        print(path)
 
         # READ DATASET
         hf = h5py.File(path, 'r')
         t = np.array(hf.get('t'))
-        u_all = np.zeros((nx, nx, len(t), nu))
-        u_all[:, :, :, 0] = np.array(hf.get('u_refined'))  # Update u_all with data from file
-        if nu == 2:
+        # Instantiating the velocities array with zeros
+        u_all = np.zeros((Nx, Nx, len(t), Nu))
+
+        # Update u_all with data from file
+        u_all[:, :, :, 0] = np.array(hf.get('u_refined'))
+        if Nu == 2:
             u_all[:, :, :, 1] = np.array(hf.get('v_refined'))
-        u_all = np.transpose(u_all, [2, 0, 1, 3])  # Time, Nx, Nx, Nu
+
+        # Transpose of u_all in order to make it easier to work with it
+        # New dimensions of u_all = [Time, Nx, Nx, Nu]
+        #       - Time: number of frames we have in our data set, which are always related to a different time moment
+        #       - Nx: size of the frame in the horizontal component
+        #       - Nx: size of the frame in the vertical component
+        #       - Nu: dimension of the velocity vector
+        u_all = np.transpose(u_all, [2, 0, 1, 3])
         hf.close()
+
+        # Shuffle of the data in order to make sure that there is heterogeneity throughout the test set
+        u_all = shuffle(u_all, random_state=42)
         return u_all
 
     @staticmethod
-    def preprocess(u_all=None, re=20.0, nx=24, nu=1, split=True, norm=True):
+    def preprocess(u_all=None, Re=40.0, Nx=24, Nu=1):
+        """ Function to scale the data set and split it into train, validation and test sets.
+            nx: Size of the grid side
+            nu: Number of velocity components, 1-> 'x', 2 -> 'x','y'"""
+
+        # Run data reading to avoid errors
         if u_all is None:
-            u_all = Model.data_reading(re, nx, nu)
+            u_all = Model.data_reading(Re, Nx, Nu)
 
-        # normalize data
-        if norm:
-            u_min = np.amin(u_all[:, :, :, 0])
-            u_max = np.amax(u_all[:, :, :, 0])
-            u_all[:, :, :, 0] = (u_all[:, :, :, 0] - u_min) / (u_max - u_min)
-            if nu == 2:
-                v_min = np.amin(u_all[:, :, :, 1])
-                v_max = np.amax(u_all[:, :, :, 1])
-                u_all[:, :, :, 1] = (u_all[:, :, :, 1] - v_min) / (v_max - v_min)
+        # Normalize data
+        u_min = np.amin(u_all[:, :, :, 0])
+        u_max = np.amax(u_all[:, :, :, 0])
+        u_all[:, :, :, 0] = (u_all[:, :, :, 0] - u_min) / (u_max - u_min)
+        if Nu == 2:
+            # Code to run if using velocities in 'y' direction as well
+            v_min = np.amin(u_all[:, :, :, 1])
+            v_max = np.amax(u_all[:, :, :, 1])
+            u_all[:, :, :, 1] = (u_all[:, :, :, 1] - v_min) / (v_max - v_min)
 
-        if split:
-            val_ratio = int(np.round(0.75 * len(u_all)))  # Amount of data used for validation
-            test_ratio = int(np.round(0.95 * len(u_all)))  # Amount of data used for testing
+        # Division of training, validation and testing data
+        val_ratio = int(np.round(0.75 * len(u_all)))  # Amount of data used for validation
+        test_ratio = int(np.round(0.95 * len(u_all)))  # Amount of data used for testing
 
-            u_train = u_all[:val_ratio, :, :, :].astype('float32')
-            u_val = u_all[val_ratio:test_ratio, :, :, :].astype('float32')
-            u_test = u_all[test_ratio:, :, :, :].astype('float32')
-            return u_train, u_val, u_test
-        return u_all
+        u_train = u_all[:val_ratio, :, :, :].astype('float32')
+        u_val = u_all[val_ratio:test_ratio, :, :, :].astype('float32')
+        u_test = u_all[test_ratio:, :, :, :].astype('float32')
+        return u_train, u_val, u_test
 
-    def loss(self) -> float:
+    def performance(self) -> dict[str, float]:
         """
         Checks reconstruction loss
-        :return: accuracy metric
+        :return: Dictionary
         """
         # TODO: define proper performance measure
-        mse = mean_squared_error(self.input, self.output)
-        return mse
+        d = dict()
+        d['mse'] = mean_squared_error(self.input, self.output)
+        self.dict_perf = d
+        return d
 
     @staticmethod
     def train_test_batch(param_ranges: dict, model) -> None:
@@ -231,14 +251,12 @@ class Model:
             model_.passthrough(u_val)  # sets input and output
 
             end_time = time.time()  # get end time
-
+            t_time = end_time-start_time
             # compute loss
-            loss = model_.loss()
+            perf = model_.performance()
 
             # write to file
-            write = {'Running Time': end_time-start_time,
-                     'Loss': loss
-                     # , 'Compression': params['dimensions'][-1] / (24 * 24) # this will not generalise well
+            write = {'Accuracy': perf['abs_percentage'], 'Running Time': t_time, 'Loss': perf['mse']
                      }
             write.update(params)
 
@@ -248,4 +266,39 @@ class Model:
                 writer.writerow(write)
             print(f'Model {n}')
             n += 1
+
+    def verification(self, data, print_res=True):
+        ''' Function to check conservation of mass
+            data: time series 2D velocity grid
+            output: max, min, and avg of divergence of velocity with control volume as entire grid'''
+
+        # List to store values of divergence
+        all_conv = []
+
+        for time in range(np.shape(data)[0]):
+
+            # Isolate time components
+            grid = data[time, :, :, :]
+
+            # Isolate velocity components
+            u_vel = grid[:, :, 0]
+            v_vel = grid[:, :, 1]
+
+            # Partial derivatives (du/dx, dv/dy) step size set to 0.262 based on grid size
+            u_vel_grad = np.gradient(u_vel, 0.262, edge_order=2, axis=1)
+            v_vel_grad = np.gradient(v_vel, 0.262, edge_order=2, axis=0)
+
+            divergence = u_vel_grad + v_vel_grad
+
+            all_conv.append(np.sum(divergence))
+
+        max_div = max(all_conv)
+        min_div = min(all_conv)
+        avg_div = sum(all_conv) / len(all_conv)
+        if print_res:
+            print(f'max: {max_div}')
+            print(f'min: {min_div}')
+            print(f'avg: {avg_div}')
+
+        return max_div, min_div, avg_div
     # END GENERAL METHODS
