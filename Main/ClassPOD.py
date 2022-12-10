@@ -1,5 +1,5 @@
 import numpy as np
-from numpy import linalg as LA
+from numpy import linalg as la
 from Main import Model
 import matplotlib.pyplot as plt
 
@@ -35,7 +35,7 @@ class POD(Model):
         """
         self.compute(train_array)
 
-    def get_code(self, input_: np.array) -> np.array: # skeleton
+    def get_code(self, input_: np.array) -> np.array:  # skeleton
         """
         Passes self.input through the model, returns code
         :input_: time series input
@@ -67,7 +67,7 @@ class POD(Model):
         C = np.matmul(np.transpose(UU), UU) / (m - 1)
 
         # solve eigenvalue problem
-        eig, phi = LA.eigh(C)
+        eig, phi = la.eigh(C)
 
         # Sort Eigenvalues and vectors
         idx = eig.argsort()[::-1]
@@ -85,7 +85,6 @@ class POD(Model):
         self.a = np.copy(a)
         self.mode_energy = mode_energy
         self.dim = dim
-
 
     def reconstruct(self, n_modes: int or None = None) -> np.array:
         """
@@ -126,15 +125,14 @@ class POD(Model):
 
 
 if __name__ == '__main__':
-    u_all_2 = POD.preprocess(nu=2, split=False)
+    u_all_2 = POD.preprocess(Nu=2, split=False)
     Model2 = POD(u_all_2, n=128)
     out2 = Model2.passthrough(Model2.input)
 
-    slice = out2[0]
+    slice_ = out2[0]
     fig = plt.figure()
     ax = plt.subplot(121)
-    ax.contourf(slice[:, :, 0])
+    ax.contourf(slice_[:, :, 0])
     ax = plt.subplot(122)
-    ax.contourf(slice[:, :, 1])
+    ax.contourf(slice_[:, :, 1])
     plt.show()
-

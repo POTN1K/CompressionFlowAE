@@ -190,7 +190,7 @@ class Model:
         return u_all
 
     @staticmethod
-    def preprocess(u_all=None, Re=40.0, Nx=24, Nu=1):
+    def preprocess(u_all=None, Re=40.0, Nx=24, Nu=1, split=False, norm=False):
         """ Function to scale the data set and split it into train, validation and test sets.
             nx: Size of the grid side
             nu: Number of velocity components, 1-> 'x', 2 -> 'x','y'"""
@@ -200,23 +200,26 @@ class Model:
             u_all = Model.data_reading(Re, Nx, Nu)
 
         # Normalize data
-        u_min = np.amin(u_all[:, :, :, 0])
-        u_max = np.amax(u_all[:, :, :, 0])
-        u_all[:, :, :, 0] = (u_all[:, :, :, 0] - u_min) / (u_max - u_min)
-        if Nu == 2:
-            # Code to run if using velocities in 'y' direction as well
-            v_min = np.amin(u_all[:, :, :, 1])
-            v_max = np.amax(u_all[:, :, :, 1])
-            u_all[:, :, :, 1] = (u_all[:, :, :, 1] - v_min) / (v_max - v_min)
+        if norm:
+            u_min = np.amin(u_all[:, :, :, 0])
+            u_max = np.amax(u_all[:, :, :, 0])
+            u_all[:, :, :, 0] = (u_all[:, :, :, 0] - u_min) / (u_max - u_min)
+            if Nu == 2:
+                # Code to run if using velocities in 'y' direction as well
+                v_min = np.amin(u_all[:, :, :, 1])
+                v_max = np.amax(u_all[:, :, :, 1])
+                u_all[:, :, :, 1] = (u_all[:, :, :, 1] - v_min) / (v_max - v_min)
 
         # Division of training, validation and testing data
-        val_ratio = int(np.round(0.75 * len(u_all)))  # Amount of data used for validation
-        test_ratio = int(np.round(0.95 * len(u_all)))  # Amount of data used for testing
+        if split:
+            val_ratio = int(np.round(0.75 * len(u_all)))  # Amount of data used for validation
+            test_ratio = int(np.round(0.95 * len(u_all)))  # Amount of data used for testing
 
-        u_train = u_all[:val_ratio, :, :, :].astype('float32')
-        u_val = u_all[val_ratio:test_ratio, :, :, :].astype('float32')
-        u_test = u_all[test_ratio:, :, :, :].astype('float32')
-        return u_train, u_val, u_test
+            u_train = u_all[:val_ratio, :, :, :].astype('float32')
+            u_val = u_all[val_ratio:test_ratio, :, :, :].astype('float32')
+            u_test = u_all[test_ratio:, :, :, :].astype('float32')
+            return u_train, u_val, u_test
+        return u_all
 
     def performance(self) -> dict[str, float]:
         """
