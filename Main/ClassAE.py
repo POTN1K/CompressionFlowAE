@@ -21,15 +21,16 @@ from ExperimentsAE.CustomLibraries import MixedPooling2D
 # import os
 # os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
+
 # Autoencoder Model Class
 class AE(Model):
-    def __init__(self, dimensions=[8, 4, 2, 1], activation_function='tanh', l_rate=0.01, epochs=10, batch=200,
-                 early_stopping=5, pooling='max', re=40.0, Nu=1, Nx=24, loss='mse'):
+    def __init__(self, dimensions=(8, 4, 2, 1), activation_function='tanh', l_rate=0.01, epochs=10, batch=200,
+                 early_stopping=5, pooling='max', re=40.0, nu=1, nx=24, loss='mse'):
         """ Ambiguous Inputs-
             dimensions: Number of features per convolution layer, dimensions[-1] is dimension of latent space.
             pooling: 'max' or 'ave', function to combine pixels.
-            Nu: Number of velocity components, 1 -> 'x', 2 -> 'x','y'.
-            Nx: Size of grid side."""
+            nu: Number of velocity components, 1 -> 'x', 2 -> 'x','y'.
+            nx: Size of grid side."""
         self.dimensions = dimensions
         self.activation_function = activation_function
         self.l_rate = l_rate
@@ -37,8 +38,8 @@ class AE(Model):
         self.batch = batch
         self.early_stopping = early_stopping
         self.re = re
-        self.nu = Nu
-        self.nx = Nx
+        self.nu = nu
+        self.nx = nx
         self.pooling = pooling
         self.loss = loss
         # Instantiating
@@ -58,40 +59,39 @@ class AE(Model):
         self.network()
 
     # SKELETON FUNCTIONS: FILL (OVERWRITE) IN SUBCLASS
-    def fit_model(self, train, val) -> None:  # skeleton
+    def fit_model(self, train_array: np.array, val_array: np.array or None = None) -> None:  # skeleton
         """
         Fits the model on the training data: skeleton, overwrite
-        :param input_: time series of inputs
+        val_array is optional; required by Keras for training
+        :param train_array: time series training data
+        :param val_array: optional, time series validation data
         """
-        # TODO Fill function
-        self.u_train = train
-        self.u_val = val
+        self.u_train = train_array
+        self.u_val = val_array
         self.training()
 
     def get_code(self, input_: np.array) -> np.array:  # skeleton
         """
-        Passes self.input through the model, returns code
+        Returns the encoded signal given data to encode
         :input_: time series input
         :return: time series code
         """
-        # TODO Fill function
         self.u_test = input_
         return self.encoder.predict(input_)
 
     def get_output(self, input_: np.array) -> np.array:  # skeleton
         """
-        Passes self.code through the model, returns output
+        Returns the decoded data given the encoded signal
         :input_: time series code
         :return: time series output
         """
-        # TODO Fill function
         self.y_pred = self.decoder.predict(input_)
         return self.y_pred
     # END SKELETONS
 
     @property
     def pooling(self):
-        return self._pooling
+        return self.pooling_function
 
     @pooling.setter
     def pooling(self, value):
@@ -177,7 +177,7 @@ class AE(Model):
                                          callbacks=[early_stop_callback])
 
         # Predict model using test data
-        #self.y_pred = self.autoencoder.predict(self.u_test[:, :, :, :], verbose=0)
+        # self.y_pred = self.autoencoder.predict(self.u_test[:, :, :, :], verbose=0)
 
     def visual_analysis(self, n=1, plot_error=False):
         """Function to visualize some samples of predictions in order to visually compare with the test set. Moreover,
@@ -244,9 +244,9 @@ def create_run_model():
     """General function to run one model"""
 
     n = 2
-    model = AE(l_rate=0.001, epochs=30, batch=10, early_stopping=10, dimensions=[32, 16, 8, 4], Nu=n)
+    model = AE(l_rate=0.001, epochs=30, batch=10, early_stopping=10, dimensions=[32, 16, 8, 4], nu=n)
 
-    u_train, u_val, u_test = AE.preprocess(Nu=n)
+    u_train, u_val, u_test = AE.preprocess(nu=n)
     model.fit(u_train, u_val)
     model.passthrough(u_test)
     model.visual_analysis()
@@ -265,6 +265,7 @@ def create_run_model():
 
 def run_trained_model():
     # Load Models
+    # TODO: Un-hard code
     autoencoder = load_model("C:\\Users\\ricke\\Documents\\Code\\GitHub\\CompressionFlowAE\\Main\\KerasModels\\autoencoder_2D.h5")
     encoder = load_model(
         "C:\\Users\\ricke\\Documents\\Code\\GitHub\\CompressionFlowAE\\Main\\KerasModels\\encoder_2D.h5")
@@ -278,7 +279,7 @@ def run_trained_model():
     model.trained = True
 
     # Predict
-    u_train, u_val, u_test = AE.preprocess(Nu=2)
+    u_train, u_val, u_test = AE.preprocess(nu=2)
     model.passthrough(u_test)
     model.verification(u_test)
     model.verification(model.y_pred)
@@ -287,6 +288,7 @@ def run_trained_model():
     perf = model.performance()
     print(f'Absolute %: {round(perf["abs_percentage"], 3)} +- {round(perf["abs_std"], 3)}')
     print(f'Squared %: {round(perf["sqr_percentage"], 3)} +- {round(perf["sqr_std"], 3)}')
+
 
 if __name__ == '__main__':
     run_trained_model()
