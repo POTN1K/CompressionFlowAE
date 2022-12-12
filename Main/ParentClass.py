@@ -271,6 +271,7 @@ class Model:
         n = 0
         dir_ = os.path.join(os.path.split(__file__)[0], 'TuningDivision')
         _name = f'_at_{datetime.now().strftime("%m.%d.%Y_%Hh%Mm")}.csv'
+        flag = False
         for params in param_grid:
             start_time = time.time()  # get start time
 
@@ -284,7 +285,7 @@ class Model:
             perf = model_.performance()
 
             # write to file
-            write = {'Accuracy': perf['abs_percentage'], 'Running Time': t_time, 'Loss': perf['mse']
+            write = {'Accuracy': 1-perf['mse'], 'Running Time': t_time, 'Loss': perf['mse']
                      }
             write.update(params)
 
@@ -292,7 +293,15 @@ class Model:
             with open(os.path.join(dir_, f'{model_.__class__.__name__}{_name}')
                       , 'a', newline='') as f:
                 writer = DictWriter(f, columns)
-                writer.writerow(write)
+
+                if not flag:  # write column names, its ugly im sorry
+                    labels = dict(write)
+                    for key in labels.keys():
+                        labels[key] = key
+                    writer.writerow(labels)
+                    flag = True
+
+                writer.writerow(write)  # write results
             print(f'Model {n}')
             n += 1
 
