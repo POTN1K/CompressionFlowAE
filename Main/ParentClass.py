@@ -270,7 +270,7 @@ class Model:
         # loop over models
         n = 0
         dir_ = os.path.join(os.path.split(__file__)[0], 'TuningDivision')
-        _name = f'_at_{datetime.now().strftime("%m/%d/%Y_%Hh%Mm")}.csv'
+        _name = f'_at_{datetime.now().strftime("%m.%d.%Y_%Hh%Mm")}.csv'
         for params in param_grid:
             start_time = time.time()  # get start time
 
