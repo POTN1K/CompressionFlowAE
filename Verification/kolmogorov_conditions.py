@@ -1,7 +1,7 @@
 import numpy as np
-import sys
-sys.path.append('..')
-from SampleFlows.ParentClass import Model
+#import sys
+#sys.path.append('..')
+#from SampleFlows.ParentClass import Model
 
 #data = Model.data_reading(re=40, nx=24, nu=2)
 
@@ -58,3 +58,7 @@ def navier_stokes(_3x3x2, f):
     kinetic_viscosity_y = (convection(_3x3x2)[1] - internal_source(_3x3x2)[1] - f[1]) / diffusion_over_kinetic_viscosity(_3x3x2)[1]
 
     return abs(kinetic_viscosity_x - kinetic_viscosity_y)
+
+nxnx2 = np.array([[[1,2],[3,4],[5,6]],[[7,8],[9,8],[7,6]],[[5,4],[3,2],[1,2]]])
+
+#print(np.tensordot(nxnx2, nxnx2, 2))

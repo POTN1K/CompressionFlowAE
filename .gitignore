@@ -1,6 +1,7 @@
 .idea
 /checkpoint
 /AI
+/local_test.py
 /checkpoint.data-00000-of-00001
 /checkpoint.index
 /.ipynb_checkpoints/Notebook-checkpoint.ipynb
