@@ -263,7 +263,7 @@ class Model:
         :param model: subclass model
         :return: None; results written to timestamped file
         """
-        u_train, u_val, u_test = Model.preprocess()  # get split data
+        u_train, u_val, u_test = Model.preprocess(nu=2)  # get split data
 
         param_grid = ParameterGrid(param_ranges)  # Flattened grid of all combinations
 

@@ -13,9 +13,11 @@ import matplotlib.pyplot as plt
 from keras.layers import Input, Conv2D, MaxPool2D, AveragePooling2D, UpSampling2D, Conv2DTranspose
 from keras.optimizers import Adam
 from keras.models import load_model
+import os
 # Local codes
 from Main import Model
-from .ExperimentsAE.CustomLibraries import MixedPooling2D
+# from .ExperimentsAE.CustomLibraries import MixedPooling2D
+
 
 # Uncomment if keras does not run
 # import os
@@ -24,8 +26,8 @@ from .ExperimentsAE.CustomLibraries import MixedPooling2D
 
 # Autoencoder Model Class
 class AE(Model):
-    def __init__(self, dimensions=(8, 4, 2, 1), activation_function='tanh', l_rate=0.01, epochs=10, batch=200,
-                 early_stopping=5, pooling='max', re=40.0, nu=1, nx=24, loss='mse', train_array=None, val_array=None):
+    def __init__(self, dimensions=[8, 4, 2, 1], activation_function='tanh', l_rate=0.01, epochs=10, batch=200,
+                 early_stopping=5, pooling='max', re=40.0, nu=2, nx=24, loss='mse', train_array=None, val_array=None):
         """ Ambiguous Inputs-
             dimensions: Number of features per convolution layer, dimensions[-1] is dimension of latent space.
             pooling: 'max' or 'ave', function to combine pixels.
@@ -58,6 +60,23 @@ class AE(Model):
         self.network()
         super().__init__(train_array=train_array, val_array=val_array)
 
+    @staticmethod
+    def create_trained():
+        # Load Models
+        dir_curr = os.path.split(__file__)[0]
+        model = AE()
+        # Autoencoder
+        auto_rel = ('KerasModels', f'autoencoder_2D.h5')
+        model.autoencoder = load_model(os.path.join(dir_curr, *auto_rel))
+        # Encoder
+        enco_rel = ('KerasModels', f'encoder_2D.h5')
+        model.encoder = load_model(os.path.join(dir_curr, *enco_rel))
+        # Decoder
+        deco_rel = ('KerasModels', f'decoder_2D.h5')
+        model.decoder = load_model(os.path.join(dir_curr, *deco_rel))
+        model.trained = True
+        return model
+
     # SKELETON FUNCTIONS: FILL (OVERWRITE) IN SUBCLASS
     def fit_model(self, train_array: np.array, val_array: np.array or None = None) -> None:  # skeleton
         """
@@ -87,6 +106,7 @@ class AE(Model):
         """
         self.y_pred = self.decoder.predict(input_)
         return self.y_pred
+
     # END SKELETONS
 
     @property
@@ -240,14 +260,16 @@ class AE(Model):
         return d
 
 
-def create_run_model():
+def run_model():
     """General function to run one model"""
 
     n = 2
-    model = AE(l_rate=0.001, epochs=30, batch=10, early_stopping=10, dimensions=[32, 16, 8, 4], nu=n)
-
     u_train, u_val, u_test = AE.preprocess(nu=n)
-    model.fit(u_train, u_val)
+
+    model = AE.create_trained()
+    # model = AE(l_rate=0.0005, epochs=500, batch=10, early_stopping=10, dimensions=[32, 16, 8, 4], nu=n)
+    # model.fit(u_train, u_val)
+
     model.passthrough(u_test)
     model.visual_analysis()
     perf = model.performance()
@@ -263,32 +285,5 @@ def create_run_model():
     # model.decoder.save('decoder_2D.h5')
 
 
-def run_trained_model():
-    # Load Models
-    # TODO: Un-hard code
-    autoencoder = load_model("C:\\Users\\ricke\\Documents\\Code\\GitHub\\CompressionFlowAE\\Main\\KerasModels\\autoencoder_2D.h5")
-    encoder = load_model(
-        "C:\\Users\\ricke\\Documents\\Code\\GitHub\\CompressionFlowAE\\Main\\KerasModels\\encoder_2D.h5")
-    decoder = load_model(
-        "C:\\Users\\ricke\\Documents\\Code\\GitHub\\CompressionFlowAE\\Main\\KerasModels\\decoder_2D.h5")
-    # Save to object
-    model = AE()
-    model.autoencoder = autoencoder
-    model.encoder = encoder
-    model.decoder = decoder
-    model.trained = True
-
-    # Predict
-    u_train, u_val, u_test = AE.preprocess(nu=2)
-    model.passthrough(u_test)
-    model.verification(u_test)
-    model.verification(model.y_pred)
-
-    model.visual_analysis(3)
-    perf = model.performance()
-    print(f'Absolute %: {round(perf["abs_percentage"], 3)} +- {round(perf["abs_std"], 3)}')
-    print(f'Squared %: {round(perf["sqr_percentage"], 3)} +- {round(perf["sqr_std"], 3)}')
-
-
 if __name__ == '__main__':
-    run_trained_model()
+    run_model()
