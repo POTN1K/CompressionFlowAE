@@ -16,7 +16,7 @@ from keras.models import load_model
 import os
 # Local codes
 from Main import Model
-from ExperimentsAE.CustomLibraries import MixedPooling2D
+# from .ExperimentsAE.CustomLibraries import MixedPooling2D
 
 
 # Uncomment if keras does not run
@@ -264,11 +264,12 @@ def run_model():
     """General function to run one model"""
 
     n = 2
+    u_train, u_val, u_test = AE.preprocess(nu=n)
+
     model = AE.create_trained()
     # model = AE(l_rate=0.0005, epochs=500, batch=10, early_stopping=10, dimensions=[32, 16, 8, 4], nu=n)
     # model.fit(u_train, u_val)
 
-    u_train, u_val, u_test = AE.preprocess(nu=n)
     model.passthrough(u_test)
     model.visual_analysis()
     perf = model.performance()
