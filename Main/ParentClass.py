@@ -269,6 +269,8 @@ class Model:
 
         # loop over models
         n = 0
+        dir_ = os.path.join(os.path.split(__file__)[0], 'TuningDivision')
+        _name = f'_at_{datetime.now().strftime("%m/%d/%Y_%Hh%Mm")}.csv'
         for params in param_grid:
             start_time = time.time()  # get start time
 
@@ -287,8 +289,7 @@ class Model:
             write.update(params)
 
             columns = write.keys()
-            dir_ = os.path.join(os.path.split(__file__)[0], 'TuningDivision')
-            with open(os.path.join(dir_, f'{model_.__class__.__name__} at {str(datetime.now())[:-7]}.csv')
+            with open(os.path.join(dir_, f'{model_.__class__.__name__}{_name}')
                       , 'a', newline='') as f:
                 writer = DictWriter(f, columns)
                 writer.writerow(write)

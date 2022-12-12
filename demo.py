@@ -22,7 +22,7 @@ def run_tune():
 
 
 if __name__ == '__main__':
-    run_model_AE()
+    run_tune()
 
 #
 # import os
