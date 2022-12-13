@@ -147,8 +147,8 @@ class AE(Model):
 
         # Predict model using test data
         self.y_pred = self.autoencoder.predict(self.u_test[:, :, :, :], verbose=0)
-        np.save('predictions_2D.npy', self.y_pred)
-        np.save('original_2D.npy', self.u_test)
+        # np.save('predictions_2D.npy', self.y_pred)
+        # np.save('original_2D.npy', self.u_test)
 
     def visual_analysis(self, n_images=1):
         """Function to visualize some samples of predictions in order to visually compare with the test set. Moreover,
@@ -210,8 +210,8 @@ class AE(Model):
 def run_model():
     """General function to run one model"""
 
-    nu = 2
-    model = AE(l_rate=0.0005, epochs=200, batch=10, early_stopping=20, dimensions=[64, 32, 16, 8], Nu=nu)
+    nu = 1
+    model = AE(l_rate=0.0005, epochs=200, batch=10, early_stopping=20, dimensions=[64,32,16,8], Nu=nu)
     model.u_train, model.u_val, model.u_test = AE.preprocess(Nu=nu)
     model.network()
     model.creator()
@@ -222,9 +222,9 @@ def run_model():
     print(f'Absolute %: {round(model.abs_percentage, 3)} +- {round(model.abs_std, 3)}')
     print(f'Squared %: {round(model.sqr_percentage, 3)} +- {round(model.sqr_std, 3)}')
 
-    model.autoencoder.save('autoencoder_2D.h5')
-    model.encoder.save('encoder_2D.h5')
-    model.decoder.save('decoder_2D.h5')
+    # model.autoencoder.save('autoencoder_2D.h5')
+    # model.encoder.save('encoder_2D.h5')
+    # model.decoder.save('decoder_2D.h5')
 
 
 if __name__ == '__main__':

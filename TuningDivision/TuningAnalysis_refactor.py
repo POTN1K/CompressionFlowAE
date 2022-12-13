@@ -11,17 +11,18 @@ from Models import ClassAE
 
 
 # Ranges for the hyperparameters that have to be tuned
-param_ranges_dict = {'l_rate': [0.01, 0.001],
-                     'epochs': [10, 50, 100],
-                     'batch': [1000, 100, 10],
-                     'early_stopping': [5, 10, 20],
-                     'dimensions': [[8, 4, 2, 1], [16, 8, 4, 2], [24, 12, 6, 3]]}
+param_ranges_dict = {'l_rate': [0.0005, 0.0001, 0.00005],
+                     'epochs': [500],
+                     'batch': [10],
+                     'early_stopping': [10],
+                     'dimensions': [[256, 128, 64, 32]],
+                     'Nu': [2]}
 
 # Flattened grid of all combinations of hyperparameters
 param_grid = ParameterGrid(param_ranges_dict)
 
 # Data reading and preprocess before starting the tuning to save computational time
-u_train, u_val, u_test = ClassAE.AE.preprocess()
+u_train, u_val, u_test = ClassAE.AE.preprocess(Nu=2)
 
 
 n = 0
@@ -43,7 +44,7 @@ for params in param_grid:
     #   -'Running Time' and 'Loss': important for accuracy analysis
     #   - hyperparameters: important to replicate the most optimal models
 
-    values = {'Running Time': t_time, 'Loss': myModel.mse
+    values = {'Accuracy': myModel.abs_percentage, 'Running Time': t_time, 'Loss': myModel.mse
               # , 'Compression': params['dimensions'][-1] / (24 * 24) # this will not generalise well
               }
     values.update(params)
