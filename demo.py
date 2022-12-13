@@ -12,11 +12,12 @@ def run_model_AE():
 
 
 def run_tune():
-    param_ranges_dict = {'l_rate': [0.01],
-                         'epochs': [10],
-                         'batch': [1000],
-                         'early_stopping': [5],
-                         'dimensions': [[16, 8, 4, 2], [24, 12, 6, 3]]}
+    param_ranges_dict = {'l_rate': [0.0005],
+                         'epochs': [500],
+                         'batch': [10],
+                         'early_stopping': [10],
+                         'dimensions': [[24, 12, 6, 3], [32, 16, 8, 4], [40, 20, 10, 5], [48, 24, 12, 6],
+                                        [56, 28, 14, 7]]}
 
     Model.train_test_batch(param_ranges_dict, AE)
 

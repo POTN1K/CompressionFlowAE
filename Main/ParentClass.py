@@ -285,7 +285,7 @@ class Model:
             perf = model_.performance()
 
             # write to file
-            write = {'Accuracy': perf["abs_percentage"], 'Running Time': t_time, 'Loss': perf["mse"]
+            write = {'Accuracy': perf["mse"], 'Running Time': t_time, 'Loss': perf["mse"]
                      }
             write.update(params)
 
