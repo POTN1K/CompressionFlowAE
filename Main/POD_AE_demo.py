@@ -9,6 +9,13 @@ import os
 # data AE
 data_AE = {
     64: 0.000483625044580549,
+    60: 0.000558981264475733,
+    56: 0.0003469263028819114,
+    52: 0.0007156611536629498,
+    48: 0.00040509356767870486,
+    44: 0.0004914376186206937,
+    40: 0.0005454086931422353,
+    36: 0.0011667398503050208,
     32: 0.000676902,
     30: 0.0006799998227506876,
     28: 0.0007047419785521924,
@@ -66,4 +73,22 @@ if generate:
 
         print(f'{train_size} written to file')
 
-### load
+# load POD data from txt
+train_size = 0.95
+rel_strs = ('TuningDivision', f'POD_{train_size}')
+path = os.path.join(os.getcwd(), *rel_strs)
+x, y = np.loadtxt(path)
+# x = 100 - np.array(x) * 100/(24*24*2)
+plt.scatter(x, y, label='POD', color='r', marker='.')
+
+# get AE data from dict
+lists = sorted(data_AE.items())  # sort
+x, y = zip(*lists)
+# x = 100 - np.array(x) * 100/(24*24*2)
+plt.scatter(x, y, label='AE', color='b', marker ='+')
+
+plt.xlabel('Dimension of Encoded Flow (Orig: 1152)')
+plt.ylabel('MSE')
+plt.title('MSE vs Compression for AE and POD, 95% of data used for training')
+plt.legend()
+plt.show()
