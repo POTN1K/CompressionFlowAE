@@ -1,0 +1,2 @@
+Accuracy,Running Time,Loss,batch,dimensions,early_stopping,epochs,l_rate
+0.0012825157027691603,615.6047945022583,0.0012825157027691603,10,"[256, 128, 64, 32]",10,500,0.0005
