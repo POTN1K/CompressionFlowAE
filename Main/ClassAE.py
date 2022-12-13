@@ -322,7 +322,7 @@ class AE(Model):
 def run_model():
     """General function to run one model"""
 
-    n = 2
+    n = 1
     u_train, u_val, u_test = AE.preprocess(nu=n)
 
     # model = AE.create_trained()
@@ -332,16 +332,16 @@ def run_model():
     model.passthrough(u_test)
     model.visual_analysis()
     perf = model.performance()
-    if n == 2:
-        model.verification(u_test)
-        model.verification(model.y_pred)
+
+    model.verification(u_test)
+    model.verification(model.y_pred)
 
     print(f'Absolute %: {round(perf["abs_percentage"], 3)} +- {round(perf["abs_std"], 3)}')
     print(f'Squared %: {round(perf["sqr_percentage"], 3)} +- {round(perf["sqr_std"], 3)}')
 
-    # model.autoencoder.save('autoencoder_2D.h5')
-    # model.encoder.save('encoder_2D.h5')
-    # model.decoder.save('decoder_2D.h5')
+    model.autoencoder.save('autoencoder_1D.h5')
+    model.encoder.save('encoder_1D.h5')
+    model.decoder.save('decoder_1D.h5')
 
 
 if __name__ == '__main__':
