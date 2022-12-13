@@ -9,6 +9,11 @@ __pycache__/ClassAE.cpython-310.pyc
 __pycache__/ClassAE.cpython-39.pyc
 __pycache__/DataReading.cpython-310.pyc
 *.pyc
+/Main/Models/checkpoint.index
+/Main/Models/checkpoint.data-00000-of-00001
+/Main/Models/checkpoint
+/Main/TuningDivision/tuning.csv
+.gitignore
 /Models/checkpoint.index
 /Models/checkpoint.data-00000-of-00001
 /Models/checkpoint
