@@ -1,6 +1,6 @@
 from Main.ClassAE import AE
 import numpy as np
-
+import matplotlib.pyplot as plt
 n = 2
 # u_train, u_val, u_test = AE.preprocess(nu=n)
 model = AE.create_trained()
