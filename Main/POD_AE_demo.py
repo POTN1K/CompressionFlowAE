@@ -51,11 +51,12 @@ def gen_val_curve(u_train_, u_test_):
     del pod
     return x_, y_
 
+
 # generate
 generate = False
 if generate:
     u_all = POD.preprocess(split=False, norm=False)
-    for train_size in [0.001, 0.01, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]:
+    for train_size in [0.95]:
         u_train, u_test = train_test_split(u_all, train_size=train_size)
         x, y = gen_val_curve(u_train, u_test)
 
@@ -65,7 +66,4 @@ if generate:
 
         print(f'{train_size} written to file')
 
-# cols = ['lightgray', 'darkgray', 'gray', 'black']
-# plt.plot(x, y, label=train_size, color = cols[i])
-# i += 1
-# print(train_size)
+### load
