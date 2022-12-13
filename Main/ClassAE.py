@@ -266,9 +266,9 @@ def run_model():
     n = 2
     u_train, u_val, u_test = AE.preprocess(nu=n)
 
-    model = AE.create_trained()
-    # model = AE(l_rate=0.0005, epochs=500, batch=10, early_stopping=10, dimensions=[32, 16, 8, 4], nu=n)
-    # model.fit(u_train, u_val)
+    # model = AE.create_trained()
+    model = AE(l_rate=0.0005, epochs=500, batch=10, early_stopping=10, dimensions=[256, 128, 64, 32], nu=n)
+    model.fit(u_train, u_val)
 
     model.passthrough(u_test)
     model.visual_analysis()
