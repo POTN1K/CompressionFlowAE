@@ -26,8 +26,8 @@ from Main import Model
 
 # Autoencoder Model Class
 class AE(Model):
-    def __init__(self, dimensions=[8, 4, 2, 1], activation_function='tanh', l_rate=0.01, epochs=10, batch=200,
-                 early_stopping=5, pooling='max', re=40.0, nu=2, nx=24, loss='mse', train_array=None, val_array=None):
+    def __init__(self, dimensions=[32, 16, 8, 4], activation_function='tanh', l_rate=0.0005, epochs=500, batch=10,
+                 early_stopping=10, pooling='max', re=40.0, nu=2, nx=24, loss='mse', train_array=None, val_array=None):
         """ Ambiguous Inputs-
             dimensions: Number of features per convolution layer, dimensions[-1] is dimension of latent space.
             pooling: 'max' or 'ave', function to combine pixels.
@@ -259,6 +259,55 @@ class AE(Model):
         self.dict_perf = d
         return d
 
+    @staticmethod
+    def energy(nxnx2: np.array):
+        '''
+        returns the kinetic grid wise energy of one image without taking mass into account 
+        '''
+        u = nxnx2[0]
+        v = nxnx2[1]
+        return 0.5 * np.add(np.multiply(u, u), np.multiply(v, v))
+
+    @staticmethod
+    def curl(nxnx2: np.array):
+        '''
+        returns the curl over the grid of a picture -> curl is used to calculate lift/drag therefore significant
+        '''
+        u = nxnx2[0]
+        v = nxnx2[1]
+
+        return np.subtract(np.gradient(u, axis = 1), np.gradient(v, axis=0))
+
+    @staticmethod
+    def plot_energy(nxnx2 : np.array):
+        '''
+        plots energy/grid without mass/density
+        '''
+        plt.contourf(AE.energy(nxnx2), min = 0, max = 1.1)
+        plt.show()
+        return None
+
+    
+    @staticmethod
+    def plot_vorticity(nxnx2 : np.array):
+        '''
+        This method returns and shows a plot of the cross product of the velocity components
+        '''
+        plt.contourf(AE.curl(nxnx2),  min = 0, max = 2.2)
+        plt.show()
+        return None
+
+    @staticmethod
+    def plot_velocity(nxnx2: np.array):
+        '''
+        plots vectorfield
+        '''
+        x, y = np.meshgrid(np.linspace(0, 2 * np.pi, 24), np.linspace(0, 2 * np.pi, 24))
+        plt.quiver(x, y, nxnx2[:, :, 0], nxnx2[:, :, 1])
+        plt.show()
+        return None
+
+
 
 def run_model():
     """General function to run one model"""
@@ -267,23 +316,26 @@ def run_model():
     u_train, u_val, u_test = AE.preprocess(nu=n)
 
     model = AE.create_trained()
-    # model = AE(l_rate=0.0005, epochs=500, batch=10, early_stopping=10, dimensions=[32, 16, 8, 4], nu=n)
-    # model.fit(u_train, u_val)
+    #model = AE(l_rate=0.0005, epochs=500, batch=10, early_stopping=10, dimensions=[256, 128, 64, 32], nu=n)
+    #model.fit(u_train, u_val)
 
     model.passthrough(u_test)
-    model.visual_analysis()
+    #model.visual_analysis()
+
     perf = model.performance()
-    if n == 2:
-        model.verification(u_test)
-        model.verification(model.y_pred)
+
+    model.verification(u_test)
+    model.verification(model.y_pred)
 
     print(f'Absolute %: {round(perf["abs_percentage"], 3)} +- {round(perf["abs_std"], 3)}')
     print(f'Squared %: {round(perf["sqr_percentage"], 3)} +- {round(perf["sqr_std"], 3)}')
 
-    # model.autoencoder.save('autoencoder_2D.h5')
-    # model.encoder.save('encoder_2D.h5')
-    # model.decoder.save('decoder_2D.h5')
+    model.autoencoder.save('autoencoder_1D.h5')
+    model.encoder.save('encoder_1D.h5')
+    model.decoder.save('decoder_1D.h5')
 
 
 if __name__ == '__main__':
     run_model()
+
+
