@@ -4,16 +4,13 @@ import matplotlib.pyplot as plt
 import pickle
 import os
 
-n = 2
-u_train, u_val, u_test = AE.preprocess(nu=n)
-model = AE.create_trained()
-
 # Physical conditions of the flow: Check the values for vorticity (curl), energy, cross product, resultant velocity
 # The characteristics of latent space: check changes in latent space due to different Re
 domain = np.arange(-0.5, 0.5, 0.05)
+model = AE.create_trained()
 
 
-def curl_analysis(k, dictionary, j=None):
+def curl_analysis(k, dictionary):
     """
     Function to get curl for different values of a mode
     k: mode to change
@@ -24,14 +21,12 @@ def curl_analysis(k, dictionary, j=None):
     for i in domain:
         latent_space = np.array([[[[0., 0., 0., 0.]]]])
         latent_space[:, :, :, k] = i
-        if j is not None:
-            latent_space[:, :, :, j] = i
         artificial = model.decode(latent_space)
         curls.append((np.average(model.curl(artificial))))
     dictionary[f'curl_{k}'] = curls
 
 
-def energy_analysis(k, dictionary, j=None):
+def energy_analysis(k, dictionary):
     """
         Function to get energy for different values of a mode
         k: mode to change
@@ -42,8 +37,6 @@ def energy_analysis(k, dictionary, j=None):
     for i in domain:
         latent_space = np.array([[[[0., 0., 0., 0.]]]])
         latent_space[:, :, :, k] = i
-        if j is not None:
-            latent_space[:, :, :, j] = i
         artificial = model.decode(latent_space)
         energy.append(np.average(model.energy(artificial)))
 
@@ -133,32 +126,33 @@ def generation_from_original(n_element):
     n_element: One time frame array, shape = [24,24,2]
     :return: None"""
     # One real element
+    u_train, u_val, u_test = AE.preprocess(nu=2)
     test_element = u_test[n_element]
 
     # Plot original data set
-    plt.subplot(121)
-    plt.contourf(test_element[:, :, 0], vmin=0.0, vmax=1.1)
-    plt.subplot(122)
-    plt.contourf(test_element[:, :, 1], vmin=0.0, vmax=1.1)
-    plt.show()
+    AE.u_v_plot(test_element)
 
     latent_space_original = model.encode(test_element)
     print(latent_space_original)
+    print(type(latent_space_original))
 
     reconstructed_original = model.decode(latent_space_original)
     # Plot vorticity
-    model.plot_vorticity(reconstructed_original)
-    # Plot energy
-    model.plot_energy(reconstructed_original)
-    # Plot velocity
-    model.plot_velocity(reconstructed_original)
-    # Plot reconstructed velocities
-    plt.subplot(121)
-    plt.contourf(reconstructed_original[:, :, 0], vmin=0.0, vmax=1.1)
-    plt.subplot(122)
-    plt.contourf(reconstructed_original[:, :, 1], vmin=0.0, vmax=1.1)
-    plt.show()
+    AE.plot_all(reconstructed_original)
+
+
+def generate(latent_space):
+    """
+    Generate artificial flow
+    :param latent_space: [m1,m2,m3,m4], values between -1 to 1
+    :return: artificial flow [24,24,2]
+    """
+    artificial = model.decode(np.array([[[latent_space]]]))
+    return artificial
 
 
 if __name__ == '__main__':
-    load_3D_image(0, 3)
+    # art_flow = generate([-0.05988009, -0.10334677, 0.45784602, 0.04919271])
+    # AE.plot_all(art_flow)
+    generation_from_original(0)
+
