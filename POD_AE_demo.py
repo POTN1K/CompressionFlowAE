@@ -67,7 +67,7 @@ if generate:
         u_train, u_test = train_test_split(u_all, train_size=train_size)
         x, y = gen_val_curve(u_train, u_test)
 
-        rel_strs = ('TuningDivision', f'POD_{train_size}')
+        rel_strs = ('Main', 'TuningDivision', f'POD_{train_size}')
         path = os.path.join(os.getcwd(), *rel_strs)
         np.savetxt(path, np.array([x, y]))
 
@@ -75,7 +75,7 @@ if generate:
 
 # load POD data from txt
 train_size = 0.95
-rel_strs = ('TuningDivision', f'POD_{train_size}')
+rel_strs = ('Main', 'TuningDivision', f'POD_{train_size}')
 path = os.path.join(os.getcwd(), *rel_strs)
 x, y = np.loadtxt(path)
 # x = 100 - np.array(x) * 100/(24*24*2)
