@@ -302,18 +302,8 @@ class AE(Model):
         '''
         plots vectorfield
         '''
-        x = np.arange(24)
-        y = np.arange(24)
-        
-        X, Y = np.meshgrid(x, y)
-        
-        # Creating plot
-        fig, ax = plt.subplots(figsize =(9, 9))
-        ax.quiver(X, Y, nxnx2)
-        
-        ax.xaxis.set_ticks([])
-        ax.yaxis.set_ticks([])
-        ax.set_aspect('equal')
+        x, y = np.meshgrid(np.linspace(0, 2 * np.pi, 24), np.linspace(0, 2 * np.pi, 24))
+        plt.quiver(x, y, nxnx2[:, :, 0], nxnx2[:, :, 1])
         plt.show()
         return None
 
@@ -322,15 +312,16 @@ class AE(Model):
 def run_model():
     """General function to run one model"""
 
-    n = 1
+    n = 2
     u_train, u_val, u_test = AE.preprocess(nu=n)
 
-    # model = AE.create_trained()
-    model = AE(l_rate=0.0005, epochs=500, batch=10, early_stopping=10, dimensions=[256, 128, 64, 32], nu=n)
-    model.fit(u_train, u_val)
+    model = AE.create_trained()
+    #model = AE(l_rate=0.0005, epochs=500, batch=10, early_stopping=10, dimensions=[256, 128, 64, 32], nu=n)
+    #model.fit(u_train, u_val)
 
     model.passthrough(u_test)
-    model.visual_analysis()
+    #model.visual_analysis()
+
     perf = model.performance()
 
     model.verification(u_test)
@@ -346,3 +337,5 @@ def run_model():
 
 if __name__ == '__main__':
     run_model()
+
+
