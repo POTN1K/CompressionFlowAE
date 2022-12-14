@@ -87,6 +87,8 @@ x, y = zip(*lists)
 # x = 100 - np.array(x) * 100/(24*24*2)
 plt.scatter(x, y, label='AE', color='b', marker ='+')
 
+plt.ylim(bottom=0.)
+plt.xlim(left=0., right=65)
 plt.xlabel('Dimension of Encoded Flow (Orig: 1152)')
 plt.ylabel('MSE')
 plt.title('MSE vs Compression for AE and POD, 95% of data used for training')
