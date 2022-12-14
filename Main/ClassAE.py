@@ -125,7 +125,7 @@ class AE(Model):
     def network(self):
         """ This function defines the architecture of the neural network. Every layer of the NN presents a convolution
             and a pooling. There are 8 layers in total, 4 for the encoder and 4 for the decoder.
-            Connv2D inputs:
+            Conv2D inputs:
             - number of features to be extracted from the frame
             - (m, n) defines the size of the filter, x_size_filter = x_size_frame / m, y_size_filter = y_size_frame / n
             - how to behave when at the boundary of the frame, 'same' adds 0s to the left/right/up/down of the frame
@@ -264,8 +264,8 @@ class AE(Model):
         '''
         returns the kinetic grid wise energy of one image without taking mass into account 
         '''
-        u = nxnx2[0]
-        v = nxnx2[1]
+        u = nxnx2[:,:,0]
+        v = nxnx2[:,:,1]
         return 0.5 * np.add(np.multiply(u, u), np.multiply(v, v))
 
     @staticmethod
@@ -273,8 +273,8 @@ class AE(Model):
         '''
         returns the curl over the grid of a picture -> curl is used to calculate lift/drag therefore significant
         '''
-        u = nxnx2[0]
-        v = nxnx2[1]
+        u = nxnx2[:,:,0]
+        v = nxnx2[:,:,1]
 
         return np.subtract(np.gradient(u, axis = 1), np.gradient(v, axis=0))
 
@@ -284,6 +284,7 @@ class AE(Model):
         plots energy/grid without mass/density
         '''
         plt.contourf(AE.energy(nxnx2), min = 0, max = 1.1)
+        plt.title('Energy')
         plt.show()
         return None
 
@@ -293,27 +294,17 @@ class AE(Model):
         '''
         This method returns and shows a plot of the cross product of the velocity components
         '''
-        plt.contourf(AE.curl(nxnx2),  min = 0, max = 2.2)
+        plt.contourf(AE.curl(nxnx2),  min = -2.2, max = 2.2)
+        plt.title('Vorticity')
         plt.show()
         return None
 
     @staticmethod
     def plot_velocity(nxnx2: np.array):
-        '''
-        plots vectorfield
-        '''
-        x = np.arange(24)
-        y = np.arange(24)
-        
-        X, Y = np.meshgrid(x, y)
-        
-        # Creating plot
-        fig, ax = plt.subplots(figsize =(9, 9))
-        ax.quiver(X, Y, nxnx2)
-        
-        ax.xaxis.set_ticks([])
-        ax.yaxis.set_ticks([])
-        ax.set_aspect('equal')
+        '''plots vectorfield'''
+        x, y = np.meshgrid(np.linspace(0, 24, 24), np.linspace(0, 24, 24))
+        plt.quiver(x, y, nxnx2[:, :, 0], nxnx2[:, :, 1])
+        plt.title('Velocity')
         plt.show()
         return None
 
