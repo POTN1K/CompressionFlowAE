@@ -125,7 +125,7 @@ class AE(Model):
     def network(self):
         """ This function defines the architecture of the neural network. Every layer of the NN presents a convolution
             and a pooling. There are 8 layers in total, 4 for the encoder and 4 for the decoder.
-            Conv2D inputs:
+            Connv2D inputs:
             - number of features to be extracted from the frame
             - (m, n) defines the size of the filter, x_size_filter = x_size_frame / m, y_size_filter = y_size_frame / n
             - how to behave when at the boundary of the frame, 'same' adds 0s to the left/right/up/down of the frame
@@ -264,8 +264,8 @@ class AE(Model):
         '''
         returns the kinetic grid wise energy of one image without taking mass into account 
         '''
-        u = nxnx2[:,:,0]
-        v = nxnx2[:,:,1]
+        u = nxnx2[0]
+        v = nxnx2[1]
         return 0.5 * np.add(np.multiply(u, u), np.multiply(v, v))
 
     @staticmethod
@@ -273,8 +273,8 @@ class AE(Model):
         '''
         returns the curl over the grid of a picture -> curl is used to calculate lift/drag therefore significant
         '''
-        u = nxnx2[:,:,0]
-        v = nxnx2[:,:,1]
+        u = nxnx2[0]
+        v = nxnx2[1]
 
         return np.subtract(np.gradient(u, axis = 1), np.gradient(v, axis=0))
 
@@ -284,7 +284,6 @@ class AE(Model):
         plots energy/grid without mass/density
         '''
         plt.contourf(AE.energy(nxnx2), min = 0, max = 1.1)
-        plt.title('Energy')
         plt.show()
         return None
 
@@ -294,17 +293,17 @@ class AE(Model):
         '''
         This method returns and shows a plot of the cross product of the velocity components
         '''
-        plt.contourf(AE.curl(nxnx2),  min = -2.2, max = 2.2)
-        plt.title('Vorticity')
+        plt.contourf(AE.curl(nxnx2),  min = 0, max = 2.2)
         plt.show()
         return None
 
     @staticmethod
     def plot_velocity(nxnx2: np.array):
-        '''plots vectorfield'''
-        x, y = np.meshgrid(np.linspace(0, 24, 24), np.linspace(0, 24, 24))
+        '''
+        plots vectorfield
+        '''
+        x, y = np.meshgrid(np.linspace(0, 2 * np.pi, 24), np.linspace(0, 2 * np.pi, 24))
         plt.quiver(x, y, nxnx2[:, :, 0], nxnx2[:, :, 1])
-        plt.title('Velocity')
         plt.show()
         return None
 
@@ -316,24 +315,27 @@ def run_model():
     n = 2
     u_train, u_val, u_test = AE.preprocess(nu=n)
 
-    # model = AE.create_trained()
-    model = AE(l_rate=0.0005, epochs=500, batch=10, early_stopping=10, dimensions=[256, 128, 64, 32], nu=n)
-    model.fit(u_train, u_val)
+    model = AE.create_trained()
+    #model = AE(l_rate=0.0005, epochs=500, batch=10, early_stopping=10, dimensions=[256, 128, 64, 32], nu=n)
+    #model.fit(u_train, u_val)
 
     model.passthrough(u_test)
-    model.visual_analysis()
+    #model.visual_analysis()
+
     perf = model.performance()
-    if n == 2:
-        model.verification(u_test)
-        model.verification(model.y_pred)
+
+    model.verification(u_test)
+    model.verification(model.y_pred)
 
     print(f'Absolute %: {round(perf["abs_percentage"], 3)} +- {round(perf["abs_std"], 3)}')
     print(f'Squared %: {round(perf["sqr_percentage"], 3)} +- {round(perf["sqr_std"], 3)}')
 
-    # model.autoencoder.save('autoencoder_2D.h5')
-    # model.encoder.save('encoder_2D.h5')
-    # model.decoder.save('decoder_2D.h5')
+    model.autoencoder.save('autoencoder_1D.h5')
+    model.encoder.save('encoder_1D.h5')
+    model.decoder.save('decoder_1D.h5')
 
 
 if __name__ == '__main__':
     run_model()
+
+

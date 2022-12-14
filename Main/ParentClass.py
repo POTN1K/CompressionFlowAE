@@ -324,11 +324,13 @@ class Model:
 
             # Isolate velocity components
             u_vel = grid[:, :, 0]
-            v_vel = grid[:, :, 1]
-
             # Partial derivatives (du/dx, dv/dy) step size set to 0.262 based on grid size
             u_vel_grad = np.gradient(u_vel, 0.262, edge_order=2, axis=1)
-            v_vel_grad = np.gradient(v_vel, 0.262, edge_order=2, axis=0)
+            v_vel_grad = 0
+
+            if np.shape(data)[3] == 2:
+                v_vel = grid[:, :, 1]
+                v_vel_grad = np.gradient(v_vel, 0.262, edge_order=2, axis=0)
 
             divergence = u_vel_grad + v_vel_grad
 
