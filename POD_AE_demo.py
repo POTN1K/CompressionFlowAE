@@ -64,8 +64,8 @@ def gen_val_curve(u_train_, u_test_):
 # generate
 generate = True
 if generate:
-    u_all = POD.preprocess(split=False, norm=False)
-    for train_size in [0.95]:
+    u_all = POD.preprocess(split=False, norm=False, nu=2)
+    for train_size in [0.95, 0.1]:
         u_train, u_test = train_test_split(u_all, train_size=train_size)
         x, y = gen_val_curve(u_train, u_test)
 

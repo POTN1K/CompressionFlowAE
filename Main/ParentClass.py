@@ -256,21 +256,18 @@ class Model:
         u_true = np.reshape(self.input, ([dim[0], dim[1]*dim[2]*dim[3]]))
         u_pred = np.reshape(self.output, ([dim[0], dim[1]*dim[2]*dim[3]]))
 
+        # MSE and Squared Percentage Error
         d['mse'] = mean_squared_error(u_true, u_pred)
-        d['abs_percentage'] = 100 * (1 - mean_absolute_percentage_error(u_true, u_pred))
         d['sqr_percentage'] = 100 * (1 - mean_squared_error(u_true/u_true, u_pred/u_true))
 
         # Absolute percentage metric, along with its std
-        d['abs_percentage'] = 100 * (1 - (np.median(np.abs((self.input - self.output) / self.input))))
-        #     # np.average(1 - np.abs(self.output - self.input) / self.input) * 100
-        # abs_average_images = np.average((1 - np.abs(self.output - self.input) / self.input), axis=(1, 2)) * 100
-        # d['abs_std'] = np.std(abs_average_images)
-        #
-        # # Squared percentage metric, along with std
-        # d['sqr_percentage'] = np.average(1 - ((self.output - self.input) / self.input) ** 2) * 100
-        # sqr_average_images = np.average((1 - (self.output - self.input) ** 2 / self.input), axis=(1, 2)) * 100
-        # d['sqr_std'] = np.std(sqr_average_images)
-        # self.dict_perf = d
+        percentage = 100 * (1 - (np.abs((self.input - self.output) / self.input)))  # get array; we use it 3 times
+        d['abs_percentage_median'] = np.median(percentage)
+        d['abs_percentage_mean'] = np.mean(percentage)
+        d['abs_percentage_std'] = np.std(percentage)
+
+        # Verification results
+        d['div_max'], d['div_min'], d['div_avg'] = Model.verification(self.output, print_res=False)
         return d
 
     @staticmethod
@@ -303,7 +300,7 @@ class Model:
             perf = model_.performance()
 
             # write to file
-            write = {'Accuracy': perf["mse"], 'Running Time': t_time, 'Loss': perf["mse"]
+            write = {**perf
                      }
             write.update(params)
 

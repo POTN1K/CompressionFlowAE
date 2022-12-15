@@ -239,25 +239,25 @@ class AE(Model):
             plt.legend()
             plt.show()
 
-    def performance(self):
-        """Here we transform the mse into an accuracy value. Two different metrics are used, the absolute
-        error and the squared error. With those values, two different stds are calculated"""
-
-        d = dict()
-        # Calculation of MSE
-        d['mse'] = self.autoencoder.evaluate(self.u_test, self.u_test, self.batch, verbose=0)
-
-        # Absolute percentage metric, along with its std
-        d['abs_percentage'] = np.average(1 - np.abs(self.y_pred - self.u_test) / self.u_test) * 100
-        abs_average_images = np.average((1 - np.abs(self.y_pred - self.u_test) / self.u_test), axis=(1, 2)) * 100
-        d['abs_std'] = np.std(abs_average_images)
-
-        # Squared percentage metric, along with std
-        d['sqr_percentage'] = np.average(1 - (self.y_pred - self.u_test) ** 2 / self.u_test) * 100
-        sqr_average_images = np.average((1 - (self.y_pred - self.u_test) ** 2 / self.u_test), axis=(1, 2)) * 100
-        d['sqr_std'] = np.std(sqr_average_images)
-        self.dict_perf = d
-        return d
+    # def performance(self):
+    #     """Here we transform the mse into an accuracy value. Two different metrics are used, the absolute
+    #     error and the squared error. With those values, two different stds are calculated"""
+    #
+    #     d = dict()
+    #     # Calculation of MSE
+    #     d['mse'] = self.autoencoder.evaluate(self.u_test, self.u_test, self.batch, verbose=0)
+    #
+    #     # Absolute percentage metric, along with its std
+    #     d['abs_percentage'] = np.average(1 - np.abs(self.y_pred - self.u_test) / self.u_test) * 100
+    #     abs_average_images = np.average((1 - np.abs(self.y_pred - self.u_test) / self.u_test), axis=(1, 2)) * 100
+    #     d['abs_std'] = np.std(abs_average_images)
+    #
+    #     # Squared percentage metric, along with std
+    #     d['sqr_percentage'] = np.average(1 - (self.y_pred - self.u_test) ** 2 / self.u_test) * 100
+    #     sqr_average_images = np.average((1 - (self.y_pred - self.u_test) ** 2 / self.u_test), axis=(1, 2)) * 100
+    #     d['sqr_std'] = np.std(sqr_average_images)
+    #     self.dict_perf = d
+    #     return d
 
 
 def run_model():
