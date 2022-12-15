@@ -4,7 +4,7 @@ import numpy as np
 import time
 from csv import DictWriter
 from sklearn.model_selection import ParameterGrid
-from sklearn.metrics import mean_squared_error  # pip3.10 install scikit-learn NOT sklearn
+from sklearn.metrics import mean_squared_error, mean_absolute_percentage_error
 from sklearn.utils import shuffle
 from datetime import datetime
 import os
@@ -249,10 +249,28 @@ class Model:
         Checks reconstruction loss
         :return: Dictionary
         """
-        # TODO: define proper performance measure
         d = dict()
-        d['mse'] = mean_squared_error(self.input, self.output)
-        self.dict_perf = d
+        # Calculation of MSE
+
+        dim = self.input.shape
+        u_true = np.reshape(self.input, ([dim[0], dim[1]*dim[2]*dim[3]]))
+        u_pred = np.reshape(self.output, ([dim[0], dim[1]*dim[2]*dim[3]]))
+
+        d['mse'] = mean_squared_error(u_true, u_pred)
+        d['abs_percentage'] = 100 * (1 - mean_absolute_percentage_error(u_true, u_pred))
+        d['sqr_percentage'] = 100 * (1 - mean_squared_error(u_true/u_true, u_pred/u_true))
+
+        # Absolute percentage metric, along with its std
+        d['abs_percentage'] = 100 * (1 - (np.median(np.abs((self.input - self.output) / self.input))))
+        #     # np.average(1 - np.abs(self.output - self.input) / self.input) * 100
+        # abs_average_images = np.average((1 - np.abs(self.output - self.input) / self.input), axis=(1, 2)) * 100
+        # d['abs_std'] = np.std(abs_average_images)
+        #
+        # # Squared percentage metric, along with std
+        # d['sqr_percentage'] = np.average(1 - ((self.output - self.input) / self.input) ** 2) * 100
+        # sqr_average_images = np.average((1 - (self.output - self.input) ** 2 / self.input), axis=(1, 2)) * 100
+        # d['sqr_std'] = np.std(sqr_average_images)
+        # self.dict_perf = d
         return d
 
     @staticmethod

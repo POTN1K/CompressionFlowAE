@@ -50,17 +50,19 @@ def gen_val_curve(u_train_, u_test_):
         pod.n = n
 
         pod.passthrough(u_test_)
-        u_test_mse = np.reshape(u_test_, ([dim[0], dim[1]*dim[2]*dim[3]]))
-        output_mse = np.reshape(pod.output, ([dim[0], dim[1]*dim[2]*dim[3]]))
-
-        y_.append(mean_squared_error(u_test_mse, output_mse))
-        x_.append(n)
+        perf = pod.performance()
+        print(perf, n)
+        # u_test_mse = np.reshape(u_test_, ([dim[0], dim[1]*dim[2]*dim[3]]))
+        # output_mse = np.reshape(pod.output, ([dim[0], dim[1]*dim[2]*dim[3]]))
+        #
+        # y_.append(mean_squared_error(u_test_mse, output_mse))
+        # x_.append(n)
     del pod
     return x_, y_
 
 
 # generate
-generate = False
+generate = True
 if generate:
     u_all = POD.preprocess(split=False, norm=False)
     for train_size in [0.95]:
@@ -74,25 +76,27 @@ if generate:
         print(f'{train_size} written to file')
 
 # load POD data from txt
-train_size = 0.95
-rel_strs = ('Main', 'TuningDivision', f'POD_{train_size}')
-path = os.path.join(os.getcwd(), *rel_strs)
-x, y = np.loadtxt(path)
-# x = 100 - np.array(x) * 100/(24*24*2)
-plt.scatter(x, y, label='POD', color='r', marker='.')
+plot = False
+if plot:
+    train_size = 0.95
+    rel_strs = ('Main', 'TuningDivision', f'POD_{train_size}')
+    path = os.path.join(os.getcwd(), *rel_strs)
+    x, y = np.loadtxt(path)
+    # x = 100 - np.array(x) * 100/(24*24*2)
+    plt.scatter(x, y, label='POD', color='r', marker='.')
 
-# get AE data from dict
-lists = sorted(data_AE.items())  # sort
-x, y = zip(*lists)
-# x = 100 - np.array(x) * 100/(24*24*2)
-plt.scatter(x, y, label='AE', color='b', marker ='+')
+    # get AE data from dict
+    lists = sorted(data_AE.items())  # sort
+    x, y = zip(*lists)
+    # x = 100 - np.array(x) * 100/(24*24*2)
+    plt.scatter(x, y, label='AE', color='b', marker ='+')
 
-plt.ylim(bottom=1E-6)
-plt.yscale('log')
-plt.xlim()
-plt.xscale('log')
-plt.xlabel('Dimension of Encoded Flow (Orig: 1152)')
-plt.ylabel('MSE')
-plt.title('MSE vs Compression for AE and POD, 95% of data used for training')
-plt.legend()
-plt.show()
+    plt.ylim(bottom=1E-6)
+    plt.yscale('log')
+    # plt.xlim(left=1E-1, right=1E2)
+    # plt.xscale('log')
+    plt.xlabel('Dimension of Encoded Flow (Orig: 1152)')
+    plt.ylabel('MSE')
+    plt.title('MSE vs Compression for AE and POD, 95% of data used for training')
+    plt.legend()
+    plt.show()
