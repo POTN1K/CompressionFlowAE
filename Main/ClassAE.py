@@ -96,7 +96,7 @@ class AE(Model):
         :return: time series code
         """
         self.u_test = input_
-        return self.encoder.predict(input_)
+        return self.encoder.predict(input_, verbose=0)
 
     def get_output(self, input_: np.array) -> np.array:  # skeleton
         """

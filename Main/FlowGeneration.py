@@ -2,12 +2,16 @@ from Main.ClassAE import AE
 import numpy as np
 import matplotlib.pyplot as plt
 import pickle
+from tqdm import tqdm
 import os
+from os import path
+from mpl_toolkits import mplot3d
 
 # Physical conditions of the flow: Check the values for vorticity (curl), energy, cross product, resultant velocity
 # The characteristics of latent space: check changes in latent space due to different Re
 domain = np.arange(-0.5, 0.5, 0.05)
 model = AE.create_trained()
+u_train, u_val, u_test = AE.preprocess(nu=2)
 
 
 def curl_analysis(k, dictionary):
@@ -121,24 +125,22 @@ def load_3D_image(mode1, mode2):
         plt.show()
 
 
-def generation_from_original(n_element):
+def generation_from_original(time_series, n_element):
     """
     n_element: One time frame array, shape = [24,24,2]
     :return: None"""
     # One real element
-    u_train, u_val, u_test = AE.preprocess(nu=2)
-    test_element = u_test[n_element]
+    test_element = time_series[n_element]
 
     # Plot original data set
-    AE.u_v_plot(test_element)
+    #AE.u_v_plot(test_element)
 
     latent_space_original = model.encode(test_element)
-    print(latent_space_original)
-    print(type(latent_space_original))
+    return latent_space_original
 
-    reconstructed_original = model.decode(latent_space_original)
+    #reconstructed_original = model.decode(latent_space_original)
     # Plot vorticity
-    AE.plot_all(reconstructed_original)
+    #AE.plot_all(reconstructed_original)
 
 
 def generate(latent_space):
@@ -151,8 +153,53 @@ def generate(latent_space):
     return artificial
 
 
-if __name__ == '__main__':
-    # art_flow = generate([-0.05988009, -0.10334677, 0.45784602, 0.04919271])
-    # AE.plot_all(art_flow)
-    generation_from_original(0)
+def original_ls_visual(params: tuple, time_series, plotting=True, saving=False):
+    """
+    Function to visualiz the first three parameters of all latent spaces of a time seires
+    :param params: modes for which we want to visualize the values
+    :param plotting: bool to determine is plotting of the results is needed
+    :param saving: bool to determine if saving the plot is needed
+    :return: None
+    """
+    if not path.exists(f'{params}_latent.csv'):
+        latent = generation_from_original(time_series, 0)[0, 0, 0, :]
+        for i in tqdm(range(1, np.shape(time_series)[0]), colour='purple'):
+            latent = np.vstack((latent, generation_from_original(time_series, i)[0, 0, 0, :]))
+        np.savetxt(f'{params}_latent.csv', latent, delimiter=',')
+    else:
+        latent = np.genfromtxt(f'{params}_latent.csv', delimiter=',')
+    if plotting is True:
+        fig = plt.figure()
+        ax = plt.axes(projection='3d')
+        p1 = latent[:, params[0]]
+        p2 = latent[:, params[1]]
+        p3 = latent[:, params[2]]
 
+        # Polar
+        #r = np.sqrt(p1 ** 2 + p2 ** 2)
+        #theta = np.arctan2(p1, p2)
+        #print(r)
+
+        ax.scatter3D(p1, p2, p3, '*')
+        plt.xlabel('param 1')
+        plt.ylabel('param 2')
+        plt.show()
+    if saving is True:
+        pickle.dump(fig, open(f'{params}_plot.fig.pickle', 'wb'))
+
+
+def ranges(params: tuple):
+    latent = np.genfromtxt(f'{params}_latent.csv', delimiter=',')
+    values = []
+    for i in tqdm(range(len(params))):
+        values.append((np.max(latent[:, params[i]]), np.min(latent[:, params[i]])))
+    print(values)
+
+
+def average(params: tuple):
+    latent = np.genfromtxt(f'{params}_latent.csv', delimiter=',')
+    print(np.average(latent[:,0:3]))
+
+
+if __name__ == '__main__':
+    ...
