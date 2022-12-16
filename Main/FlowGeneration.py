@@ -175,6 +175,8 @@ def original_ls_visual(params: tuple, time_series, plotting=True, saving=False):
         p2 = latent[:, params[1]]
         p3 = latent[:, params[2]]
 
+        spheroid(p1, p2, p3)
+
         # Polar
         #r = np.sqrt(p1 ** 2 + p2 ** 2)
         #theta = np.arctan2(p1, p2)
@@ -201,5 +203,29 @@ def average(params: tuple):
     print(np.average(latent[:,0:3]))
 
 
-if __name__ == '__main__':
+def param_analysis(mode):
+    # Should return the mean surface for the shape
     ...
+
+def spheroid(x, y, z):
+    # x**2 / a**2 + y**2 / b**2 + z**2/c**2 = 1
+    fig = plt.figure()
+    ax = fig.add_subplot(projection='3d')
+
+    a = np.min(x) + (np.abs(np.max(x)) + np.abs(np.min(x))) / 2
+    b = (np.abs(np.min(y)) + np.abs(np.max(y))) / 2 + np.min(y)
+    c = np.min(z) + (np.abs(np.max(z)) + np.abs(np.min(z))) / 2
+    z_upper = np.sqrt((1 - (x ** 2 / a ** 2 + y ** 2 / b ** 2)) * c ** 2)
+    z_lower = -1 * z_upper
+
+    print(np.shape(z))
+    ax.plot_surface(x, y, z_upper)
+    ax.set_aspect('equal')
+
+    plt.show()
+
+
+
+
+if __name__ == '__main__':
+    original_ls_visual((0,1,2), u_test, True, True)
