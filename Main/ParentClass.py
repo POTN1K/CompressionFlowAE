@@ -257,8 +257,8 @@ class Model:
         u_pred = np.reshape(self.output, ([dim[0], dim[1]*dim[2]*dim[3]]))
 
         # MSE and Squared Percentage Error
-        d['mse'] = mean_squared_error(u_true, u_pred)
-        d['sqr_percentage'] = 100 * (1 - mean_squared_error(u_true/u_true, u_pred/u_true))
+        d['mse'] = np.mean(self.output-self.input)**2
+        d['sqr_percentage'] = np.mean(100 * (1 - ((self.output-self.input)/self.input))**2)
 
         # Absolute percentage metric, along with its std
         percentage = 100 * (1 - (np.abs((self.input - self.output) / self.input)))  # get array; we use it 3 times
