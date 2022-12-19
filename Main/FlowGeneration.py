@@ -220,7 +220,7 @@ def stats(mode: list[float]):
     return [(mx + mn) / 2, (mx - mn) / 2, mx, mn, np.average(mode)]
 
 
-def spheroid(p1: list[float], p2: list[float], p3: list[float]) -> [list[float]]:
+def spheroid(p1: list[float], p2: list[float], p3: list[float]) -> tuple[list[float]]:
     """
     :param p1: the values of this mode in all latent spaces of a certain time series
     :param p2: the values of this mode in all latent spaces of a certain time series
@@ -243,4 +243,4 @@ def spheroid(p1: list[float], p2: list[float], p3: list[float]) -> [list[float]]
 
 
 if __name__ == '__main__':
-    original_ls_visual((0,1,3), u_test, True, False)
+    original_ls_visual((0,1,2), u_test, True, False)
