@@ -61,7 +61,7 @@ if generate:
 load = True
 if load:
     flag = False
-    with open(r'C:\Users\Jan Grobusch\PycharmProjects\CompressionFlowAE\Main\TuningDivision\AE_0.95.csv', newline='')\
+    with open(r'/Users/jangrobusch/PycharmProjects/CompressionFlowAE/Main/TuningDivision/AE_0.95.csv', newline='')\
             as csvfile:
         rows = reader(csvfile, delimiter=',')
         data_AE = {
@@ -87,22 +87,24 @@ if load:
 
     # load AE data from txt
     flag = False
-    with open(r'C:\Users\Jan Grobusch\PycharmProjects\CompressionFlowAE\Main\TuningDivision\POD_0.95.csv', newline='')\
+    with open(r'/Users/jangrobusch/PycharmProjects/CompressionFlowAE/Main/TuningDivision/POD_0.95.csv', newline='')\
             as csvfile:
         rows = reader(csvfile, delimiter=',')
         data_POD = {
             'n': [],
             'mse': [],
             'abs_med': [],
+            'abs_mean': [],
             'div_max': [],
             'div_min': [],
             'div_avg': []
         }
         for row in rows:
             if flag:
-                mse, abs_med, div_max, div_min, div_avg = row[0], row[2], row[5], row[6], row[7]
+                mse, abs_med, abs_mean, div_max, div_min, div_avg = row[0], row[2], row[3], row[5], row[6], row[7]
                 n = row[-1]
-                lst = [float(n), float(mse), float(abs_med), float(div_max), float(div_min), float(div_avg)]
+                lst = [float(n), float(mse), float(abs_med), float(abs_mean), float(div_max), float(div_min),
+                       float(div_avg)]
                 i = 0
                 for key in data_POD.keys():
                     data_POD[key].append(lst[i])
@@ -111,29 +113,80 @@ if load:
             if not flag:
                 flag = True
 
-plot = True
-if plot:
+plot_abs_med = True
+if plot_abs_med:
     if not load:
         raise Exception('load is false')
     # Scatter data
-    plt.scatter(data_AE['n'], data_AE['mse'], label='AE', color='b', marker='+')
-    plt.scatter(data_POD['n'], data_POD['mse'], label='POD', color='r', marker='.')
+    plt.scatter(data_AE['n'], data_AE['abs_med'], label='AE', color='b', marker='+')
+    plt.scatter(data_POD['n'], data_POD['abs_med'], label='POD', color='r', marker='.')
 
     # Set y axis
     # plt.yscale('log')
     # plt.ylim(bottom=1E-6)
-    plt.ylabel('ylabel')
+    plt.ylabel('Median Absolute Percentage Accuracy (%)')
     plt.ylim(top=100, bottom=0)
 
 
     # Set x axis
     # plt.xscale()
     plt.xlabel('Dimension of Encoded Flow (Orig: 1152)')
-    plt.xlim(left=0, right=65)
+    plt.xlim(left=0, right=62.5)
 
     # Title
-    plt.title('Title')
+    # plt.title('POD and AutoEncoder Accuracy, trained on 3800 flow instances')
 
     # Plot
     plt.legend()
     plt.show()
+    # plt.savefig('POD_AE_abs_med', format='PDF')
+
+plot_med_mean = False
+if plot_med_mean:
+    if not load:
+        raise Exception('load is false')
+    # 1st axis
+    fig, ax = plt.subplots()
+    ax.plot(data_POD['n'], data_POD['abs_med'], label='AE', color='b') #, marker='+')
+    ax.set_ylabel('abs_med')
+
+    ax.set_xlabel('Dimension of Encoded Flow (Orig: 1152)')
+    ax.set_xlim(left=0, right=62.5)
+
+    # 2nd
+    ax2 = ax.twinx()
+    ax2.plot(data_POD['n'], data_POD['abs_mean'], label='POD', color='r') #, marker='.')
+    ax2.set_ylabel('abs_mean')
+
+    plt.show()
+
+plot_divergence = False
+if plot_divergence:
+    if not load:
+        raise Exception('load is false')
+    # Scatter data
+    # plt.scatter(data_AE['n'], data_AE['div_min'], label='AE', color='b', marker='+')
+    # plt.scatter(data_AE['n'], data_AE['div_avg'], label='AE', color='b', marker='+')
+    # plt.scatter(data_AE['n'], data_AE['div_max'], label='AE', color='b', marker='+')
+
+    plt.errorbar(data_POD['n'], data_POD['div_avg'], np.abs(np.array([data_POD['div_min'], data_POD['div_max']])),
+                 label='POD', color='black', ecolor='r', marker='.')
+
+    # Set y axis
+    # plt.yscale('log')
+    plt.ylim(bottom=-1.5E-12, top=1.5E-12)
+    plt.ylabel('Divergence of the Velocity Field')
+
+
+    # Set x axis
+    # plt.xscale()
+    plt.xlabel('Dimension of Encoded Flow (Orig: 1152)')
+    plt.xlim(left=0, right=62.5)
+
+    # Title
+    # plt.title('POD and AutoEncoder Accuracy, trained on 3800 flow instances')
+
+    # Plot
+    # plt.legend()
+    plt.show()
+    # plt.savefig('POD_AE_abs_med', format='PDF')
