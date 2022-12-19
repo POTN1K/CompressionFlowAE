@@ -163,7 +163,7 @@ def original_ls_visual(params: tuple, time_series, plotting=True, saving=False):
     """
     if not path.exists(f'{params}_latent.csv'):
         latent = generation_from_original(time_series, 0)[0, 0, 0, :]
-        for i in tqdm(range(1, np.shape(time_series)[0]), colour='purple'):
+        for i in tqdm(range(1, np.shape(time_series)[0]), colour='green'):
             latent = np.vstack((latent, generation_from_original(time_series, i)[0, 0, 0, :]))
         np.savetxt(f'{params}_latent.csv', latent, delimiter=',')
     else:
@@ -171,20 +171,23 @@ def original_ls_visual(params: tuple, time_series, plotting=True, saving=False):
     if plotting is True:
         fig = plt.figure()
         ax = plt.axes(projection='3d')
+
+        ax.set_xlabel(f'mode {params[0]}')
+        ax.set_ylabel(f'mode {params[1]}')
+        ax.set_zlabel(f'mode {params[2]}')
+
         p1 = latent[:, params[0]]
         p2 = latent[:, params[1]]
         p3 = latent[:, params[2]]
 
-        spheroid(p1, p2, p3)
-
+        x, y, z = spheroid(p1, p2, p3)
+        ax.plot_surface(x, y, z)
         # Polar
         #r = np.sqrt(p1 ** 2 + p2 ** 2)
         #theta = np.arctan2(p1, p2)
         #print(r)
 
         ax.scatter3D(p1, p2, p3, '*')
-        plt.xlabel('param 1')
-        plt.ylabel('param 2')
         plt.show()
     if saving is True:
         pickle.dump(fig, open(f'{params}_plot.fig.pickle', 'wb'))
@@ -203,29 +206,41 @@ def average(params: tuple):
     print(np.average(latent[:,0:3]))
 
 
-def param_analysis(mode):
+def param_analysis(p1, p2, p3):
     # Should return the mean surface for the shape
     ...
 
-def spheroid(x, y, z):
+def stats(mode: list[float]):
+    """
+    :param mode: the values of the given mode in all latent spaces of a certain time series
+    :return: a list of 5 statistics: midpoint, radius, maximum, minimum, average
+    """
+    mx = np.max(mode)
+    mn = np.min(mode)
+    return [(mx + mn) / 2, (mx - mn) / 2, mx, mn, np.average(mode)]
+
+
+def spheroid(p1: list[float], p2: list[float], p3: list[float]) -> [list[float]]:
+    """
+    :param p1: the values of this mode in all latent spaces of a certain time series
+    :param p2: the values of this mode in all latent spaces of a certain time series
+    :param p3: the values of this mode in all latent spaces of a certain time series
+    :return: tuple containing the values for x, y, and z which can be used for plotting
+    """
     # x**2 / a**2 + y**2 / b**2 + z**2/c**2 = 1
     fig = plt.figure()
     ax = fig.add_subplot(projection='3d')
 
-    a = np.min(x) + (np.abs(np.max(x)) + np.abs(np.min(x))) / 2
-    b = (np.abs(np.min(y)) + np.abs(np.max(y))) / 2 + np.min(y)
-    c = np.min(z) + (np.abs(np.max(z)) + np.abs(np.min(z))) / 2
-    z_upper = np.sqrt((1 - (x ** 2 / a ** 2 + y ** 2 / b ** 2)) * c ** 2)
-    z_lower = -1 * z_upper
+    a, b, c = stats(p1)[1], stats(p2)[1], stats(p3)[1]
+    phi = np.linspace(0, 2 * np.pi, 256).reshape(256, 1)  # the angle of the projection in the xy-plane
+    theta = np.linspace(0, np.pi, 256).reshape(-1, 256)  # the angle from the polar axis, ie the polar angle
+    x = a * np.sin(theta) * np.cos(phi) + stats(p1)[0]
+    y = b * np.sin(theta) * np.sin(phi) + stats(p2)[0]
+    z = c * np.cos(theta)
 
-    print(np.shape(z))
-    ax.plot_surface(x, y, z_upper)
-    ax.set_aspect('equal')
-
-    plt.show()
-
+    return x, y, z
 
 
 
 if __name__ == '__main__':
-    original_ls_visual((0,1,2), u_test, True, True)
+    original_ls_visual((0,1,3), u_test, True, False)
