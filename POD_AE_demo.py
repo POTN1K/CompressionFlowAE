@@ -21,6 +21,7 @@ def gen_val_curve(u_train_, u_test_):
 
         pod.passthrough(u_test_)
         perf = pod.performance()
+        print(perf['div_avg'])
         write = {**perf}
         write.update({'n': pod.n})
 
@@ -52,7 +53,7 @@ def gen_val_curve(u_train_, u_test_):
 # generate
 generate = False
 if generate:
-    u_all = POD.preprocess(split=False, norm=False, nu=2)
+    u_all = POD.preprocess(split=False, nu=2)
     for train_size in [0.5, 0.95]:
         u_train, u_test = train_test_split(u_all, train_size=train_size)
         gen_val_curve(u_train, u_test)
@@ -61,7 +62,7 @@ if generate:
 load = True
 if load:
     flag = False
-    with open(r'/Users/jangrobusch/PycharmProjects/CompressionFlowAE/Main/TuningDivision/AE_0.95.csv', newline='')\
+    with open(r'C:\Users\Jan Grobusch\PycharmProjects\CompressionFlowAE\Main\TuningDivision\AE_0.95.csv', newline='')\
             as csvfile:
         rows = reader(csvfile, delimiter=',')
         data_AE = {
@@ -87,7 +88,7 @@ if load:
 
     # load AE data from txt
     flag = False
-    with open(r'/Users/jangrobusch/PycharmProjects/CompressionFlowAE/Main/TuningDivision/POD_0.95.csv', newline='')\
+    with open(r'C:\Users\Jan Grobusch\PycharmProjects\CompressionFlowAE\Main\TuningDivision\POD_0.95.csv', newline='')\
             as csvfile:
         rows = reader(csvfile, delimiter=',')
         data_POD = {
@@ -113,7 +114,7 @@ if load:
             if not flag:
                 flag = True
 
-plot_abs_med = True
+plot_abs_med = False
 if plot_abs_med:
     if not load:
         raise Exception('load is false')
@@ -125,7 +126,7 @@ if plot_abs_med:
     # plt.yscale('log')
     # plt.ylim(bottom=1E-6)
     plt.ylabel('Median Absolute Percentage Accuracy (%)')
-    plt.ylim(top=100, bottom=0)
+    plt.ylim(top=100, bottom=80)
 
 
     # Set x axis
@@ -160,7 +161,7 @@ if plot_med_mean:
 
     plt.show()
 
-plot_divergence = False
+plot_divergence = True
 if plot_divergence:
     if not load:
         raise Exception('load is false')
@@ -172,21 +173,22 @@ if plot_divergence:
     plt.errorbar(data_POD['n'], data_POD['div_avg'], np.abs(np.array([data_POD['div_min'], data_POD['div_max']])),
                  label='POD', color='black', ecolor='r', marker='.')
 
-    # Set y axis
-    # plt.yscale('log')
-    plt.ylim(bottom=-1.5E-12, top=1.5E-12)
+    plt.ylim(bottom=-5E-4, top=5E-4)
     plt.ylabel('Divergence of the Velocity Field')
 
 
-    # Set x axis
-    # plt.xscale()
     plt.xlabel('Dimension of Encoded Flow (Orig: 1152)')
     plt.xlim(left=0, right=62.5)
 
-    # Title
-    # plt.title('POD and AutoEncoder Accuracy, trained on 3800 flow instances')
-
-    # Plot
-    # plt.legend()
     plt.show()
-    # plt.savefig('POD_AE_abs_med', format='PDF')
+
+    plt.errorbar(data_AE['n'], data_AE['div_avg'], np.abs(np.array([data_AE['div_min'], data_AE['div_max']])),
+                 label='AE', color='black', ecolor='b', marker='+')
+
+    # plt.ylim(bottom=-1.5E-12, top=1.5E-12)
+    plt.ylabel('Divergence of the Velocity Field')
+
+    plt.xlabel('Dimension of Encoded Flow (Orig: 1152)')
+    plt.xlim(left=0, right=62.5)
+
+    plt.show()

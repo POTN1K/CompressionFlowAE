@@ -234,15 +234,18 @@ class Model:
                 u_all[:, :, :, 1] = (u_all[:, :, :, 1] - v_min) / (v_max - v_min)
 
         # Division of training, validation and testing data
-        if split:
-            val_ratio = int(np.round(0.75 * len(u_all)))  # Amount of data used for validation
-            test_ratio = int(np.round(0.95 * len(u_all)))  # Amount of data used for testing
 
-            u_train = u_all[:val_ratio, :, :, :].astype('float32')
-            u_val = u_all[val_ratio:test_ratio, :, :, :].astype('float32')
-            u_test = u_all[test_ratio:, :, :, :].astype('float32')
+        val_ratio = int(np.round(0.75 * len(u_all)))  # Amount of data used for validation
+        test_ratio = int(np.round(0.95 * len(u_all)))  # Amount of data used for testing
+
+        u_train = u_all[:val_ratio, :, :, :].astype('float32')
+        u_val = u_all[val_ratio:test_ratio, :, :, :].astype('float32')
+        u_test = u_all[test_ratio:, :, :, :].astype('float32')
+
+        if split:
             return u_train, u_val, u_test
-        return u_all
+        if not split:
+            return np.concatenate((u_train, u_val, u_test))
 
     def performance(self) -> dict[str, float]:
         """
