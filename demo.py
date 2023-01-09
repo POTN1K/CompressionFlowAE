@@ -1,7 +1,18 @@
 from Main import Model, AE, POD
+import numpy as np
+
+
 
 def run_model_AE():
-    data = AE.preprocess(split=False)
+    data = AE.preprocess(nu=2)
+    data_cartesian = AE.preprocess(nu=2)
+    # convert
+    for set_cartesian in data_cartesian:
+        # tx 24, 24, 2 -> 24, 24, 2
+        length = np.sqrt(set_cartesian[:,:,:,0]**2+set_cartesian[:,:,:,1]**2)
+        phase = np.sin(set_cartesian[:,:,:,0]/set_cartesian[:,:,:,0])
+        set_radial = np.concatenate((length, phase))
+        print(set_radial.shape)
 
 #
 # def run_model_POD():
@@ -22,7 +33,7 @@ def run_tune():
 
 
 if __name__ == '__main__':
-    run_tune()
+    run_model_AE()
 
 #
 # import os
