@@ -61,24 +61,34 @@ def custom_gradient(kxnxn, axis):
 
 
 def custom_loss_function(y_true, y_pred):
-            u_true = y_true[:,:,:,0]
-            v_true = y_true[:,:,:,1]
-            u_pred = y_pred[:,:,:,0]
-            v_pred = y_pred[:,:,:,1]
+    u_true = y_true[:, :, :, 0]
+    v_true = y_true[:, :, :, 1]
+    u_pred = y_pred[:, :, :, 0]
+    v_pred = y_pred[:, :, :, 1]
 
-            energy_true =   tf.math.add(tf.multiply(u_true, u_true), (tf.multiply(v_true, v_true)))
-            energy_pred =   tf.math.add(tf.multiply(u_pred, u_pred), (tf.multiply(v_pred, v_pred)))
+    energy_true = tf.math.add(tf.multiply(u_true, u_true), (tf.math.multiply(v_true, v_true)))
+    energy_pred = tf.math.add(tf.multiply(u_pred, u_pred), (tf.math.multiply(v_pred, v_pred)))
 
-            energy_difference = tf.keras.metrics.mean_squared_error(energy_true, energy_pred)
+    diff_energy = tf.math.subtract(energy_true, energy_pred)
+    energy_average = tf.math.divide(tf.math.reduce_sum(tf.math.multiply(diff_energy, diff_energy), axis=0), np.shape(u_true)[0])
+    energy_mse = tf.math.reduce_mean(energy_average, axis=[0, 1])
+    # energy_difference = tf.keras.metrics.mean_squared_error(energy_true, energy_pred)
 
-            curl_true = tf.math.subtract(custom_gradient(u_true, axis = 1), custom_gradient(v_true, axis = 0))
-            curl_pred = tf.math.subtract(custom_gradient(u_pred, axis = 1), custom_gradient(v_pred, axis = 0))
+    curl_true = tf.math.subtract(custom_gradient(u_true, axis=1), custom_gradient(v_true, axis=0))
+    curl_pred = tf.math.subtract(custom_gradient(u_pred, axis=1), custom_gradient(v_pred, axis=0))
 
-            curl_difference = tf.keras.metrics.mean_squared_error(curl_true, curl_pred)
+    diff_curl = tf.math.subtract(curl_true, curl_pred)
+    curl_average = tf.math.divide(tf.math.reduce_sum(tf.math.multiply(diff_curl, diff_curl), axis=0), np.shape(u_true)[0])
+    curl_mse = tf.math.reduce_mean(curl_average, axis=[0, 1])
+    # curl_difference = tf.keras.metrics.mean_squared_error(curl_true, curl_pred)
 
-            divergence = tf.math.add(custom_gradient(u_pred, axis = 0), custom_gradient( v_pred, axis = 1))
+    divergence = tf.math.add(custom_gradient(u_pred, axis=0), custom_gradient( v_pred, axis=1))
+    div_average = tf.math.divide(tf.math.reduce_sum(tf.math.multiply(divergence, divergence), axis=0), np.shape(u_true)[0])
+    div_mse = tf.math.reduce_mean(div_average, axis=[0, 1])
 
-            return curl_difference, energy_difference
+    return curl_mse, energy_mse, div_mse
+
+
 # Autoencoder Model Class
 class AE(Model):
     def __init__(self, dimensions=[8, 4, 2, 1], activation_function='tanh', l_rate=0.01, epochs=10, batch=200,
@@ -145,7 +155,6 @@ class AE(Model):
         self.u_train = train_array
         self.u_val = val_array
         if self.two_step:
-            print('test 1')
             self.two_step_training()
         else:
             self.training()
@@ -267,7 +276,6 @@ class AE(Model):
     def two_step_training(self):
         """Function to train autoencoder with two different loss function. At each training iteration it has
             checkpoints for checkpoints and early stopping"""
-        print('working')
 
         weights = self.autoencoder.get_weights()
 
@@ -358,7 +366,7 @@ def run_model():
     model = AE.create_trained()
     model.u_train, model.u_val, model.u_test = u_train, u_val, u_test
     model.two_step = True
-    model.epochs = 20
+    model.epochs = 10
     model.l_rate = 0.001
     # model = AE()
     model.fit(u_train, u_val)
