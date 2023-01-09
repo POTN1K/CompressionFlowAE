@@ -69,20 +69,21 @@ def custom_loss_function(y_true, y_pred):
             energy_true =   tf.math.add(tf.multiply(u_true, u_true), (tf.multiply(v_true, v_true)))
             energy_pred =   tf.math.add(tf.multiply(u_pred, u_pred), (tf.multiply(v_pred, v_pred)))
 
-            energy_difference = tf.math.abs(tf.math.subtract(energy_true, energy_pred))
+            energy_difference = tf.keras.metrics.mean_squared_error(energy_true, energy_pred)
 
             curl_true = tf.math.subtract(custom_gradient(u_true, axis = 1), custom_gradient(v_true, axis = 0))
             curl_pred = tf.math.subtract(custom_gradient(u_pred, axis = 1), custom_gradient(v_pred, axis = 0))
 
-            curl_difference = tf.math.abs(tf.math.subtract(curl_true, curl_pred))
+            curl_difference = tf.keras.metrics.mean_squared_error(curl_true, curl_pred)
 
             divergence = tf.math.add(custom_gradient(u_pred, axis = 0), custom_gradient( v_pred, axis = 1))
 
-            return tf.concat([curl_difference, energy_difference], 0)
+            return curl_difference, energy_difference
 # Autoencoder Model Class
 class AE(Model):
     def __init__(self, dimensions=[8, 4, 2, 1], activation_function='tanh', l_rate=0.01, epochs=10, batch=200,
-                 early_stopping=5, pooling='max', re=40.0, nu=2, nx=24, loss='mse', train_array=None, val_array=None):
+                 early_stopping=5, pooling='max', re=40.0, nu=2, nx=24, loss='mse', train_array=None, val_array=None,
+                 two_step=False):
         """ Ambiguous Inputs-
             dimensions: Number of features per convolution layer, dimensions[-1] is dimension of latent space.
             pooling: 'max' or 'ave', function to combine pixels.
@@ -99,6 +100,7 @@ class AE(Model):
         self.nx = nx
         self.pooling = pooling
         self.loss = loss
+        self.two_step = two_step
         # Instantiating
         self.u_all = None
         self.u_train = None
@@ -142,7 +144,15 @@ class AE(Model):
         """
         self.u_train = train_array
         self.u_val = val_array
-        self.training()
+        if self.two_step:
+            print('test 1')
+            self.two_step_training()
+        else:
+            self.training()
+
+    def passthrough(self, input_: np.array) -> np.array:
+        self.y_pred = self.autoencoder.predict(input_)
+        return self.y_pred
 
     def get_code(self, input_: np.array) -> np.array:  # skeleton
         """
@@ -229,7 +239,7 @@ class AE(Model):
 
     def training(self):
         """Function to train autoencoder, with checkpoints for checkpoints and early stopping"""
-
+        print('this shit not working')
         self.autoencoder.compile(optimizer=Adam(learning_rate=self.l_rate), loss=custom_loss_function)
 
         # Checkpoint callback creation
@@ -253,6 +263,28 @@ class AE(Model):
 
         # Predict model using test data
         # self.y_pred = self.autoencoder.predict(self.u_test[:, :, :, :], verbose=0)
+
+    def two_step_training(self):
+        """Function to train autoencoder with two different loss function. At each training iteration it has
+            checkpoints for checkpoints and early stopping"""
+        print('working')
+
+        weights = self.autoencoder.get_weights()
+
+        self.autoencoder.compile(optimizer=Adam(learning_rate=self.l_rate), loss=custom_loss_function)
+        self.autoencoder.set_weights(weights)
+
+        early_stop_callback = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=self.early_stopping)
+
+        # Fit the training and validation data to model, while saving a history. Verbose prints the epochs
+        self.hist = self.autoencoder.fit(self.u_train, self.u_train, epochs=self.epochs, batch_size=self.batch,
+                                         shuffle=True, validation_data=(self.u_val, self.u_val),
+                                         verbose=1,
+                                         callbacks=[early_stop_callback])
+
+        weights_n = self.autoencoder.get_weights()
+
+        #print((weights_n==weights).all())
 
     def visual_analysis(self, n=1, plot_error=False):
         """Function to visualize some samples of predictions in order to visually compare with the test set. Moreover,
@@ -323,8 +355,12 @@ def run_model():
     n = 2
     u_train, u_val, u_test = AE.preprocess(nu=n)
 
-    # model = AE.create_trained()
-    model = AE(l_rate=0.01, epochs=5, batch=10, early_stopping=10, dimensions=[32, 16, 8, 4], nu=n)
+    model = AE.create_trained()
+    model.u_train, model.u_val, model.u_test = u_train, u_val, u_test
+    model.two_step = True
+    model.epochs = 20
+    model.l_rate = 0.001
+    # model = AE()
     model.fit(u_train, u_val)
 
     model.passthrough(u_test)
