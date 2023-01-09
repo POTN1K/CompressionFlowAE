@@ -16,6 +16,8 @@ from keras.models import load_model
 import os
 # Local codes
 from Main import Model
+
+
 # from .ExperimentsAE.CustomLibraries import MixedPooling2D
 
 
@@ -253,7 +255,7 @@ class AE(Model):
         d['abs_std'] = np.std(abs_average_images)
 
         # Squared percentage metric, along with std
-        d['sqr_percentage'] = np.average(1 - (self.y_pred - self.u_test) ** 2 / self.u_test) * 100
+        d['sqr_percentage'] = np.average(1 - (self.y_pred - self.u_test) ** 2 / self.u_test ** 2) * 100
         sqr_average_images = np.average((1 - (self.y_pred - self.u_test) ** 2 / self.u_test), axis=(1, 2)) * 100
         d['sqr_std'] = np.std(sqr_average_images)
         self.dict_perf = d
@@ -276,25 +278,24 @@ class AE(Model):
         u = nxnx2[0]
         v = nxnx2[1]
 
-        return np.subtract(np.gradient(u, axis = 1), np.gradient(v, axis=0))
+        return np.subtract(np.gradient(u, axis=1), np.gradient(v, axis=0))
 
     @staticmethod
-    def plot_energy(nxnx2 : np.array):
+    def plot_energy(nxnx2: np.array):
         '''
         plots energy/grid without mass/density
         '''
-        plt.contourf(AE.energy(nxnx2), min = 0, max = 1.1)
+        plt.contourf(AE.energy(nxnx2), min=0, max=1.1)
         plt.title('Energy')
         plt.show()
         return None
 
-    
     @staticmethod
-    def plot_vorticity(nxnx2 : np.array):
+    def plot_vorticity(nxnx2: np.array):
         '''
         This method returns and shows a plot of the cross product of the velocity components
         '''
-        plt.contourf(AE.curl(nxnx2),  min = 0, max = 2.2)
+        plt.contourf(AE.curl(nxnx2), min=0, max=2.2)
         plt.title('Vorticity')
         plt.show()
         return None
@@ -343,11 +344,11 @@ def run_model():
     u_train, u_val, u_test = AE.preprocess(nu=n)
 
     model = AE.create_trained()
-    #model = AE(l_rate=0.0005, epochs=500, batch=10, early_stopping=10, dimensions=[256, 128, 64, 32], nu=n)
-    #model.fit(u_train, u_val)
+    # model = AE(l_rate=0.0005, epochs=500, batch=10, early_stopping=10, dimensions=[256, 128, 64, 32], nu=n)
+    # model.fit(u_train, u_val)
 
     model.passthrough(u_test)
-    #model.visual_analysis()
+    # model.visual_analysis()
 
     perf = model.performance()
 
@@ -364,5 +365,3 @@ def run_model():
 
 if __name__ == '__main__':
     run_model()
-
-

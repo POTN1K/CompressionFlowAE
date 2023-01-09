@@ -211,7 +211,7 @@ class Model:
         return u_all
 
     @staticmethod
-    def preprocess(u_all=None, re=40.0, nx=24, nu=1, split=True, norm=True):
+    def preprocess(u_all=None, re=40.0, nx=24, nu=2, split=True, norm=True):
         """
         Function to scale the data set and split it into train, validation and test sets.
         nx: Size of the grid side
