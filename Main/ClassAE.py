@@ -15,6 +15,8 @@ from keras.optimizers import Adam
 from keras.models import load_model
 import os
 # Local codes
+import sys
+sys.path.append('.')
 from Main import Model
 # from .ExperimentsAE.CustomLibraries import MixedPooling2D
 
@@ -24,6 +26,59 @@ from Main import Model
 # os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 
+# loss function
+def central_difference(before, after):
+    return tf.math.scalar_mul(0.5, tf.math.subtract(after, before))
+                    
+def forward_difference(current, after):
+    return tf.math.subtract(after, current)
+    
+def backward_difference(before, current):
+    return tf.math.subtract(current, before)
+
+def one_gradient(kxnxn, i, j, axis):
+    if axis == 0:
+        if i == 0:
+            return forward_difference(kxnxn[:,i+1,j], kxnxn[:,i,j])
+        elif i == 23:
+            return backward_difference(kxnxn[:,i,j], kxnxn[:,i-1,j])
+        else:
+            return central_difference(kxnxn[:,i+1,j], kxnxn[:,i-1,j])
+    elif axis == 1:
+        if j == 0:
+            return forward_difference(kxnxn[:,i,j+1], kxnxn[:,i,j])
+        elif j == 23:
+            return backward_difference(kxnxn[:,i,j], kxnxn[:,i,j-1])
+        else:
+            return central_difference(kxnxn[:,i,j+1], kxnxn[:,i,j-1])
+    else:
+        raise NotImplementedError 
+
+@tf.function
+def custom_gradient(kxnxn, axis):
+    n = 24
+    return tf.transpose([[one_gradient(kxnxn, i, j, axis = axis) for i in range(n)] for j in range(n)], (2, 0, 1))
+
+
+def custom_loss_function(y_true, y_pred):
+            u_true = y_true[:,:,:,0]
+            v_true = y_true[:,:,:,1]
+            u_pred = y_pred[:,:,:,0]
+            v_pred = y_pred[:,:,:,1]
+
+            energy_true =   tf.math.add(tf.multiply(u_true, u_true), (tf.multiply(v_true, v_true)))
+            energy_pred =   tf.math.add(tf.multiply(u_pred, u_pred), (tf.multiply(v_pred, v_pred)))
+
+            energy_difference = tf.math.abs(tf.math.subtract(energy_true, energy_pred))
+
+            curl_true = tf.math.subtract(custom_gradient(u_true, axis = 1), custom_gradient(v_true, axis = 0))
+            curl_pred = tf.math.subtract(custom_gradient(u_pred, axis = 1), custom_gradient(v_pred, axis = 0))
+
+            curl_difference = tf.math.abs(tf.math.subtract(curl_true, curl_pred))
+
+            divergence = tf.math.add(custom_gradient(u_pred, axis = 0), custom_gradient( v_pred, axis = 1))
+
+            return tf.concat([curl_difference, energy_difference], 0)
 # Autoencoder Model Class
 class AE(Model):
     def __init__(self, dimensions=[8, 4, 2, 1], activation_function='tanh', l_rate=0.01, epochs=10, batch=200,
@@ -174,8 +229,8 @@ class AE(Model):
 
     def training(self):
         """Function to train autoencoder, with checkpoints for checkpoints and early stopping"""
-        # Compile model for training
-        self.autoencoder.compile(optimizer=Adam(learning_rate=self.l_rate), loss=self.loss)
+
+        self.autoencoder.compile(optimizer=Adam(learning_rate=self.l_rate), loss=custom_loss_function)
 
         # Checkpoint callback creation
         # checkpoint_filepath = './checkpoint'
@@ -259,63 +314,6 @@ class AE(Model):
         self.dict_perf = d
         return d
 
-    @staticmethod
-    def energy(nxnx2: np.array):
-        '''
-        returns the kinetic grid wise energy of one image without taking mass into account 
-        '''
-        u = nxnx2[0]
-        v = nxnx2[1]
-        return 0.5 * np.add(np.multiply(u, u), np.multiply(v, v))
-
-    @staticmethod
-    def curl(nxnx2: np.array):
-        '''
-        returns the curl over the grid of a picture -> curl is used to calculate lift/drag therefore significant
-        '''
-        u = nxnx2[0]
-        v = nxnx2[1]
-
-        return np.subtract(np.gradient(u, axis = 1), np.gradient(v, axis=0))
-
-    @staticmethod
-    def plot_energy(nxnx2 : np.array):
-        '''
-        plots energy/grid without mass/density
-        '''
-        plt.contourf(AE.energy(nxnx2), min = 0, max = 1.1)
-        plt.show()
-        return None
-
-    
-    @staticmethod
-    def plot_vorticity(nxnx2 : np.array):
-        '''
-        This method returns and shows a plot of the cross product of the velocity components
-        '''
-        plt.contourf(AE.curl(nxnx2),  min = 0, max = 2.2)
-        plt.show()
-        return None
-
-    @staticmethod
-    def plot_velocity(nxnx2: np.array):
-        '''
-        plots vectorfield
-        '''
-        x = np.arange(24)
-        y = np.arange(24)
-        
-        X, Y = np.meshgrid(x, y)
-        
-        # Creating plot
-        fig, ax = plt.subplots(figsize =(9, 9))
-        ax.quiver(X, Y, nxnx2)
-        
-        ax.xaxis.set_ticks([])
-        ax.yaxis.set_ticks([])
-        ax.set_aspect('equal')
-        plt.show()
-        return None
 
 
 
@@ -325,9 +323,9 @@ def run_model():
     n = 2
     u_train, u_val, u_test = AE.preprocess(nu=n)
 
-    model = AE.create_trained()
-    # model = AE(l_rate=0.0005, epochs=500, batch=10, early_stopping=10, dimensions=[32, 16, 8, 4], nu=n)
-    # model.fit(u_train, u_val)
+    # model = AE.create_trained()
+    model = AE(l_rate=0.01, epochs=5, batch=10, early_stopping=10, dimensions=[32, 16, 8, 4], nu=n)
+    model.fit(u_train, u_val)
 
     model.passthrough(u_test)
     model.visual_analysis()
