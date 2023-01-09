@@ -19,3 +19,5 @@ __pycache__/DataReading.cpython-310.pyc
 /Models/checkpoint
 /TuningDivision/iter_1_analysis.csv
 /TuningDivision/iter_1_analysis.xlsx
+Main/(0, 1, 2)_plot.fig.pickle
+Main/(0, 1, 3)_latent.csv

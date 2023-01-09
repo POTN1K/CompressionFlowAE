@@ -96,7 +96,7 @@ class AE(Model):
         :return: time series code
         """
         self.u_test = input_
-        return self.encoder.predict(input_)
+        return self.encoder.predict(input_, verbose=0)
 
     def get_output(self, input_: np.array) -> np.array:  # skeleton
         """
@@ -284,6 +284,7 @@ class AE(Model):
         plots energy/grid without mass/density
         '''
         plt.contourf(AE.energy(nxnx2), min = 0, max = 1.1)
+        plt.title('Energy')
         plt.show()
         return None
 
@@ -294,6 +295,7 @@ class AE(Model):
         This method returns and shows a plot of the cross product of the velocity components
         '''
         plt.contourf(AE.curl(nxnx2),  min = 0, max = 2.2)
+        plt.title('Vorticity')
         plt.show()
         return None
 
@@ -304,10 +306,35 @@ class AE(Model):
         '''
         x, y = np.meshgrid(np.linspace(0, 2 * np.pi, 24), np.linspace(0, 2 * np.pi, 24))
         plt.quiver(x, y, nxnx2[:, :, 0], nxnx2[:, :, 1])
+        plt.title('Velocity')
         plt.show()
         return None
 
+    @staticmethod
+    def u_v_plot(nxnx2):
+        """
+        Plots velocity components x, y
+        :param nxnx2: Time frame for plotting
+        :return: None
+        """
+        fig = plt.figure()
+        ax1 = fig.add_subplot(121)
+        ax1.contourf(nxnx2[:, :, 0], vmin=0.0, vmax=1.1)
+        ax1.title.set_text('x_velocity')
 
+        ax2 = fig.add_subplot(122)
+        ax2.contourf(nxnx2[:, :, 1], vmin=0.0, vmax=1.1)
+        ax2.title.set_text('y_velocity')
+
+        fig.suptitle('Velocity Components')
+        plt.show()
+
+    @staticmethod
+    def plot_all(nxnx2):
+        AE.u_v_plot(nxnx2)
+        AE.plot_energy(nxnx2)
+        AE.plot_vorticity(nxnx2)
+        AE.plot_velocity(nxnx2)
 
 def run_model():
     """General function to run one model"""
@@ -330,9 +357,9 @@ def run_model():
     print(f'Absolute %: {round(perf["abs_percentage"], 3)} +- {round(perf["abs_std"], 3)}')
     print(f'Squared %: {round(perf["sqr_percentage"], 3)} +- {round(perf["sqr_std"], 3)}')
 
-    model.autoencoder.save('autoencoder_1D.h5')
-    model.encoder.save('encoder_1D.h5')
-    model.decoder.save('decoder_1D.h5')
+    #model.autoencoder.save('autoencoder_1D.h5')
+    #model.encoder.save('encoder_1D.h5')
+    #model.decoder.save('decoder_1D.h5')
 
 
 if __name__ == '__main__':
