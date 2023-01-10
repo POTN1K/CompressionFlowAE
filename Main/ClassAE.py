@@ -67,33 +67,84 @@ def custom_loss_function(y_true, y_pred):
     v_pred = y_pred[:, :, :, 1]
 
     energy_true = tf.math.add(tf.multiply(u_true, u_true), (tf.math.multiply(v_true, v_true)))
+    energy_true_scaled = tf.math.divide(energy_true, (tf.math.abs(tf.math.subtract(tf.reduce_min(energy_true), tf.reduce_max(energy_true)))))
     energy_pred = tf.math.add(tf.multiply(u_pred, u_pred), (tf.math.multiply(v_pred, v_pred)))
+    energy_pred_scaled = tf.math.divide(energy_pred, (tf.math.abs(tf.math.subtract(tf.reduce_min(energy_true), tf.reduce_max(energy_true)))))
 
-    diff_energy = tf.math.subtract(energy_true, energy_pred)
+    diff_energy = tf.math.subtract(energy_true_scaled, energy_pred_scaled)
     energy_average = tf.math.divide(tf.math.reduce_sum(tf.math.multiply(diff_energy, diff_energy), axis=0), np.shape(u_true)[0])
     energy_mse = tf.math.reduce_mean(energy_average, axis=[0, 1])
     # energy_difference = tf.keras.metrics.mean_squared_error(energy_true, energy_pred)
 
     curl_true = tf.math.subtract(custom_gradient(u_true, axis=1), custom_gradient(v_true, axis=0))
+    curl_true_scaled = tf.math.divide(curl_true, (tf.math.abs(tf.math.subtract(tf.reduce_min(curl_true), tf.reduce_max(curl_true)))))
     curl_pred = tf.math.subtract(custom_gradient(u_pred, axis=1), custom_gradient(v_pred, axis=0))
+    curl_pred_scaled = tf.math.divide(curl_pred, (tf.math.abs(tf.math.subtract(tf.reduce_min(curl_true), tf.reduce_max(curl_true)))))
 
-    diff_curl = tf.math.subtract(curl_true, curl_pred)
+    diff_curl = tf.math.subtract(curl_true_scaled, curl_pred_scaled)
     curl_average = tf.math.divide(tf.math.reduce_sum(tf.math.multiply(diff_curl, diff_curl), axis=0), np.shape(u_true)[0])
     curl_mse = tf.math.reduce_mean(curl_average, axis=[0, 1])
     # curl_difference = tf.keras.metrics.mean_squared_error(curl_true, curl_pred)
 
     divergence = tf.math.add(custom_gradient(u_pred, axis=0), custom_gradient( v_pred, axis=1))
-    div_average = tf.math.divide(tf.math.reduce_sum(tf.math.multiply(divergence, divergence), axis=0), np.shape(u_true)[0])
+    divergence_scaled = tf.math.scalar_mul(100, divergence)
+    div_average = tf.math.divide(tf.math.reduce_sum(tf.math.multiply(divergence_scaled, divergence_scaled), axis=0), np.shape(u_true)[0])
     div_mse = tf.math.reduce_mean(div_average, axis=[0, 1])
 
     return curl_mse, energy_mse, div_mse
 
+def custom_loss_divergence(y_true, y_pred):
+    u_true = y_true[:, :, :, 0]
+    v_true = y_true[:, :, :, 1]
+    u_pred = y_pred[:, :, :, 0]
+    v_pred = y_pred[:, :, :, 1]
 
+    divergence = tf.math.add(custom_gradient(u_pred, axis=0), custom_gradient(v_pred, axis=1))
+    divergence_scaled = tf.math.scalar_mul(100, divergence)
+    div_average = tf.math.divide(tf.math.reduce_sum(tf.math.multiply(divergence_scaled, divergence_scaled), axis=0), np.shape(u_true)[0])
+    div_mse = tf.math.reduce_mean(div_average, axis=[0, 1])
+
+    return div_mse
+
+def custom_loss_energy(y_true, y_pred):
+    u_true = y_true[:, :, :, 0]
+    v_true = y_true[:, :, :, 1]
+    u_pred = y_pred[:, :, :, 0]
+    v_pred = y_pred[:, :, :, 1]
+
+    energy_true = tf.math.add(tf.multiply(u_true, u_true), (tf.math.multiply(v_true, v_true)))
+    energy_true_scaled = tf.math.divide(energy_true, (tf.math.abs(tf.math.subtract(tf.reduce_min(energy_true), tf.reduce_max(energy_true)))))
+    energy_pred = tf.math.add(tf.multiply(u_pred, u_pred), (tf.math.multiply(v_pred, v_pred)))
+    energy_pred_scaled = tf.math.divide(energy_pred, (tf.math.abs(tf.math.subtract(tf.reduce_min(energy_true), tf.reduce_max(energy_true)))))
+
+    diff_energy = tf.math.subtract(energy_true_scaled, energy_pred_scaled)
+    energy_average = tf.math.divide(tf.math.reduce_sum(tf.math.multiply(diff_energy, diff_energy), axis=0),np.shape(u_true)[0])
+    energy_mse = tf.math.reduce_mean(energy_average, axis=[0, 1])
+    # energy_difference = tf.keras.metrics.mean_squared_error(energy_true, energy_pred)
+
+    return energy_mse
+
+def custom_loss_curl(y_true, y_pred):
+    u_true = y_true[:, :, :, 0]
+    v_true = y_true[:, :, :, 1]
+    u_pred = y_pred[:, :, :, 0]
+    v_pred = y_pred[:, :, :, 1]
+
+    curl_true = tf.math.subtract(custom_gradient(u_true, axis=1), custom_gradient(v_true, axis=0))
+    curl_true_scaled = tf.math.divide(curl_true, (tf.math.abs(tf.math.subtract(tf.reduce_min(curl_true), tf.reduce_max(curl_true)))))
+    curl_pred = tf.math.subtract(custom_gradient(u_pred, axis=1), custom_gradient(v_pred, axis=0))
+    curl_pred_scaled = tf.math.divide(curl_pred, (tf.math.abs(tf.math.subtract(tf.reduce_min(curl_true), tf.reduce_max(curl_true)))))
+
+    diff_curl = tf.math.subtract(curl_true_scaled, curl_pred_scaled)
+    curl_average = tf.math.divide(tf.math.reduce_sum(tf.math.multiply(diff_curl, diff_curl), axis=0),np.shape(u_true)[0])
+    curl_mse = tf.math.reduce_mean(curl_average, axis=[0, 1])
+
+    return curl_mse
 # Autoencoder Model Class
 class AE(Model):
     def __init__(self, dimensions=[8, 4, 2, 1], activation_function='tanh', l_rate=0.01, epochs=10, batch=200,
                  early_stopping=5, pooling='max', re=40.0, nu=2, nx=24, loss='mse', train_array=None, val_array=None,
-                 two_step=False):
+                 two_step=False, one_by_one=False):
         """ Ambiguous Inputs-
             dimensions: Number of features per convolution layer, dimensions[-1] is dimension of latent space.
             pooling: 'max' or 'ave', function to combine pixels.
@@ -111,6 +162,7 @@ class AE(Model):
         self.pooling = pooling
         self.loss = loss
         self.two_step = two_step
+        self.one_by_one = one_by_one
         # Instantiating
         self.u_all = None
         self.u_train = None
@@ -156,6 +208,8 @@ class AE(Model):
         self.u_val = val_array
         if self.two_step:
             self.two_step_training()
+        if self.one_by_one:
+            self.one_by_one_training()
         else:
             self.training()
 
@@ -279,7 +333,7 @@ class AE(Model):
 
         weights = self.autoencoder.get_weights()
 
-        self.autoencoder.compile(optimizer=Adam(learning_rate=self.l_rate), loss=custom_loss_function)
+        self.autoencoder.compile(optimizer=Adam(learning_rate=self.l_rate), loss=custom_loss_divergence)
         self.autoencoder.set_weights(weights)
 
         early_stop_callback = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=self.early_stopping)
@@ -293,6 +347,49 @@ class AE(Model):
         weights_n = self.autoencoder.get_weights()
 
         #print((weights_n==weights).all())
+
+    def one_by_one_training(self):
+        weights = self.autoencoder.get_weights()
+
+        self.autoencoder.compile(optimizer=Adam(learning_rate=self.l_rate), loss=custom_loss_curl)
+        self.autoencoder.set_weights(weights)
+
+        early_stop_callback = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=self.early_stopping)
+
+        # Fit the training and validation data to model, while saving a history. Verbose prints the epochs
+        self.hist = self.autoencoder.fit(self.u_train, self.u_train, epochs=self.epochs, batch_size=self.batch,
+                                         shuffle=True, validation_data=(self.u_val, self.u_val),
+                                         verbose=1,
+                                         callbacks=[early_stop_callback])
+
+        # Get weights of newly trained AE and recompile autoencoder with next loss function
+        weights = self.autoencoder.get_weights()
+
+        self.autoencoder.compile(optimizer=Adam(learning_rate=self.l_rate), loss=custom_loss_energy)
+        self.autoencoder.set_weights(weights)
+
+        early_stop_callback = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=self.early_stopping)
+
+        # Fit the training and validation data to model, while saving a history. Verbose prints the epochs
+        self.hist = self.autoencoder.fit(self.u_train, self.u_train, epochs=self.epochs, batch_size=self.batch,
+                                         shuffle=True, validation_data=(self.u_val, self.u_val),
+                                         verbose=1,
+                                         callbacks=[early_stop_callback])
+
+        # # Get weights again and recompile autoencoder with next loss function
+        # weights = self.autoencoder.get_weights()
+        #
+        # self.autoencoder.compile(optimizer=Adam(learning_rate=self.l_rate), loss=custom_loss_divergence)
+        # self.autoencoder.set_weights(weights)
+        #
+        # early_stop_callback = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=self.early_stopping)
+        #
+        # # Fit the training and validation data to model, while saving a history. Verbose prints the epochs
+        # self.hist = self.autoencoder.fit(self.u_train, self.u_train, epochs=self.epochs, batch_size=self.batch,
+        #                                  shuffle=True, validation_data=(self.u_val, self.u_val),
+        #                                  verbose=1,
+        #                                  callbacks=[early_stop_callback])
+
 
     def visual_analysis(self, n=1, plot_error=False):
         """Function to visualize some samples of predictions in order to visually compare with the test set. Moreover,
@@ -321,7 +418,6 @@ class AE(Model):
                 plt.colorbar(figure2y)
                 plt.title("Velocity y-dir")
                 plt.show()
-
 
         if plot_error:
             # Creation of a loss graph, comparing validation and training data.
@@ -366,8 +462,9 @@ def run_model():
 
     model = AE.create_trained()
     model.u_train, model.u_val, model.u_test = u_train, u_val, u_test
-    model.two_step = True
-    model.epochs = 10
+    model.two_step = False
+    model.one_by_one = True
+    model.epochs = 15
     model.l_rate = 0.001
     # model = AE()
     model.fit(u_train, u_val)
