@@ -321,6 +321,7 @@ class AE(Model):
                 plt.colorbar(figure2y)
                 plt.title("Velocity y-dir")
                 plt.show()
+                
 
         if plot_error:
             # Creation of a loss graph, comparing validation and training data.
