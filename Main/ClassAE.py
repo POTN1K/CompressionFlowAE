@@ -393,13 +393,13 @@ def run_model():
 
     model = AE.create_trained()
     model.u_train, model.u_val, model.u_test = u_train, u_val, u_test
-    model.epochs = 2
-    model.l_rate = 0.001
-    model.batch = 300
+    model.epochs = 30
+    model.l_rate = 0.01
+    model.batch = 50
     # model = AE()
     model.fit(custom_loss_curl, u_train, u_val)
-    model.epochs = 2
-    model.l_rate = 0.001
+    model.epochs = 30
+    model.l_rate = 0.01
     model.batch = 200
     model.fit(custom_loss_energy, u_train, u_val)
 
