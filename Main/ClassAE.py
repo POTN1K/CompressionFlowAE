@@ -377,8 +377,8 @@ def run_model():
 
     model = AE.create_trained()
     model.u_train, model.u_val, model.u_test = u_train, u_val, u_test
-    model.epochs = 4
-    model.l_rate = 0.001
+    model.epochs = 20
+    model.l_rate = 0.0001
     model.batch = 50
     # model = AE()
     model.fit(custom_loss_function, u_train, u_val)
