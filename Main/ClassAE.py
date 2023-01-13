@@ -194,7 +194,7 @@ class AE(Model):
 
         # Fit the training and validation data to model, while saving a history. Verbose prints the epochs
         self.hist = self.autoencoder.fit(self.u_train, self.u_train, epochs=self.epochs, batch_size=self.batch,
-                                         shuffle=True, validation_data=(self.u_val, self.u_val),
+                                         shuffle=False, validation_data=(self.u_val, self.u_val),
                                          verbose=1,
                                          callbacks=[early_stop_callback])
 
@@ -343,11 +343,11 @@ def run_model():
     n = 2
     u_train, u_val, u_test = AE.preprocess(nu=n)
 
-    model = AE.create_trained()
-    # model = AE(l_rate=0.0005, epochs=500, batch=10, early_stopping=10, dimensions=[256, 128, 64, 32], nu=n)
-    # model.fit(u_train, u_val)
+    # model = AE.create_trained()
+    model = AE(l_rate=0.0005, epochs=500, batch=10, early_stopping=10, dimensions=[16,8,4,2], nu=n)
+    model.fit(u_train, u_val)
 
-    model.passthrough(u_test)
+    t = model.passthrough(u_test)
     # model.visual_analysis()
 
     perf = model.performance()
@@ -358,6 +358,7 @@ def run_model():
     print(f'Absolute %: {round(perf["abs_percentage"], 3)} +- {round(perf["abs_std"], 3)}')
     print(f'Squared %: {round(perf["sqr_percentage"], 3)} +- {round(perf["sqr_std"], 3)}')
 
+    AE.u_v_plot(t[0])
     #model.autoencoder.save('autoencoder_1D.h5')
     #model.encoder.save('encoder_1D.h5')
     #model.decoder.save('decoder_1D.h5')
