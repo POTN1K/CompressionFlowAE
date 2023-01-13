@@ -5,9 +5,9 @@ from ClassAE import custom_loss_function
 import numpy as np
 from sklearn.model_selection import ParameterGrid  # pip3.10 -U scikit-learn
 
-param_ranges_dict = {'l_rate': [0.01, 0.001],
-                     'epochs': [10],
-                     'batch': [200, 10]}
+param_ranges_dict = {'l_rate': [0.01, 0.001, 0.0001],
+                     'epochs': [5, 10, 20],
+                     'batch': [200, 50, 10]}
 
 param_grid = ParameterGrid(param_ranges_dict)  # Flattened grid of all combinations
 
@@ -35,7 +35,7 @@ for params in param_grid:
 
     t_time = end - start
 
-    values = {'Running Time': t_time, 'Loss': model.dict_perf['mse'], 'Divergence': avg_div
+    values = {'Loss': model.dict_perf['mse'], 'Divergence': avg_div
               # , 'Compression': params['dimensions'][-1] / (24 * 24) # this will not generalise well
               }
     values.update(params)

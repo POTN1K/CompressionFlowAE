@@ -115,29 +115,20 @@ def custom_loss_function(y_true, y_pred):
 
     energy_true = tf.math.add(tf.multiply(u_true, u_true), (tf.multiply(v_true, v_true)))
     energy_pred = tf.math.add(tf.multiply(u_pred, u_pred), (tf.multiply(v_pred, v_pred)))
-    range_ = tf.math.abs(tf.math.subtract(tf.math.reduce_max(energy_true), tf.math.reduce_min(energy_true)))
 
-    energy_difference = tf.math.divide(tf.math.abs(tf.subtract(energy_true, energy_pred)), range_)
+    energy_difference = tf.math.reduce_mean(tf.math.abs(tf.subtract(energy_true, energy_pred)), axis=[1, 2])
 
     curl_true = tf.math.subtract(custom_gradient(u_true, axis=1), custom_gradient(v_true, axis=0))
     curl_pred = tf.math.subtract(custom_gradient(u_pred, axis=1), custom_gradient(v_pred, axis=0))
-    range_2 = tf.math.abs(tf.math.subtract(tf.math.reduce_max(curl_true), tf.math.reduce_min(curl_true)))
 
-    curl_difference = tf.math.divide((tf.subtract(curl_true, curl_pred)), range_2)
+    curl_difference = tf.math.reduce_mean(tf.math.abs(tf.subtract(curl_true, curl_pred)), axis=[1, 2])
 
-<<<<<<< Updated upstream
     divergence = tf.math.abs(
         tf.math.reduce_mean(tf.math.add(custom_gradient(u_pred, axis=0), custom_gradient(v_pred, axis=1)), axis=[1, 2]))
-=======
-            u_diff = tf.math.subtract(u_true, u_pred)
-            v_diff = tf.math.subtract(v_true, v_pred)
-            u_mse =  tf.math.reduce_mean(tf.math.multiply(u_diff, u_diff), axis = [1,2])
-            v_mse =  tf.math.reduce_mean(tf.math.multiply(v_diff, v_diff), axis = [1,2])
->>>>>>> Stashed changes
 
     u_diff = tf.math.subtract(u_true, u_pred)
     v_diff = tf.math.subtract(v_true, v_pred)
-    u_mse =  tf.math.reduce_mean(tf.math.multiply(u_diff, u_diff), axis=[1, 2])
+    u_mse = tf.math.reduce_mean(tf.math.multiply(u_diff, u_diff), axis=[1, 2])
     v_mse = tf.math.reduce_mean(tf.math.multiply(v_diff, v_diff), axis=[1, 2])
 
     return divergence, u_mse, v_mse
