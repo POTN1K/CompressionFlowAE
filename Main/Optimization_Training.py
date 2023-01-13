@@ -48,5 +48,4 @@ for params in param_grid:
 
     with open('custom_loss_optimization.csv', 'a', newline='') as f:
         writer = DictWriter(f, fieldnames=columns)
-        writer.writeheader()
         writer.writerow(values)
