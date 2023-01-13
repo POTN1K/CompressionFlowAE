@@ -92,10 +92,10 @@ def custom_loss_function(y_true, y_pred):
 
             u_diff = tf.math.subtract(u_true, u_pred)
             v_diff = tf.math.subtract(v_true, v_pred)
-            u_mse =  tf.math.scalar_mul(1/24/24, tf.math.reduce_mean(tf.math.multiply(u_diff, u_diff), axis = [1,2]))
-            v_mse =  tf.math.scalar_mul(1/24/24, tf.math.reduce_mean(tf.math.multiply(v_diff, v_diff), axis = [1,2]))
+            u_mse =  tf.math.reduce_mean(tf.math.multiply(u_diff, u_diff), axis = [1,2])
+            v_mse =  tf.math.reduce_mean(tf.math.multiply(v_diff, v_diff), axis = [1,2])
 
-            return energy_difference, curl_difference
+            return energy_difference, curl_difference, divergence
 
 
 # Autoencoder Model Class
