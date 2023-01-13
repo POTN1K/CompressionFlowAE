@@ -168,4 +168,5 @@ def is_inside(p1: list[float], p2: list[float], p3: list[float]) -> [list[bool],
 
 
 if __name__ == '__main__':
-    ...
+    x=generate([ 0.43058726, -0.05585832, -0.12001201,  0.07864941])
+    AE.u_v_plot(x)

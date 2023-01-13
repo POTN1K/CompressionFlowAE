@@ -75,15 +75,15 @@ setattr(AE, 'h_network', hierarchicalNetwork)
 # --------------------------------------------------------------------------------------------------
 # Preprocess Data
 train, val, test = AE.preprocess(nu=2)
-train = train[:50]
-val = val[:50]
-test = test[:50]
+#train = train[:50]
+#val = val[:50]
+#test = test[:50]
 
 AE.u_v_plot(test[0])
 
 # Create 1 component autoencoder
 print("Model 1")
-model1 = AE(dimensions=[64, 32, 16, 1], l_rate=0.0005, epochs=500, batch=10)
+model1 = AE(dimensions=[64, 32, 16, 1], l_rate=0.0005, epochs=50, batch=20)
 model1.h_network()
 model1.fit(train, val)
 t1 = model1.passthrough(test)
@@ -98,7 +98,7 @@ model1.encoder.trainable = False
 # ___________________________________________________________________________________________
 print("Model 2")
 # Create 2 component
-model2 = AE(dimensions=[64, 32, 10, 1], l_rate=0.0005, epochs=200, batch=20)
+model2 = AE(dimensions=[64, 32, 10, 1], l_rate=0.0005, epochs=75, batch=20)
 model2.h_network(1, model1)
 model2.fit(train, val)
 t2 = model2.passthrough(test)
@@ -114,7 +114,7 @@ model2.encoder.trainable = False
 ## ___________________________________________________________________________________________
 print("Model 3")
 # Create 3 component
-model3 = AE(dimensions=[64, 32, 10, 1], l_rate=0.0005, epochs=200, batch=20)
+model3 = AE(dimensions=[64, 32, 10, 1], l_rate=0.0005, epochs=100, batch=20)
 model3.h_network(2, model2)
 model3.fit(train, val)
 t3 = model3.passthrough(test)
@@ -129,7 +129,7 @@ model2.encoder.trainable = False
 
 print("Model 4")
 # Create 3 component
-model4 = AE(dimensions=[64, 32, 10, 1], l_rate=0.0005, epochs=200, batch=20)
+model4 = AE(dimensions=[64, 32, 10, 1], l_rate=0.0005, epochs=125, batch=20)
 model4.h_network(3, model3)
 model4.fit(train, val)
 t4 = model4.passthrough(test)
