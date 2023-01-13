@@ -40,7 +40,7 @@ def hierarchicalNetwork(self, n=0, model=None):
 
     # Custom layer
     complete_encoded = RefactorEncoded(n, model)(encoded, self.image)
-
+    print(f'Complete encoded: {complete_encoded}')
     # Beginning of Decoder
     x = Conv2DTranspose(self.dimensions[3], (3, 3), padding='same', activation=self.activation_function)(
         complete_encoded)
@@ -75,15 +75,15 @@ setattr(AE, 'h_network', hierarchicalNetwork)
 # --------------------------------------------------------------------------------------------------
 # Preprocess Data
 train, val, test = AE.preprocess(nu=2)
-train = train[:10]
-val = val[:10]
-test = test[:10]
+train = train[:50]
+val = val[:50]
+test = test[:50]
 
-# AE.plot_all(test[0])
+AE.u_v_plot(test[0])
 
 # Create 1 component autoencoder
 print("Model 1")
-model1 = AE(dimensions=[8, 4, 2, 1], l_rate=0.001, epochs=30, batch=20)
+model1 = AE(dimensions=[64, 32, 16, 1], l_rate=0.0005, epochs=500, batch=10)
 model1.h_network()
 model1.fit(train, val)
 t1 = model1.passthrough(test)
@@ -92,13 +92,13 @@ perf = model1.performance()
 print(f'Absolute %: {round(perf["abs_percentage"], 3)} +- {round(perf["abs_std"], 3)}')
 print(f'Squared %: {round(perf["sqr_percentage"], 3)} +- {round(perf["sqr_std"], 3)}')
 
-# AE.plot_all(t1[0])
-print(model1.encoder.get_weights())
+AE.u_v_plot(t1[0])
+#print(model1.encoder.get_weights())
 model1.encoder.trainable = False
 # ___________________________________________________________________________________________
 print("Model 2")
 # Create 2 component
-model2 = AE(dimensions=[8, 4, 2, 1], l_rate=0.001, epochs=30, batch=20)
+model2 = AE(dimensions=[64, 32, 10, 1], l_rate=0.0005, epochs=200, batch=20)
 model2.h_network(1, model1)
 model2.fit(train, val)
 t2 = model2.passthrough(test)
@@ -107,21 +107,36 @@ perf = model2.performance()
 print(f'Absolute %: {round(perf["abs_percentage"], 3)} +- {round(perf["abs_std"], 3)}')
 print(f'Squared %: {round(perf["sqr_percentage"], 3)} +- {round(perf["sqr_std"], 3)}')
 
-# AE.plot_all(t2[0])
-print(model1.encoder.get_weights())
+AE.u_v_plot(t2[0])
+#print(model1.encoder.get_weights())
 print(model2.encode(test[0]))
-
+model2.encoder.trainable = False
 ## ___________________________________________________________________________________________
-# print("Model 3")
-## Create 3 component
-# model3 = AE(dimensions=[8, 4, 2, 1], l_rate=0.001, epochs=30, batch=20)
-# model3.h_network(2, pred2)
-# model3.fit(train, val)
-# t3 = model3.passthrough(test)
-# perf = model3.performance()
+print("Model 3")
+# Create 3 component
+model3 = AE(dimensions=[64, 32, 10, 1], l_rate=0.0005, epochs=200, batch=20)
+model3.h_network(2, model2)
+model3.fit(train, val)
+t3 = model3.passthrough(test)
+perf = model3.performance()
 #
-# print(f'Absolute %: {round(perf["abs_percentage"], 3)} +- {round(perf["abs_std"], 3)}')
-# print(f'Squared %: {round(perf["sqr_percentage"], 3)} +- {round(perf["sqr_std"], 3)}')
+print(f'Absolute %: {round(perf["abs_percentage"], 3)} +- {round(perf["abs_std"], 3)}')
+print(f'Squared %: {round(perf["sqr_percentage"], 3)} +- {round(perf["sqr_std"], 3)}')
 #
-# AE.plot_all(t3[0])
-# print(model3.encode((data[0])))
+AE.u_v_plot(t3[0])
+print(model3.encode((test[0])))
+model2.encoder.trainable = False
+
+print("Model 4")
+# Create 3 component
+model4 = AE(dimensions=[64, 32, 10, 1], l_rate=0.0005, epochs=200, batch=20)
+model4.h_network(3, model3)
+model4.fit(train, val)
+t4 = model4.passthrough(test)
+perf = model4.performance()
+#
+print(f'Absolute %: {round(perf["abs_percentage"], 3)} +- {round(perf["abs_std"], 3)}')
+print(f'Squared %: {round(perf["sqr_percentage"], 3)} +- {round(perf["sqr_std"], 3)}')
+#
+AE.u_v_plot(t4[0])
+print(model4.encode((test[0])))

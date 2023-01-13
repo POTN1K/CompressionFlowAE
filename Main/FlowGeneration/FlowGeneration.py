@@ -10,7 +10,9 @@ from mpl_toolkits import mplot3d
 # Physical conditions of the flow: Check the values for vorticity (curl), energy, cross product, resultant velocity
 # The characteristics of latent space: check changes in latent space due to different Re
 
-
+domain = np.arange(-0.5, 0.5, 0.05)
+model = AE.create_trained()
+u_train, u_val, u_test = AE.preprocess(nu=2)
 
 def generation_from_original(time_series, n_element):
     """
@@ -55,7 +57,7 @@ def original_ls_visual(params: tuple, time_series, plotting=True, saving=False):
     :return: None
     """
     if not path.exists(f'{params}_latent.csv'):
-        latent = generate_from_original_all(time_series
+        latent = generate_from_original_all(time_series)
         np.savetxt(f'{params}_latent.csv', latent, delimiter=',')
     else:
         latent = np.genfromtxt(f'{params}_latent.csv', delimiter=',')
@@ -166,4 +168,4 @@ def is_inside(p1: list[float], p2: list[float], p3: list[float]) -> [list[bool],
 
 
 if __name__ == '__main__':
-    original_ls_visual((0,1,2), u_test, True, False)
+    ...
