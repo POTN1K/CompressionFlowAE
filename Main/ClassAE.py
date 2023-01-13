@@ -192,7 +192,7 @@ class AE(Model):
 
         # Fit the training and validation data to model, while saving a history. Verbose prints the epochs
         self.hist = self.autoencoder.fit(self.u_train, self.u_train, epochs=self.epochs, batch_size=self.batch,
-                                         shuffle=True, validation_data=(self.u_val, self.u_val),
+                                         shuffle=False, validation_data=(self.u_val, self.u_val),
                                          verbose=1,
                                          callbacks=[early_stop_callback])
 
@@ -357,9 +357,8 @@ def run_model():
     print(f'Absolute %: {round(perf["abs_percentage"], 3)} +- {round(perf["abs_std"], 3)}')
     print(f'Squared %: {round(perf["sqr_percentage"], 3)} +- {round(perf["sqr_std"], 3)}')
 
-    #model.autoencoder.save('autoencoder_1D.h5')
-    #model.encoder.save('encoder_1D.h5')
-    #model.decoder.save('decoder_1D.h5')
+
+
 
 
 if __name__ == '__main__':

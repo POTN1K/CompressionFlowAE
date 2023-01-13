@@ -41,8 +41,8 @@ class Model:
         :param input_: singular or time series input
         :return: singular or time series code
         """
-        if not self.trained:
-            raise Exception('Called encode before fit')
+        # if not self.trained:
+        #     raise Exception('Called encode before fit')
 
         self.input = input_
         self.encoded = self.get_code(self.input)
