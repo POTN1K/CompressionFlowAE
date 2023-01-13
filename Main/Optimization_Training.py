@@ -5,7 +5,7 @@ from ClassAE import custom_loss_function
 import numpy as np
 from sklearn.model_selection import ParameterGrid  # pip3.10 -U scikit-learn
 
-param_ranges_dict = {'l_rate': [0.01],
+param_ranges_dict = {'l_rate': [0.01, 0.001],
                      'epochs': [10],
                      'batch': [200, 10]}
 
@@ -31,10 +31,11 @@ for params in param_grid:
     end = time.time()
     model.passthrough(model.u_test)
     model.performance()
+    max_div, min_div, avg_div = model.verification(model.y_pred, print_res=False)
 
     t_time = end - start
 
-    values = {'Running Time': t_time, 'Loss': model.dict_perf['mse']
+    values = {'Running Time': t_time, 'Loss': model.dict_perf['mse'], 'Divergence': avg_div
               # , 'Compression': params['dimensions'][-1] / (24 * 24) # this will not generalise well
               }
     values.update(params)
@@ -46,5 +47,6 @@ for params in param_grid:
     k += 1
 
     with open('custom_loss_optimization.csv', 'a', newline='') as f:
-        writer = DictWriter(f, columns)
+        writer = DictWriter(f, fieldnames=columns)
+        writer.writeheader()
         writer.writerow(values)
