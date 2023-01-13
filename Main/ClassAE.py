@@ -95,58 +95,45 @@ def custom_loss_curl(y_true, y_pred):
     v_true = y_true[:, :, :, 1]
     u_pred = y_pred[:, :, :, 0]
     v_pred = y_pred[:, :, :, 1]
-    print(f'u_true: {np.shape(u_true)}')
 
     curl_true = tf.math.subtract(custom_gradient(u_true, axis=1), custom_gradient(v_true, axis=0))
     curl_true_scaled = tf.math.divide(curl_true, (tf.math.abs(tf.math.subtract(tf.reduce_min(curl_true), tf.reduce_max(curl_true)))))
-    print(f'curl_true_scaled: {np.shape(curl_true_scaled)}')
     curl_pred = tf.math.subtract(custom_gradient(u_pred, axis=1), custom_gradient(v_pred, axis=0))
     curl_pred_scaled = tf.math.divide(curl_pred, (tf.math.abs(tf.math.subtract(tf.reduce_min(curl_true), tf.reduce_max(curl_true)))))
-    print(f'curl_pred_scaled: {np.shape(curl_pred_scaled)}')
 
     diff_curl = tf.math.subtract(curl_true_scaled, curl_pred_scaled)
-    print(f'diff_curl: {np.shape(diff_curl)}')
     curl_average = tf.math.divide(tf.math.reduce_sum(tf.math.multiply(diff_curl, diff_curl), axis=0), np.shape(u_true)[0])
     curl_mse = tf.math.reduce_mean(curl_average, axis=[0, 1])
 
     return curl_mse
 
 def custom_loss_function(y_true, y_pred):
+    u_true = y_true[:, :, :, 0]
+    v_true = y_true[:, :, :, 1]
+    u_pred = y_pred[:, :, :, 0]
+    v_pred = y_pred[:, :, :, 1]
 
-    curl_mse = custom_loss_curl(y_true, y_pred)
-    energy_mse = custom_loss_energy(y_true, y_pred)
-    div_mse = custom_loss_divergence(y_true, y_pred)
-    # u_true = y_true[:, :, :, 0]
-    # v_true = y_true[:, :, :, 1]
-    # u_pred = y_pred[:, :, :, 0]
-    # v_pred = y_pred[:, :, :, 1]
-    #
-    # energy_true = tf.math.add(tf.multiply(u_true, u_true), (tf.math.multiply(v_true, v_true)))
-    # energy_true_scaled = tf.math.divide(energy_true, (tf.math.abs(tf.math.subtract(tf.reduce_min(energy_true), tf.reduce_max(energy_true)))))
-    # energy_pred = tf.math.add(tf.multiply(u_pred, u_pred), (tf.math.multiply(v_pred, v_pred)))
-    # energy_pred_scaled = tf.math.divide(energy_pred, (tf.math.abs(tf.math.subtract(tf.reduce_min(energy_true), tf.reduce_max(energy_true)))))
-    #
-    # diff_energy = tf.math.subtract(energy_true_scaled, energy_pred_scaled)
-    # energy_average = tf.math.divide(tf.math.reduce_sum(tf.math.multiply(diff_energy, diff_energy), axis=0), np.shape(u_true)[0])
-    # energy_mse = tf.math.reduce_mean(energy_average, axis=[0, 1])
-    # # energy_difference = tf.keras.metrics.mean_squared_error(energy_true, energy_pred)
-    #
-    # curl_true = tf.math.subtract(custom_gradient(u_true, axis=1), custom_gradient(v_true, axis=0))
-    # curl_true_scaled = tf.math.divide(curl_true, (tf.math.abs(tf.math.subtract(tf.reduce_min(curl_true), tf.reduce_max(curl_true)))))
-    # curl_pred = tf.math.subtract(custom_gradient(u_pred, axis=1), custom_gradient(v_pred, axis=0))
-    # curl_pred_scaled = tf.math.divide(curl_pred, (tf.math.abs(tf.math.subtract(tf.reduce_min(curl_true), tf.reduce_max(curl_true)))))
-    #
-    # diff_curl = tf.math.subtract(curl_true_scaled, curl_pred_scaled)
-    # curl_average = tf.math.divide(tf.math.reduce_sum(tf.math.multiply(diff_curl, diff_curl), axis=0), np.shape(u_true)[0])
-    # curl_mse = tf.math.reduce_mean(curl_average, axis=[0, 1])
-    # # curl_difference = tf.keras.metrics.mean_squared_error(curl_true, curl_pred)
-    #
-    # divergence = tf.math.add(custom_gradient(u_pred, axis=0), custom_gradient( v_pred, axis=1))
-    # divergence_scaled = tf.math.scalar_mul(100, divergence)
-    # div_average = tf.math.divide(tf.math.reduce_sum(tf.math.multiply(divergence_scaled, divergence_scaled), axis=0), np.shape(u_true)[0])
-    # div_mse = tf.math.reduce_mean(div_average, axis=[0, 1])
+    energy_true = tf.math.add(tf.multiply(u_true, u_true), (tf.multiply(v_true, v_true)))
+    energy_pred = tf.math.add(tf.multiply(u_pred, u_pred), (tf.multiply(v_pred, v_pred)))
+    range_ = tf.math.abs(tf.math.subtract(tf.math.reduce_max(energy_true), tf.math.reduce_min(energy_true)))
 
-    return curl_mse, energy_mse, div_mse
+    energy_difference = tf.math.divide(tf.math.abs(tf.subtract(energy_true, energy_pred)), range_)
+
+    curl_true = tf.math.subtract(custom_gradient(u_true, axis=1), custom_gradient(v_true, axis=0))
+    curl_pred = tf.math.subtract(custom_gradient(u_pred, axis=1), custom_gradient(v_pred, axis=0))
+    range_2 = tf.math.abs(tf.math.subtract(tf.math.reduce_max(curl_true), tf.math.reduce_min(curl_true)))
+
+    curl_difference = tf.math.divide((tf.subtract(curl_true, curl_pred)), range_2)
+
+    divergence = tf.math.abs(
+        tf.math.reduce_mean(tf.math.add(custom_gradient(u_pred, axis=0), custom_gradient(v_pred, axis=1)), axis=[1, 2]))
+
+    u_diff = tf.math.subtract(u_true, u_pred)
+    v_diff = tf.math.subtract(v_true, v_pred)
+    u_mse =  tf.math.reduce_mean(tf.math.multiply(u_diff, u_diff), axis=[1, 2])
+    v_mse = tf.math.reduce_mean(tf.math.multiply(v_diff, v_diff), axis=[1, 2])
+
+    return divergence, u_mse, v_mse
 
 # Autoencoder Model Class
 class AE(Model):
@@ -384,7 +371,6 @@ class AE(Model):
         self.dict_perf = d
         return d
 
-
 def run_model():
     """General function to run one model"""
 
@@ -393,15 +379,11 @@ def run_model():
 
     model = AE.create_trained()
     model.u_train, model.u_val, model.u_test = u_train, u_val, u_test
-    model.epochs = 1
-    model.l_rate = 0.01
+    model.epochs = 4
+    model.l_rate = 0.001
     model.batch = 50
     # model = AE()
-    model.fit(custom_loss_curl, u_train, u_val)
-    model.epochs = 1
-    model.l_rate = 0.01
-    model.batch = 50
-    model.fit(custom_loss_energy, u_train, u_val)
+    model.fit(custom_loss_function, u_train, u_val)
 
     model.passthrough(u_test)
     model.visual_analysis()
