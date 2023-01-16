@@ -15,6 +15,8 @@ from keras.optimizers import Adam
 from keras.models import load_model
 import os
 # Local codes
+import sys
+sys.path.append('.')
 from Main import Model
 # from .ExperimentsAE.CustomLibraries import MixedPooling2D
 
@@ -24,10 +26,70 @@ from Main import Model
 # os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 
+# loss function
+def central_difference(before, after):
+    return tf.math.scalar_mul(0.5, tf.math.subtract(after, before))
+
+def forward_difference(current, after):
+    return tf.math.subtract(after, current)
+
+def backward_difference(before, current):
+    return tf.math.subtract(current, before)
+
+def one_gradient(kxnxn, i, j, axis):
+    if axis == 0:
+        if i == 0:
+            return forward_difference(kxnxn[:,i+1,j], kxnxn[:,i,j])
+        elif i == 23:
+            return backward_difference(kxnxn[:,i,j], kxnxn[:,i-1,j])
+        else:
+            return central_difference(kxnxn[:,i+1,j], kxnxn[:,i-1,j])
+    elif axis == 1:
+        if j == 0:
+            return forward_difference(kxnxn[:,i,j+1], kxnxn[:,i,j])
+        elif j == 23:
+            return backward_difference(kxnxn[:,i,j], kxnxn[:,i,j-1])
+        else:
+            return central_difference(kxnxn[:,i,j+1], kxnxn[:,i,j-1])
+    else:
+        raise NotImplementedError
+
+@tf.function
+def custom_gradient(kxnxn, axis):
+    n = 24
+    return tf.transpose([[one_gradient(kxnxn, i, j, axis = axis) for i in range(n)] for j in range(n)], (2, 0, 1))
+
+def custom_loss_function(y_true, y_pred):
+            u_true = y_true[:,:,:,0]
+            v_true = y_true[:,:,:,1]
+            u_pred = y_pred[:,:,:,0]
+            v_pred = y_pred[:,:,:,1]
+
+            energy_true =   tf.math.add(tf.multiply(u_true, u_true), (tf.multiply(v_true, v_true)))
+            energy_pred =   tf.math.add(tf.multiply(u_pred, u_pred), (tf.multiply(v_pred, v_pred)))
+
+            energy_difference = tf.math.reduce_mean(tf.math.abs(tf.subtract(energy_true, energy_pred)), axis=[1,2])
+
+            curl_true = tf.math.subtract(custom_gradient(u_true, axis = 1), custom_gradient(v_true, axis = 0))
+            curl_pred = tf.math.subtract(custom_gradient(u_pred, axis = 1), custom_gradient(v_pred, axis = 0))
+
+            curl_difference = tf.math.reduce_mean(tf.math.abs(tf.subtract(curl_true, curl_pred)), axis=[1,2])
+
+            divergence = tf.math.abs(tf.math.reduce_mean(tf.math.add(custom_gradient(u_pred, axis = 0), custom_gradient(v_pred, axis = 1)), axis=[1,2]))
+
+            u_diff = tf.math.subtract(u_true, u_pred)
+            v_diff = tf.math.subtract(v_true, v_pred)
+            u_mse =  tf.math.reduce_mean(tf.math.multiply(u_diff, u_diff), axis = [1,2])
+            v_mse =  tf.math.reduce_mean(tf.math.multiply(v_diff, v_diff), axis = [1,2])
+
+            return energy_difference, curl_difference
+
+
 # Autoencoder Model Class
 class AE(Model):
     def __init__(self, dimensions=[32, 16, 8, 4], activation_function='tanh', l_rate=0.0005, epochs=500, batch=10,
-                 early_stopping=10, pooling='max', re=40.0, nu=2, nx=24, loss='mse', train_array=None, val_array=None):
+                 early_stopping=10, pooling='max', re=40.0, nu=2, nx=24, loss='mse', train_array=None, val_array=None,
+                 two_step=False, one_by_one=False, trained=False):
         """ Ambiguous Inputs-
             dimensions: Number of features per convolution layer, dimensions[-1] is dimension of latent space.
             pooling: 'max' or 'ave', function to combine pixels.
@@ -44,6 +106,9 @@ class AE(Model):
         self.nx = nx
         self.pooling = pooling
         self.loss = loss
+        self.two_step = two_step
+        self.one_by_one = one_by_one
+        self.trained = trained
         # Instantiating
         self.u_all = None
         self.u_train = None
@@ -78,7 +143,7 @@ class AE(Model):
         return model
 
     # SKELETON FUNCTIONS: FILL (OVERWRITE) IN SUBCLASS
-    def fit_model(self, train_array: np.array, val_array: np.array or None = None) -> None:  # skeleton
+    def fit_model(self, loss_function, train_array: np.array, val_array: np.array or None = None) -> None:  # skeleton
         """
         Fits the model on the training data: skeleton, overwrite
         val_array is optional; required by Keras for training
@@ -87,7 +152,8 @@ class AE(Model):
         """
         self.u_train = train_array
         self.u_val = val_array
-        self.training()
+
+        self.training(loss_function)
 
     def get_code(self, input_: np.array) -> np.array:  # skeleton
         """
@@ -172,20 +238,16 @@ class AE(Model):
             deco = self.autoencoder.layers[-8 + i](deco)
         self.decoder = tf.keras.models.Model(encoded_input, deco)
 
-    def training(self):
+    def training(self, loss_function):
         """Function to train autoencoder, with checkpoints for checkpoints and early stopping"""
-        # Compile model for training
-        self.autoencoder.compile(optimizer=Adam(learning_rate=self.l_rate), loss=self.loss)
 
-        # Checkpoint callback creation
-        # checkpoint_filepath = './checkpoint'
-        # model_checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
-        #     filepath=checkpoint_filepath,
-        #     save_weights_only=True,
-        #     monitor='val_loss',
-        #     mode='min',
-        #     save_best_only=True)
-        # callbacks = [model_checkpoint_callback, early_stop_callback])     <-Add in fit
+        if self.trained:
+            weights = self.autoencoder.get_weights()
+
+        self.autoencoder.compile(optimizer=Adam(learning_rate=self.l_rate), loss=loss_function)
+
+        if self.trained:
+            self.autoencoder.set_weights(weights)
 
         # Early stop callback creation
         early_stop_callback = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=self.early_stopping)
@@ -208,21 +270,28 @@ class AE(Model):
             # Set of predictions we are going to plot. We decided on the first 10 frames but it could be whatever
             image_to_plot = self.y_pred[i:i + 1, :, :, :]
 
-            # u velocity
+                # u velocity
+
+            min_ = np.min(self.u_test[i, :, :, 0])
+            max_ = np.max(self.u_test[i, :, :, 0])
+
             plt.subplot(121)
-            figure1x = plt.contourf(self.y_pred[i, :, :, 0], vmin=0.0, vmax=1.1)
+            figure1x = plt.contourf(self.y_pred[i, :, :, 0], vmin= min_, vmax=max_)
             plt.subplot(122)
-            figure2x = plt.contourf(self.u_test[i, :, :, 0], vmin=0.0, vmax=1.1)
+            figure2x = plt.contourf(self.u_test[i, :, :, 0], vmin= min_, vmax=max_)
             plt.colorbar(figure2x)
             plt.title("Velocity x-dir")
             plt.show()
 
             # v velocity
+                # v velocity
+            min_ = np.min(self.u_test[i, :, :, 1])
+            max_ = np.max(self.u_test[i, :, :, 1])
             if self.nu == 2:
                 plt.subplot(121)
-                figure1y = plt.contourf(self.y_pred[i, :, :, 1], vmin=0.0, vmax=1.1)
+                figure1y = plt.contourf(self.y_pred[i, :, :, 1], vmin= min_, vmax=max_ )
                 plt.subplot(122)
-                figure2y = plt.contourf(self.u_test[i, :, :, 1], vmin=0.0, vmax=1.1)
+                figure2y = plt.contourf(self.u_test[i, :, :, 1], vmin= min_, vmax=max_ )
                 plt.colorbar(figure2y)
                 plt.title("Velocity y-dir")
                 plt.show()
@@ -238,6 +307,35 @@ class AE(Model):
             plt.ylabel("Loss")
             plt.legend()
             plt.show()
+
+    def vorticity_energy(self):
+
+        '''
+        f, (ax1, ax2) = plt.subplots(1, 2, sharey=True)
+        ax1.contourf(AE.curl(self.y_pred[0, :, :, 0]))
+        ax1.set_title('predicted')
+        ax2.contourf(AE.curl(self.u_test[0, :, :, 0]))
+        ax1.set_title('true')
+        plt.show()
+        '''
+        min_ = np.min(AE.curl(self.u_test[0, :, :, :]))
+        max_ = np.max(AE.curl(self.u_test[0, :, :, :]))
+        plt.subplot(121)
+        plt.contourf(AE.curl(self.y_pred[0, :, :, :]), vmin= min_, vmax=max_)
+        plt.subplot(122)
+        plt.contourf(AE.curl(self.u_test[0, :, :, :]), vmin= min_, vmax=max_)
+        plt.title("Vorticity")
+        plt.show()
+
+        min_ = np.min(AE.energy(self.u_test[0, :, :, :]))
+        max_ = np.max(AE.energy(self.u_test[0, :, :, :]))
+        plt.subplot(121)
+        plt.contourf(AE.energy(self.y_pred[0, :, :, :]), vmin= min_, vmax=max_)
+        plt.subplot(122)
+        plt.contourf(AE.energy(self.u_test[0, :, :, :]), vmin= min_, vmax=max_)
+        plt.title("Energy")
+        plt.show()
+        return None
 
     def performance(self):
         """Here we transform the mse into an accuracy value. Two different metrics are used, the absolute
@@ -288,7 +386,7 @@ class AE(Model):
         plt.show()
         return None
 
-    
+
     @staticmethod
     def plot_vorticity(nxnx2 : np.array):
         '''
@@ -342,13 +440,20 @@ def run_model():
     n = 2
     u_train, u_val, u_test = AE.preprocess(nu=n)
 
-    #model = AE.create_trained()
-    model = AE(l_rate=0.0005, epochs=500, batch=10, early_stopping=10, dimensions=[256, 128, 64, 32], nu=n)
-    model.fit(u_train, u_val)
+
+    # model = AE.create_trained()
+    model = AE()
+    model.network()
+    model.u_train, model.u_val, model.u_test = u_train, u_val, u_test
+    model.epochs = 20
+    model.l_rate = 0.1
+    model.batch = 50
+    # model = AE()
+    model.fit(custom_loss_function, u_train, u_val)
 
     model.passthrough(u_test)
-    #model.visual_analysis()
-
+    model.visual_analysis()
+    model.vorticity_energy()
     perf = model.performance()
 
     model.verification(u_test)
@@ -360,8 +465,5 @@ def run_model():
 
 
 
-
 if __name__ == '__main__':
     run_model()
-
-

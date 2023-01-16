@@ -8,6 +8,7 @@ from sklearn.metrics import mean_squared_error  # pip3.10 install scikit-learn N
 from sklearn.utils import shuffle
 from datetime import datetime
 import os
+import matplotlib.pyplot as plt
 
 
 # Generic Model
@@ -24,7 +25,7 @@ class Model:
             self.fit(train_array, val_array)
 
     # BEGIN LOGIC METHODS
-    def fit(self, train_array: np.array or None, val_array: np.array or None = None) -> None:
+    def fit(self, loss_function, train_array: np.array or None, val_array: np.array or None = None) -> None:
         """
         Train the model on the input data; val_array is optional, see fit_model docstring
         :input_: singular or time series to train the model on
@@ -32,7 +33,7 @@ class Model:
         if train_array is None:  # get stored input
             raise ValueError("Training data not given")
 
-        self.fit_model(train_array, val_array)
+        self.fit_model(loss_function, train_array, val_array)
         self.trained = True
 
     def encode(self, input_: np.array) -> np.array:
@@ -345,4 +346,64 @@ class Model:
             print(f'avg: {avg_div}')
 
         return max_div, min_div, avg_div
+
+    @staticmethod
+    def energy(nxnx2: np.array):
+        '''
+        returns the kinetic grid wise energy of one image without taking mass into account 
+        '''
+        u = nxnx2[:,:,0]
+        v = nxnx2[:,:,1]
+        return 0.5 * np.add(np.multiply(u, u), np.multiply(v, v))
+
+    @staticmethod
+    def curl(nxnx2: np.array):
+        '''
+        returns the curl over the grid of a picture -> curl is used to calculate lift/drag therefore significant
+        '''
+        u = nxnx2[:,:,0]
+        v = nxnx2[:,:,1]
+
+        return np.subtract(np.gradient(u, axis = 1), np.gradient(v, axis=0))
+
+    @staticmethod
+    def plot_energy(nxnx2 : np.array):
+        '''
+        plots energy/grid without mass/density
+        '''
+        plt.contourf(Model.energy(nxnx2), min = 0, max = 1.1)
+        plt.show()
+        return None
+
+    
+    @staticmethod
+    def plot_vorticity(nxnx2 : np.array):
+        '''
+        This method returns and shows a plot of the cross product of the velocity components
+        '''
+        plt.contourf(Model.curl(nxnx2),  min = -2.2, max = 2.2)
+        plt.show()
+        return None
+
+    @staticmethod
+    def plot_velocity(nxnx2: np.array):
+        '''
+        plots vectorfield
+        '''
+        x = np.arange(24)
+        y = np.arange(24)
+        
+        X, Y = np.meshgrid(x, y)
+        
+        # Creating plot
+        fig, ax = plt.subplots(figsize =(9, 9))
+        ax.quiver(X, Y, nxnx2)
+        
+        ax.xaxis.set_ticks([])
+        ax.yaxis.set_ticks([])
+        ax.set_aspect('equal')
+        plt.show()
+        return None
+
     # END GENERAL METHODS
+
