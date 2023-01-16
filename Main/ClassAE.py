@@ -59,19 +59,6 @@ def custom_gradient(kxnxn, axis):
     n = 24
     return tf.transpose([[one_gradient(kxnxn, i, j, axis = axis) for i in range(n)] for j in range(n)], (2, 0, 1))
 
-def custom_loss_divergence(y_true, y_pred):
-    u_true = y_true[:, :, :, 0]
-    v_true = y_true[:, :, :, 1]
-    u_pred = y_pred[:, :, :, 0]
-    v_pred = y_pred[:, :, :, 1]
-
-    divergence = tf.math.add(custom_gradient(u_pred, axis=0), custom_gradient(v_pred, axis=1))
-    divergence_scaled = tf.math.scalar_mul(100, divergence)
-    div_average = tf.math.divide(tf.math.reduce_sum(tf.math.multiply(divergence_scaled, divergence_scaled), axis=0), np.shape(u_true)[0])
-    div_mse = tf.math.reduce_mean(div_average, axis=[0, 1])
-
-    return div_mse
-
 def custom_loss_function(y_true, y_pred):
             u_true = y_true[:,:,:,0]
             v_true = y_true[:,:,:,1]
@@ -95,7 +82,7 @@ def custom_loss_function(y_true, y_pred):
             u_mse =  tf.math.reduce_mean(tf.math.multiply(u_diff, u_diff), axis = [1,2])
             v_mse =  tf.math.reduce_mean(tf.math.multiply(v_diff, v_diff), axis = [1,2])
 
-            return energy_difference, curl_difference, divergence
+            return energy_difference, curl_difference
 
 
 # Autoencoder Model Class
@@ -283,21 +270,28 @@ class AE(Model):
             # Set of predictions we are going to plot. We decided on the first 10 frames but it could be whatever
             image_to_plot = self.y_pred[i:i + 1, :, :, :]
 
-            # u velocity
+                # u velocity
+
+            min_ = np.min(self.u_test[i, :, :, 0])
+            max_ = np.max(self.u_test[i, :, :, 0])
+            
             plt.subplot(121)
-            figure1x = plt.contourf(self.y_pred[i, :, :, 0], vmin=0.0, vmax=1.1)
+            figure1x = plt.contourf(self.y_pred[i, :, :, 0], vmin= min_, vmax=max_)
             plt.subplot(122)
-            figure2x = plt.contourf(self.u_test[i, :, :, 0], vmin=0.0, vmax=1.1)
+            figure2x = plt.contourf(self.u_test[i, :, :, 0], vmin= min_, vmax=max_)
             plt.colorbar(figure2x)
             plt.title("Velocity x-dir")
             plt.show()
 
             # v velocity
+                # v velocity
+            min_ = np.min(self.u_test[i, :, :, 1])
+            max_ = np.max(self.u_test[i, :, :, 1])
             if self.nu == 2:
                 plt.subplot(121)
-                figure1y = plt.contourf(self.y_pred[i, :, :, 1], vmin=0.0, vmax=1.1)
+                figure1y = plt.contourf(self.y_pred[i, :, :, 1], vmin= min_, vmax=max_ )
                 plt.subplot(122)
-                figure2y = plt.contourf(self.u_test[i, :, :, 1], vmin=0.0, vmax=1.1)
+                figure2y = plt.contourf(self.u_test[i, :, :, 1], vmin= min_, vmax=max_ )
                 plt.colorbar(figure2y)
                 plt.title("Velocity y-dir")
                 plt.show()
@@ -313,6 +307,35 @@ class AE(Model):
             plt.ylabel("Loss")
             plt.legend()
             plt.show()
+
+    def vorticity_energy(self):
+
+        '''
+        f, (ax1, ax2) = plt.subplots(1, 2, sharey=True)
+        ax1.contourf(AE.curl(self.y_pred[0, :, :, 0]))
+        ax1.set_title('predicted')
+        ax2.contourf(AE.curl(self.u_test[0, :, :, 0]))
+        ax1.set_title('true')
+        plt.show()
+        '''
+        min_ = np.min(AE.curl(self.u_test[0, :, :, :]))
+        max_ = np.max(AE.curl(self.u_test[0, :, :, :]))
+        plt.subplot(121)
+        plt.contourf(AE.curl(self.y_pred[0, :, :, :]), vmin= min_, vmax=max_)
+        plt.subplot(122)
+        plt.contourf(AE.curl(self.u_test[0, :, :, :]), vmin= min_, vmax=max_)
+        plt.title("Vorticity")
+        plt.show()
+
+        min_ = np.min(AE.energy(self.u_test[0, :, :, :]))
+        max_ = np.max(AE.energy(self.u_test[0, :, :, :]))
+        plt.subplot(121)
+        plt.contourf(AE.energy(self.y_pred[0, :, :, :]), vmin= min_, vmax=max_)
+        plt.subplot(122)
+        plt.contourf(AE.energy(self.u_test[0, :, :, :]), vmin= min_, vmax=max_)
+        plt.title("Energy")
+        plt.show()
+        return None
 
     def performance(self):
         """Here we transform the mse into an accuracy value. Two different metrics are used, the absolute
@@ -340,16 +363,20 @@ def run_model():
     n = 2
     u_train, u_val, u_test = AE.preprocess(nu=n)
 
-    model = AE.create_trained()
+    
+    # model = AE.create_trained()
+    model = AE()
+    model.network()
     model.u_train, model.u_val, model.u_test = u_train, u_val, u_test
-    model.epochs = 4
-    model.l_rate = 0.001
+    model.epochs = 20
+    model.l_rate = 0.1
     model.batch = 50
-     # model = AE()
+    # model = AE()
     model.fit(custom_loss_function, u_train, u_val)
 
     model.passthrough(u_test)
     model.visual_analysis()
+    model.vorticity_energy()
     perf = model.performance()
     if n == 2:
         model.verification(u_test)
