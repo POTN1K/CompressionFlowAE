@@ -266,8 +266,8 @@ class AE(Model):
         '''
         returns the kinetic grid wise energy of one image without taking mass into account 
         '''
-        u = nxnx2[0]
-        v = nxnx2[1]
+        u = nxnx2[:,:,0]
+        v = nxnx2[:,:,1]
         return 0.5 * np.add(np.multiply(u, u), np.multiply(v, v))
 
     @staticmethod
@@ -275,8 +275,8 @@ class AE(Model):
         '''
         returns the curl over the grid of a picture -> curl is used to calculate lift/drag therefore significant
         '''
-        u = nxnx2[0]
-        v = nxnx2[1]
+        u = nxnx2[:,:,0]
+        v = nxnx2[:,:,1]
 
         return np.subtract(np.gradient(u, axis=1), np.gradient(v, axis=0))
 
@@ -295,7 +295,7 @@ class AE(Model):
         '''
         This method returns and shows a plot of the cross product of the velocity components
         '''
-        plt.contourf(AE.curl(nxnx2), min=0, max=2.2)
+        plt.contourf(AE.curl(nxnx2))
         plt.title('Vorticity')
         plt.show()
         return None
