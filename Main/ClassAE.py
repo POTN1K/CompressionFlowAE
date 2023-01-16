@@ -89,7 +89,7 @@ def custom_loss_function(y_true, y_pred):
 class AE(Model):
     def __init__(self, dimensions=[32, 16, 8, 4], activation_function='tanh', l_rate=0.0005, epochs=500, batch=10,
                  early_stopping=10, pooling='max', re=40.0, nu=2, nx=24, loss='mse', train_array=None, val_array=None,
-                 two_step=False, one_by_one=False, trained=False):
+                 trained=False):
         """ Ambiguous Inputs-
             dimensions: Number of features per convolution layer, dimensions[-1] is dimension of latent space.
             pooling: 'max' or 'ave', function to combine pixels.
@@ -106,8 +106,6 @@ class AE(Model):
         self.nx = nx
         self.pooling = pooling
         self.loss = loss
-        self.two_step = two_step
-        self.one_by_one = one_by_one
         self.trained = trained
         # Instantiating
         self.u_all = None
@@ -143,7 +141,7 @@ class AE(Model):
         return model
 
     # SKELETON FUNCTIONS: FILL (OVERWRITE) IN SUBCLASS
-    def fit_model(self, loss_function, train_array: np.array, val_array: np.array or None = None) -> None:  # skeleton
+    def fit_model(self, train_array: np.array, val_array: np.array or None = None) -> None:  # skeleton
         """
         Fits the model on the training data: skeleton, overwrite
         val_array is optional; required by Keras for training
@@ -153,7 +151,7 @@ class AE(Model):
         self.u_train = train_array
         self.u_val = val_array
 
-        self.training(loss_function)
+        self.training()
 
     def get_code(self, input_: np.array) -> np.array:  # skeleton
         """
@@ -238,16 +236,10 @@ class AE(Model):
             deco = self.autoencoder.layers[-8 + i](deco)
         self.decoder = tf.keras.models.Model(encoded_input, deco)
 
-    def training(self, loss_function):
+    def training(self):
         """Function to train autoencoder, with checkpoints for checkpoints and early stopping"""
 
-        if self.trained:
-            weights = self.autoencoder.get_weights()
-
-        self.autoencoder.compile(optimizer=Adam(learning_rate=self.l_rate), loss=loss_function)
-
-        if self.trained:
-            self.autoencoder.set_weights(weights)
+        self.autoencoder.compile(optimizer=Adam(learning_rate=self.l_rate), loss=self.loss)
 
         # Early stop callback creation
         early_stop_callback = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=self.early_stopping)
@@ -449,7 +441,7 @@ def run_model():
     model.l_rate = 0.1
     model.batch = 50
     # model = AE()
-    model.fit(custom_loss_function, u_train, u_val)
+    model.fit(u_train, u_val)
 
     model.passthrough(u_test)
     model.visual_analysis()

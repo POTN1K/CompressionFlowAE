@@ -25,7 +25,7 @@ class Model:
             self.fit(train_array, val_array)
 
     # BEGIN LOGIC METHODS
-    def fit(self, loss_function, train_array: np.array or None, val_array: np.array or None = None) -> None:
+    def fit(self, train_array: np.array or None, val_array: np.array or None = None) -> None:
         """
         Train the model on the input data; val_array is optional, see fit_model docstring
         :input_: singular or time series to train the model on
@@ -33,7 +33,7 @@ class Model:
         if train_array is None:  # get stored input
             raise ValueError("Training data not given")
 
-        self.fit_model(loss_function, train_array, val_array)
+        self.fit_model(train_array, val_array)
         self.trained = True
 
     def encode(self, input_: np.array) -> np.array:
