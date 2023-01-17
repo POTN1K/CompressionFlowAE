@@ -8,19 +8,21 @@ import os
 from os import path
 from mpl_toolkits import mplot3d
 
-
-
 model = AE.create_trained()
 u_all = AE.preprocess(u_all=None, re=40.0, nx=24, nu=2, split=False, norm=True)
 values = []
 
-def function(input):
-    return AE.curl(input)
 # Take one sample from data set and calculate latent space
 sample_latent = model.encode(u_all[0])
 range = np.arange(-0.5, 0.7, 0.1)
 print(sample_latent)  # [[[[-0.03541018  0.24589653  0.5007892  -0.19181845]]]]
 AE.u_v_plot(u_all[0])
+
+
+def function(input):
+    return AE.curl(input)
+
+
 print(np.average(function(u_all[0])))
 
 # Change mode 1
