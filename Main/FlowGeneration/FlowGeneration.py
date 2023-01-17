@@ -10,21 +10,20 @@ from mpl_toolkits import mplot3d
 # Physical conditions of the flow: Check the values for vorticity (curl), energy, cross product, resultant velocity
 # The characteristics of latent space: check changes in latent space due to different Re
 domain = np.arange(-0.5, 0.5, 0.05)
-model = AE.create_trained()
-u_train, u_val, u_test = AE.preprocess(nu=2)
+model = AE.create_trained(h=True)
+u_all = AE.preprocess(nu=2, split=False)
 
 
-def generation_from_original(time_series, n_element):
+def generation_from_original(time_series):
     """
     n_element: One time frame array, shape = [24,24,2]
     :return: None"""
     # One real element
-    test_element = time_series[n_element]
 
     # Plot original data set
     #AE.u_v_plot(test_element)
 
-    latent_space_original = model.encode(test_element)
+    latent_space_original = model.encode(time_series)
     return latent_space_original
 
     #reconstructed_original = model.decode(latent_space_original)
