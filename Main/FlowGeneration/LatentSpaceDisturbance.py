@@ -1,4 +1,4 @@
-# Script to analyze how the reconstructed flow changes wìdue to disturbances to latent space components
+# Script to analyze how the reconstructed flow changes due to disturbances to latent space components
 from Main.ClassAE import AE
 import numpy as np
 import matplotlib.pyplot as plt
@@ -8,26 +8,31 @@ import os
 from os import path
 from mpl_toolkits import mplot3d
 
+
+
 model = AE.create_trained()
 u_all = AE.preprocess(u_all=None, re=40.0, nx=24, nu=2, split=False, norm=True)
+values = []
 
+def function(input):
+    return AE.curl(input)
 # Take one sample from data set and calculate latent space
 sample_latent = model.encode(u_all[0])
-print(sample_latent) # [[[[-0.03541018  0.24589653  0.5007892  -0.19181845]]]]
+range = np.arange(-0.5, 0.7, 0.1)
+print(sample_latent)  # [[[[-0.03541018  0.24589653  0.5007892  -0.19181845]]]]
 AE.u_v_plot(u_all[0])
-print(np.average(AE.curl(u_all[0])))
+print(np.average(function(u_all[0])))
 
 # Change mode 1
-# energy = []
-# for i in [0.005, 0.01, 0.05, 0.075, 0.1]:
-#     disturbed_latent = sample_latent
-#     disturbed_latent[0, 0, 0, 0] += i
-#     print(disturbed_latent)
-#     img = model.decode(disturbed_latent)
-#     energy.append(np.average(AE.curl(img)))
-#     AE.plot_velocity(img)
-# plt.plot(np.arange(0,5), energy)
-# plt.show()
+for i in range:
+    disturbed_latent = sample_latent
+    disturbed_latent[0, 0, 0, 3] *= (1 + i)
+    print(disturbed_latent)
+    img = model.decode(disturbed_latent)
+    values.append(np.average(function(img)))
+    AE.u_v_plot(img)
+plt.plot(range, values)
+plt.show()
 # Observation:
 # - v, u velocity increases but not too much
 # - u velocity seems to be creating multiple isolated areas
@@ -77,16 +82,15 @@ print(np.average(AE.curl(u_all[0])))
 
 # Mode 4
 
-energy = [np.average(AE.curl(u_all[0]))]
-for i in [0.01, 0.1, 0.2, 0.5, 0.7]:
-    disturbed_latent = sample_latent
-    disturbed_latent[0, 0, 0, 3] *= 1 + i
-    print(disturbed_latent)
-    img = model.decode(disturbed_latent)
-    energy.append(np.average(AE.curl(img)))
-    AE.u_v_plot(img)
-plt.plot([0, 0.01, 0.1, 0.2, 0.5, 0.7], energy)
-plt.show()
+# for i in range:
+#     disturbed_latent = sample_latent
+#     disturbed_latent[0, 0, 0, 3] *= 1 + i
+#     print(disturbed_latent)
+#     img = model.decode(disturbed_latent)
+#     values.append(np.average(function(img)))
+#     #AE.plot_vorticity(img)
+# plt.plot(range, values)
+# plt.show()
 
 # energy follows similar trends as previously seen but: shifts a bit to the left as opposed to the right
 # again, vorticity first decreases and then increases, seems to shift to the left as with energy
