@@ -107,7 +107,34 @@ def custom_loss_curl(y_true, y_pred):
 
     return curl_mse
 
+
 def custom_loss_function(y_true, y_pred):
+    u_true = y_true[:, :, :, 0]
+    v_true = y_true[:, :, :, 1]
+    u_pred = y_pred[:, :, :, 0]
+    v_pred = y_pred[:, :, :, 1]
+
+    energy_true = tf.math.add(tf.multiply(u_true, u_true), (tf.multiply(v_true, v_true)))
+    energy_pred = tf.math.add(tf.multiply(u_pred, u_pred), (tf.multiply(v_pred, v_pred)))
+
+    energy_difference = tf.math.reduce_mean(tf.math.abs(tf.subtract(energy_true, energy_pred)), axis=[1, 2])
+
+    curl_true = tf.math.subtract(custom_gradient(u_true, axis=1), custom_gradient(v_true, axis=0))
+    curl_pred = tf.math.subtract(custom_gradient(u_pred, axis=1), custom_gradient(v_pred, axis=0))
+
+    curl_difference = tf.math.reduce_mean(tf.math.abs(tf.subtract(curl_true, curl_pred)), axis=[1, 2])
+
+    divergence = tf.math.abs(
+        tf.math.reduce_mean(tf.math.add(custom_gradient(u_pred, axis=0), custom_gradient(v_pred, axis=1)), axis=[1, 2]))
+
+    u_diff = tf.math.subtract(u_true, u_pred)
+    v_diff = tf.math.subtract(v_true, v_pred)
+    u_mse = tf.math.reduce_mean(tf.math.multiply(u_diff, u_diff), axis=[1, 2])
+    v_mse = tf.math.reduce_mean(tf.math.multiply(v_diff, v_diff), axis=[1, 2])
+
+    return energy_difference, curl_difference, u_mse, v_mse
+
+def custom_loss_function2(y_true, y_pred):
     u_true = y_true[:, :, :, 0]
     v_true = y_true[:, :, :, 1]
     u_pred = y_pred[:, :, :, 0]
@@ -377,11 +404,10 @@ def run_model():
 
     model = AE.create_trained()
     model.u_train, model.u_val, model.u_test = u_train, u_val, u_test
-    model.epochs = 20
-    model.l_rate = 0.0001
+    model.epochs = 30
+    model.l_rate = 0.000001
     model.batch = 50
-    model = AE()
-    model.fit(custom_loss_function, u_train, u_val)
+    model.fit(custom_loss_function2, u_train, u_val)
 
     model.passthrough(u_test)
     model.visual_analysis()

@@ -6,10 +6,10 @@ import numpy as np
 from sklearn.model_selection import ParameterGrid  # pip3.10 -U scikit-learn
 
 
-param_ranges_dict = {'l_rate': [0.01, 0.001],
-                     'epochs': [10, 50, 100],
-                     'batch': [1000, 100, 10],
-                     'early_stopping': [5, 10, 20],
+param_ranges_dict = {'l_rate': [0.001, 0.0001],
+                     'epochs': [10, 50],
+                     'batch': [50, 20],
+                     'early_stopping': [20],
                      'dimensions': [[8, 4, 2, 1], [16, 8, 4, 2], [24, 12, 6, 3]]}
 
 param_grid = ParameterGrid(param_ranges_dict)  # Flattened grid of all combinations

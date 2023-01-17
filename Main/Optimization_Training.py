@@ -2,12 +2,13 @@ from ClassAE import AE
 import time
 from csv import DictWriter
 from ClassAE import custom_loss_function
+from ClassAE import custom_loss_function2
 import numpy as np
 from sklearn.model_selection import ParameterGrid  # pip3.10 -U scikit-learn
 
-param_ranges_dict = {'l_rate': [0.01, 0.001, 0.0001],
-                     'epochs': [5, 10, 20],
-                     'batch': [200, 50, 10]}
+param_ranges_dict = {'l_rate': [0.0001, 0.00001, 0.000001],
+                     'epochs': [20, 30, 40],
+                     'batch': [50, 20]}
 
 param_grid = ParameterGrid(param_ranges_dict)  # Flattened grid of all combinations
 
@@ -27,7 +28,7 @@ for params in param_grid:
     model.batch = params['batch']
 
     start = time.time()
-    model.fit(custom_loss_function, u_train, u_val)
+    model.fit(custom_loss_function2, u_train, u_val)
     end = time.time()
     model.passthrough(model.u_test)
     model.performance()
@@ -35,11 +36,10 @@ for params in param_grid:
 
     t_time = end - start
 
-    values = {'Loss': model.dict_perf['mse'], 'Divergence': avg_div
-              # , 'Compression': params['dimensions'][-1] / (24 * 24) # this will not generalise well
-              }
-    values.update(params)
+    values = {'Loss': model.dict_perf['mse'], 'Divergence': avg_div, 'Absolute' : model.dict_perf['abs_percentage'],
+              'Squared': model.dict_perf['sqr_percentage']}
 
+    values.update(params)
     columns = values.keys()
 
     print(f'Model {k}')

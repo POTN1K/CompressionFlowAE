@@ -337,7 +337,7 @@ class Model:
 
         max_div = max(all_conv)
         min_div = min(all_conv)
-        avg_div = sum(all_conv) / len(all_conv)
+        avg_div = abs(sum(all_conv)) / len(all_conv)
         if print_res:
             print(f'max: {max_div}')
             print(f'min: {min_div}')
