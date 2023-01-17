@@ -14,11 +14,12 @@ from keras.layers import Input, Conv2D, MaxPool2D, AveragePooling2D, UpSampling2
 from keras.optimizers import Adam
 from keras.models import load_model
 import os
+
 # Local codes
 import sys
 sys.path.append('.')
 from Main import Model
-# from .ExperimentsAE.CustomLibraries import MixedPooling2D
+from Main.ExperimentsAE import Filter
 
 
 # Uncomment if keras does not run
@@ -26,67 +27,116 @@ from Main import Model
 # os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 
-# loss function
-def central_difference(before, after):
-    return tf.math.scalar_mul(0.5, tf.math.subtract(after, before))
-
-def forward_difference(current, after):
-    return tf.math.subtract(after, current)
-
-def backward_difference(before, current):
-    return tf.math.subtract(current, before)
-
-def one_gradient(kxnxn, i, j, axis):
-    if axis == 0:
-        if i == 0:
-            return forward_difference(kxnxn[:,i+1,j], kxnxn[:,i,j])
-        elif i == 23:
-            return backward_difference(kxnxn[:,i,j], kxnxn[:,i-1,j])
-        else:
-            return central_difference(kxnxn[:,i+1,j], kxnxn[:,i-1,j])
-    elif axis == 1:
-        if j == 0:
-            return forward_difference(kxnxn[:,i,j+1], kxnxn[:,i,j])
-        elif j == 23:
-            return backward_difference(kxnxn[:,i,j], kxnxn[:,i,j-1])
-        else:
-            return central_difference(kxnxn[:,i,j+1], kxnxn[:,i,j-1])
-    else:
-        raise NotImplementedError
-
-@tf.function
-def custom_gradient(kxnxn, axis):
-    n = 24
-    return tf.transpose([[one_gradient(kxnxn, i, j, axis = axis) for i in range(n)] for j in range(n)], (2, 0, 1))
-
-def custom_loss_function(y_true, y_pred):
-            u_true = y_true[:,:,:,0]
-            v_true = y_true[:,:,:,1]
-            u_pred = y_pred[:,:,:,0]
-            v_pred = y_pred[:,:,:,1]
-
-            energy_true =   tf.math.add(tf.multiply(u_true, u_true), (tf.multiply(v_true, v_true)))
-            energy_pred =   tf.math.add(tf.multiply(u_pred, u_pred), (tf.multiply(v_pred, v_pred)))
-
-            energy_difference = tf.math.reduce_mean(tf.math.abs(tf.subtract(energy_true, energy_pred)), axis=[1,2])
-
-            curl_true = tf.math.subtract(custom_gradient(u_true, axis = 1), custom_gradient(v_true, axis = 0))
-            curl_pred = tf.math.subtract(custom_gradient(u_pred, axis = 1), custom_gradient(v_pred, axis = 0))
-
-            curl_difference = tf.math.reduce_mean(tf.math.abs(tf.subtract(curl_true, curl_pred)), axis=[1,2])
-
-            divergence = tf.math.abs(tf.math.reduce_mean(tf.math.add(custom_gradient(u_pred, axis = 0), custom_gradient(v_pred, axis = 1)), axis=[1,2]))
-
-            u_diff = tf.math.subtract(u_true, u_pred)
-            v_diff = tf.math.subtract(v_true, v_pred)
-            u_mse =  tf.math.reduce_mean(tf.math.multiply(u_diff, u_diff), axis = [1,2])
-            v_mse =  tf.math.reduce_mean(tf.math.multiply(v_diff, v_diff), axis = [1,2])
-
-            return energy_difference, curl_difference
-
-
 # Autoencoder Model Class
 class AE(Model):
+
+    @staticmethod
+    def energy(nxnx2: np.array):
+        '''
+        returns the kinetic grid wise energy of one image without taking mass into account
+        '''
+        u = nxnx2[0]
+        v = nxnx2[1]
+        return 0.5 * np.add(np.multiply(u, u), np.multiply(v, v))
+
+    @staticmethod
+    def curl(nxnx2: np.array):
+        '''
+        returns the curl over the grid of a picture -> curl is used to calculate lift/drag therefore significant
+        '''
+        u = nxnx2[0]
+        v = nxnx2[1]
+
+        return np.subtract(np.gradient(u, axis=1), np.gradient(v, axis=0))
+
+    @staticmethod
+    def plot_energy(nxnx2: np.array):
+        '''
+        plots energy/grid without mass/density
+        '''
+        plt.contourf(AE.energy(nxnx2), min=0, max=1.1)
+        plt.title('Energy')
+        plt.show()
+        return None
+
+    @staticmethod
+    def plot_vorticity(nxnx2: np.array):
+        '''
+        This method returns and shows a plot of the cross product of the velocity components
+        '''
+        plt.contourf(AE.curl(nxnx2), min=0, max=2.2)
+        plt.title('Vorticity')
+        plt.show()
+        return None
+
+    @staticmethod
+    def plot_velocity(nxnx2: np.array):
+        '''
+        plots vectorfield
+        '''
+        x, y = np.meshgrid(np.linspace(0, 2 * np.pi, 24), np.linspace(0, 2 * np.pi, 24))
+        plt.quiver(x, y, nxnx2[:, :, 0], nxnx2[:, :, 1])
+        plt.title('Velocity')
+        plt.show()
+        return None
+
+    @staticmethod
+    def u_v_plot(nxnx2):
+        """
+        Plots velocity components x, y
+        :param nxnx2: Time frame for plotting
+        :return: None
+        """
+        fig = plt.figure()
+        ax1 = fig.add_subplot(121)
+        ax1.contourf(nxnx2[:, :, 0], vmin=0.0, vmax=1.1)
+        ax1.title.set_text('x_velocity')
+
+        ax2 = fig.add_subplot(122)
+        ax2.contourf(nxnx2[:, :, 1], vmin=0.0, vmax=1.1)
+        ax2.title.set_text('y_velocity')
+
+        fig.suptitle('Velocity Components')
+        plt.show()
+
+    @staticmethod
+    def plot_all(nxnx2):
+        AE.u_v_plot(nxnx2)
+        AE.plot_energy(nxnx2)
+        AE.plot_vorticity(nxnx2)
+        AE.plot_velocity(nxnx2)
+
+    @staticmethod
+    def create_trained(h=True):
+        # Load Models
+        dir_curr = os.path.split(__file__)[0]
+        if h:
+            model = AE(dimensions=[32, 16, 8, 4], l_rate=0.0005, epochs=100, batch=20)
+            model.h_network(4)
+            # Autoencoder
+            auto_rel = ('KerasModels', f'autoencoder_h.h5')
+            model.autoencoder = load_model(os.path.join(dir_curr, *auto_rel), custom_objects={'Filter': Filter})
+            # Encoder
+            enco_rel = ('KerasModels', f'encoder_h.h5')
+            model.encoder = load_model(os.path.join(dir_curr, *enco_rel), custom_objects={'Filter': Filter})
+            # Decoder
+            deco_rel = ('KerasModels', f'decoder_h.h5')
+            model.decoder = load_model(os.path.join(dir_curr, *deco_rel), custom_objects={'Filter': Filter})
+        else:
+            model = AE()
+            # Autoencoder
+            auto_rel = ('KerasModels', f'autoencoder_2D.h5')
+            model.autoencoder = load_model(os.path.join(dir_curr, *auto_rel))
+            # Encoder
+            enco_rel = ('KerasModels', f'encoder_2D.h5')
+            model.encoder = load_model(os.path.join(dir_curr, *enco_rel))
+            # Decoder
+            deco_rel = ('KerasModels', f'decoder_2D.h5')
+            model.decoder = load_model(os.path.join(dir_curr, *deco_rel))
+        model.trained = True
+        return model
+
+    # Initialize model
     def __init__(self, dimensions=[32, 16, 8, 4], activation_function='tanh', l_rate=0.0005, epochs=500, batch=10,
                  early_stopping=10, pooling='max', re=40.0, nu=2, nx=24, loss='mse', train_array=None, val_array=None,
                  trained=False):
@@ -123,24 +173,19 @@ class AE(Model):
         self.network()
         super().__init__(train_array=train_array, val_array=val_array)
 
-    @staticmethod
-    def create_trained():
-        # Load Models
-        dir_curr = os.path.split(__file__)[0]
-        model = AE()
-        # Autoencoder
-        auto_rel = ('KerasModels', f'autoencoder_2D.h5')
-        model.autoencoder = load_model(os.path.join(dir_curr, *auto_rel))
-        # Encoder
-        enco_rel = ('KerasModels', f'encoder_2D.h5')
-        model.encoder = load_model(os.path.join(dir_curr, *enco_rel))
-        # Decoder
-        deco_rel = ('KerasModels', f'decoder_2D.h5')
-        model.decoder = load_model(os.path.join(dir_curr, *deco_rel))
-        model.trained = True
-        return model
+    @property
+    def pooling(self):
+        return self.pooling_function
 
-    # SKELETON FUNCTIONS: FILL (OVERWRITE) IN SUBCLASS
+    @pooling.setter
+    def pooling(self, value):
+        if value == 'max':
+            self.pooling_function = MaxPool2D
+        else:
+            self.pooling_function = AveragePooling2D
+
+
+    # SKELETON FUNCTIONS
     def fit_model(self, train_array: np.array, val_array: np.array or None = None) -> None:  # skeleton
         """
         Fits the model on the training data: skeleton, overwrite
@@ -172,19 +217,6 @@ class AE(Model):
         return self.y_pred
 
     # END SKELETONS
-
-    @property
-    def pooling(self):
-        return self.pooling_function
-
-    @pooling.setter
-    def pooling(self, value):
-        if value == 'max':
-            self.pooling_function = MaxPool2D
-        elif value == 'mix':
-            self.pooling_function = MixedPooling2D
-        else:
-            self.pooling_function = AveragePooling2D
 
     def network(self):
         """ This function defines the architecture of the neural network. Every layer of the NN presents a convolution
@@ -236,6 +268,83 @@ class AE(Model):
             deco = self.autoencoder.layers[-8 + i](deco)
         self.decoder = tf.keras.models.Model(encoded_input, deco)
 
+    def h_network(self, n):
+        # Input
+        self.image = Input(shape=(self.nx, self.nx, self.nu))
+
+        # Beginning of Encoder 1
+        x1 = Conv2D(self.dimensions[0], (3, 3), padding='same', activation=self.activation_function)(self.image)
+        x1 = self.pooling_function((2, 2), padding='same')(x1)
+        x1 = Conv2D(self.dimensions[1], (3, 3), padding='same', activation=self.activation_function)(x1)
+        x1 = self.pooling_function((2, 2), padding='same')(x1)
+        x1 = Conv2D(self.dimensions[2], (3, 3), padding='same', activation=self.activation_function)(x1)
+        x1 = self.pooling_function((2, 2), padding='same')(x1)
+        x1 = Conv2D(1, (3, 3), padding='same', activation=self.activation_function)(x1)
+        encoded_1 = self.pooling_function((3, 3), padding='same')(x1)
+        self.encoder1 = tf.keras.models.Model(self.image, encoded_1)
+        self.encoder1.trainable = False
+
+        # Beginning of Encoder 2
+        x2 = Conv2D(self.dimensions[0], (3, 3), padding='same', activation=self.activation_function)(self.image)
+        x2 = self.pooling_function((2, 2), padding='same')(x2)
+        x2 = Conv2D(self.dimensions[1], (3, 3), padding='same', activation=self.activation_function)(x2)
+        x2 = self.pooling_function((2, 2), padding='same')(x2)
+        x2 = Conv2D(self.dimensions[2], (3, 3), padding='same', activation=self.activation_function)(x2)
+        x2 = self.pooling_function((2, 2), padding='same')(x2)
+        x2 = Conv2D(1, (3, 3), padding='same', activation=self.activation_function)(x2)
+        encoded_2 = self.pooling_function((3, 3), padding='same')(x2)
+        self.encoder2 = tf.keras.models.Model(self.image, encoded_2)
+        self.encoder2.trainable = False
+
+        # Beginning of Encoder 3
+        x3 = Conv2D(self.dimensions[0], (3, 3), padding='same', activation=self.activation_function)(self.image)
+        x3 = self.pooling_function((2, 2), padding='same')(x3)
+        x3 = Conv2D(self.dimensions[1], (3, 3), padding='same', activation=self.activation_function)(x3)
+        x3 = self.pooling_function((2, 2), padding='same')(x3)
+        x3 = Conv2D(self.dimensions[2], (3, 3), padding='same', activation=self.activation_function)(x3)
+        x3 = self.pooling_function((2, 2), padding='same')(x3)
+        x3 = Conv2D(1, (3, 3), padding='same', activation=self.activation_function)(x3)
+        encoded_3 = self.pooling_function((3, 3), padding='same')(x3)
+        self.encoder3 = tf.keras.models.Model(self.image, encoded_3)
+        self.encoder3.trainable = False
+
+        # Beginning of Encoder 4
+        x4 = Conv2D(self.dimensions[0], (3, 3), padding='same', activation=self.activation_function)(self.image)
+        x4 = self.pooling_function((2, 2), padding='same')(x4)
+        x4 = Conv2D(self.dimensions[1], (3, 3), padding='same', activation=self.activation_function)(x4)
+        x4 = self.pooling_function((2, 2), padding='same')(x4)
+        x4 = Conv2D(self.dimensions[2], (3, 3), padding='same', activation=self.activation_function)(x4)
+        x4 = self.pooling_function((2, 2), padding='same')(x4)
+        x4 = Conv2D(1, (3, 3), padding='same', activation=self.activation_function)(x4)
+        encoded_4 = self.pooling_function((3, 3), padding='same')(x4)
+        self.encoder4 = tf.keras.models.Model(self.image, encoded_4)
+        self.encoder4.trainable = False
+
+        # Combine in filter
+        self.latent_filtered = Filter(n)(encoded_1, encoded_2, encoded_3, encoded_4)
+
+        # Decoder
+        x = Conv2DTranspose(self.dimensions[3], (3, 3), padding='same', activation=self.activation_function)(
+            self.latent_filtered)
+        x = UpSampling2D((3, 3))(x)
+        x = Conv2DTranspose(self.dimensions[2], (3, 3), padding='same', activation=self.activation_function)(x)
+        x = UpSampling2D((2, 2))(x)
+        x = Conv2DTranspose(self.dimensions[1], (3, 3), padding='same', activation=self.activation_function)(x)
+        x = UpSampling2D((2, 2))(x)
+        x = Conv2DTranspose(self.dimensions[0], (3, 3), padding='same', activation=self.activation_function)(x)
+        x = UpSampling2D((2, 2))(x)
+        decoded = Conv2DTranspose(self.nu, (3, 3), activation='linear', padding='same')(x)
+
+        # Complete model
+        self.autoencoder = tf.keras.models.Model(self.image, decoded)
+        self.encoder = tf.keras.models.Model(self.image, self.latent_filtered)
+
+        encoded_input = Input(shape=(1, 1, self.latent_filtered.shape[3]))  # latent vector definition
+        deco = self.autoencoder.layers[-9](encoded_input)  # re-use the same layers as the ones of the autoencoder
+        for i in range(8):
+            deco = self.autoencoder.layers[-8 + i](deco)
+        self.decoder = tf.keras.models.Model(encoded_input, deco)
+
     def training(self):
         """Function to train autoencoder, with checkpoints for checkpoints and early stopping"""
 
@@ -247,7 +356,7 @@ class AE(Model):
         # Fit the training and validation data to model, while saving a history. Verbose prints the epochs
         self.hist = self.autoencoder.fit(self.u_train, self.u_train, epochs=self.epochs, batch_size=self.batch,
                                          shuffle=False, validation_data=(self.u_val, self.u_val),
-                                         verbose=1,
+                                         verbose=0,
                                          callbacks=[early_stop_callback])
 
         # Predict model using test data
@@ -349,83 +458,6 @@ class AE(Model):
         self.dict_perf = d
         return d
 
-    @staticmethod
-    def energy(nxnx2: np.array):
-        '''
-        returns the kinetic grid wise energy of one image without taking mass into account 
-        '''
-        u = nxnx2[0]
-        v = nxnx2[1]
-        return 0.5 * np.add(np.multiply(u, u), np.multiply(v, v))
-
-    @staticmethod
-    def curl(nxnx2: np.array):
-        '''
-        returns the curl over the grid of a picture -> curl is used to calculate lift/drag therefore significant
-        '''
-        u = nxnx2[0]
-        v = nxnx2[1]
-
-        return np.subtract(np.gradient(u, axis = 1), np.gradient(v, axis=0))
-
-    @staticmethod
-    def plot_energy(nxnx2 : np.array):
-        '''
-        plots energy/grid without mass/density
-        '''
-        plt.contourf(AE.energy(nxnx2), min = 0, max = 1.1)
-        plt.title('Energy')
-        plt.show()
-        return None
-
-
-    @staticmethod
-    def plot_vorticity(nxnx2 : np.array):
-        '''
-        This method returns and shows a plot of the cross product of the velocity components
-        '''
-        plt.contourf(AE.curl(nxnx2),  min = 0, max = 2.2)
-        plt.title('Vorticity')
-        plt.show()
-        return None
-
-    @staticmethod
-    def plot_velocity(nxnx2: np.array):
-        '''
-        plots vectorfield
-        '''
-        x, y = np.meshgrid(np.linspace(0, 2 * np.pi, 24), np.linspace(0, 2 * np.pi, 24))
-        plt.quiver(x, y, nxnx2[:, :, 0], nxnx2[:, :, 1])
-        plt.title('Velocity')
-        plt.show()
-        return None
-
-    @staticmethod
-    def u_v_plot(nxnx2):
-        """
-        Plots velocity components x, y
-        :param nxnx2: Time frame for plotting
-        :return: None
-        """
-        fig = plt.figure()
-        ax1 = fig.add_subplot(121)
-        ax1.contourf(nxnx2[:, :, 0], vmin=0.0, vmax=1.1)
-        ax1.title.set_text('x_velocity')
-
-        ax2 = fig.add_subplot(122)
-        ax2.contourf(nxnx2[:, :, 1], vmin=0.0, vmax=1.1)
-        ax2.title.set_text('y_velocity')
-
-        fig.suptitle('Velocity Components')
-        plt.show()
-
-    @staticmethod
-    def plot_all(nxnx2):
-        AE.u_v_plot(nxnx2)
-        AE.plot_energy(nxnx2)
-        AE.plot_vorticity(nxnx2)
-        AE.plot_velocity(nxnx2)
-
 def run_model():
     """General function to run one model"""
 
@@ -433,15 +465,12 @@ def run_model():
     u_train, u_val, u_test = AE.preprocess(nu=n)
 
 
-    # model = AE.create_trained()
-    model = AE()
-    model.network()
-    model.u_train, model.u_val, model.u_test = u_train, u_val, u_test
-    model.epochs = 20
-    model.l_rate = 0.1
-    model.batch = 50
+    model = AE.create_trained(True)
     # model = AE()
-    model.fit(u_train, u_val)
+
+    model.u_train, model.u_val, model.u_test = u_train, u_val, u_test
+
+    # model.fit(u_train, u_val)
 
     model.passthrough(u_test)
     model.visual_analysis()
