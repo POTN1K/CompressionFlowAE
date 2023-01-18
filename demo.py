@@ -1,6 +1,6 @@
 from Main import Model, AE, POD
 import numpy as np
-
+from Main.ExperimentsAE import custom_loss_function
 
 
 def run_model_AE():
@@ -9,10 +9,11 @@ def run_model_AE():
     # convert
     for set_cartesian in data_cartesian:
         # tx 24, 24, 2 -> 24, 24, 2
-        length = np.sqrt(set_cartesian[:,:,:,0]**2+set_cartesian[:,:,:,1]**2)
-        phase = np.sin(set_cartesian[:,:,:,0]/set_cartesian[:,:,:,0])
+        length = np.sqrt(set_cartesian[:, :, :, 0] ** 2 + set_cartesian[:, :, :, 1] ** 2)
+        phase = np.sin(set_cartesian[:, :, :, 0] / set_cartesian[:, :, :, 0])
         set_radial = np.concatenate((length, phase))
         print(set_radial.shape)
+
 
 #
 # def run_model_POD():
@@ -32,8 +33,38 @@ def run_tune():
     Model.train_test_batch(param_ranges_dict, AE)
 
 
+def tune_physical():
+    n = 2
+    u_train, u_val, u_test = AE.preprocess(nu=n)
+
+    model = AE.create_trained(True)
+    model.u_train, model.u_val, model.u_test = u_train, u_val, u_test
+    model.loss, model.l_rate, model.epochs = custom_loss_function, 0.0000000001, 20
+
+    print('Original')
+    model.verification(u_test)
+
+    print('Model divergence')
+    model.passthrough(u_test)
+    perf = model.performance()
+    model.verification(model.y_pred)
+    print(f'Absolute %: {round(perf["abs_percentage"], 3)} +- {round(perf["abs_std"], 3)}')
+    print(f'Squared %: {round(perf["sqr_percentage"], 3)} +- {round(perf["sqr_std"], 3)}')
+
+    print('Tuned divergence')
+    model.fit(u_train, u_val)
+    model.passthrough(u_test)
+    perf = model.performance()
+    model.verification(model.y_pred)
+    print(f'Absolute %: {round(perf["abs_percentage"], 3)} +- {round(perf["abs_std"], 3)}')
+    print(f'Squared %: {round(perf["sqr_percentage"], 3)} +- {round(perf["sqr_std"], 3)}')
+
+    model.autoencoder.save('autoencoder_p.h5')
+    model.encoder.save('encoder_p.h5')
+    model.decoder.save('decoder_p.h5')
+
 if __name__ == '__main__':
-    run_model_AE()
+    tune_physical()
 
 #
 # import os

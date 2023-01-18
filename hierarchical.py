@@ -1,4 +1,5 @@
 from Main import AE
+from Main.ExperimentsAE import custom_loss_function
 
 # --------------------------------------------------------------------------------------------------
 # Preprocess Data
@@ -10,7 +11,8 @@ train, val, test = AE.preprocess(nu=2)
 print("Original flow")
 AE.u_v_plot(test[0])
 
-model = AE(dimensions=[32, 16, 8, 4], l_rate=0.0005, epochs=100, batch=20)
+model = AE(dimensions=[32, 16, 8, 4], l_rate=0.0005, epochs=50, batch=20)
+model.loss = custom_loss_function
 
 # Train 1st component
 print("First component")
@@ -82,9 +84,11 @@ AE.u_v_plot(t4[0])
 print(model.encode((test[0])))
 
 model.autoencoder.trainable = True
-model.autoencoder.save('autoencoder_h.h5')
-model.encoder.save('encoder_h.h5')
-model.decoder.save('decoder_h.h5')
+model.autoencoder.save('autoencoder_hp.h5')
+model.encoder.save('encoder_hp.h5')
+model.decoder.save('decoder_hp.h5')
+
+model.verification(model.y_pred)
 
 # Accuracy
 # Absolute - 91.76%
