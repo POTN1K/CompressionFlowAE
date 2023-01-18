@@ -1,46 +1,57 @@
 import matplotlib.pyplot as plt
 import numpy as np
-
+import random
 from FlowGeneration import *
 
-
 mode1, mode2, mode3, mode4 = np.transpose(generation_from_original(u_all))
-
+reference_divergence = AE.verification(u_all)[-1]
 center = (stats(mode1)[0], stats(mode2)[0], stats(mode3)[0])
 
 # Taking into account all the points present
-distance = np.sqrt((mode1 - center[0])**2 + (mode2 - center[1])**2 + (mode3 - center[2])**2)
-mean_distance = np.mean(distance)
-std_distance = np.std(distance)
-
-# Eliminate the outliers
-percentage = 0.4
-distance2 = distance[distance > percentage]
-mean_distance2 = np.mean(distance2)
-std_distance2 = np.std(distance2)
-# Printing and Plotting
-
-#plt.subplot(221)
-plt.plot(np.arange(0, np.shape(distance)[-1]), distance[0,0,:], '*')
-plt.ylim(0, 0.7)
-# plt.subplot(222)
-# plt.plot(np.arange(0, len(distance2)), distance2, '*')
-# plt.ylim(0, 0.7)
-# plt.subplot(223)
-# plt.boxplot(distance[0,0,:])
-# plt.ylim(0, 0.7)
-# plt.subplot(224)
-# plt.boxplot(distance2)
-# plt.ylim(0, 0.7)
-plt.show()
+d = np.sqrt((mode1 - center[0])**2 + (mode2 - center[1])**2 + (mode3 - center[2])**2)[0, 0, :]
+phi = np.arctan2(np.sqrt(mode1 ** 2 + mode2 ** 2), mode3)[0, 0, :]
+theta = np.arctan2(mode1, mode2)[0, 0, :]
+mu = np.mean(d)
+sigma = np.std(d)
 
 
-print(f'Points included in the cut: {np.shape(distance2)}, ({np.shape(distance2)[0]/np.shape(distance)[-1] * 100}%)')
-print(f'Physical range: [{percentage} - {round(np.max(distance2),3)}]')
-print(f'All points considered: mean = {mean_distance}, std = {std_distance}')
-print(f'Cut dataset: mean = {mean_distance2}, std = {std_distance2}')
+def create_art():
+    d_art = random.gauss(mu, sigma)
+    phi_art = random.uniform(0, np.pi)
+    theta_art = random.uniform(0, 2 * np.pi)
+
+    m3_art = d_art * np.cos(phi_art)
+    m2_art = d_art * np.sin(phi_art) * np.cos(theta_art)
+    m1_art = d_art * np.sin(phi_art) * np.sin(theta_art)
+
+    latent_art = [m1_art, m2_art, m3_art, random.uniform(-0.2, 0.2)]
+
+    frame_art = generate(latent_art)
+
+    # Isolate velocity components
+    u_vel = frame_art[:, :, 0]
+    # Partial derivatives (du/dx, dv/dy) step size set to 0.262 based on grid size
+    u_vel_grad = np.gradient(u_vel, 0.262, edge_order=2, axis=0)
+    v_vel = frame_art[:, :, 1]
+    v_vel_grad = np.gradient(v_vel, 0.262, edge_order=2, axis=1)
+    divergence = u_vel_grad + v_vel_grad
+
+    physicality = reference_divergence * -1.1 < np.sum(divergence) < reference_divergence * 1.1
+    return latent_art, divergence, physicality, frame_art
+
+
+latents = {}
+for i in tqdm(np.arange(0, 1001), colour='green'):
+    latents[f'{i}'] = create_art()
+
+
+latent_art, div_art, physical, frame_art = latents['630']
+letter = 'is' if physical else "isn't"
+print(f"The flow {letter} physical")
+print(f'Divergence: {np.sum(div_art)}')
+AE.u_v_plot(frame_art)
+
 
 # distance > 0.4 --> 151/200 points are present 75.5%
 # distance > 0.35 --> 162/200 points are present 81%
 # distance > 0.3 --> 177/200 points are present 88.5%
-
