@@ -19,7 +19,7 @@ class Model:
         self._encoded = None  # tracks the encoded array
         self.code_artificial = False  # tracks if the code follows from an input
         self._output = None  # tracks the output array
-        self.dict_perf = None   # dictionary of performance for model
+        self.dict_perf = None  # dictionary of performance for model
 
         if train_array is not None:  # Hot start
             self.fit(train_array, val_array)
@@ -73,6 +73,7 @@ class Model:
         :return: singular or time series output
         """
         return self.decode(self.encode(input_))
+
     # END LOGIC METHODS
 
     # SKELETON FUNCTIONS: FILL (OVERWRITE) IN SUBCLASS
@@ -100,6 +101,7 @@ class Model:
         :return: time series output
         """
         raise NotImplementedError("Skeleton not filled by subclass")
+
     # END SKELETONS
 
     # BEGIN PROPERTIES
@@ -159,8 +161,6 @@ class Model:
         # if input_.shape[0] == 1:
         #     input_ = input_[0]
         self._output = input_
-
-    # TODO: Add output.getter to return 4D array([singular]) as 3D array(singular)
 
     # END PROPERTIES
 
@@ -245,17 +245,6 @@ class Model:
             return u_train, u_val, u_test
         return u_all
 
-    def performance(self) -> dict[str, float]:
-        """
-        Checks reconstruction loss
-        :return: Dictionary
-        """
-        # TODO: define proper performance measure
-        d = dict()
-        d['mse'] = mean_squared_error(self.input, self.output)
-        self.dict_perf = d
-        return d
-
     @staticmethod
     def train_test_batch(param_ranges: dict, model) -> None:
         """
@@ -281,7 +270,7 @@ class Model:
             model_.passthrough(u_val)  # sets input and output
 
             end_time = time.time()  # get end time
-            t_time = end_time-start_time
+            t_time = end_time - start_time
             # compute loss
             perf = model_.performance()
 
@@ -291,8 +280,7 @@ class Model:
             write.update(params)
 
             columns = write.keys()
-            with open(os.path.join(dir_, f'{model_.__class__.__name__}{_name}')
-                      , 'a', newline='') as f:
+            with open(os.path.join(dir_, f'{model_.__class__.__name__}{_name}'), 'a', newline='') as f:
                 writer = DictWriter(f, columns)
 
                 if not flag:  # write column names, its ugly im sorry
@@ -325,15 +313,13 @@ class Model:
 
             # Isolate velocity components
             u_vel = grid[:, :, 0]
+            v_vel = grid[:, :, 1]
+
             # Partial derivatives (du/dx, dv/dy) step size set to 0.262 based on grid size
-            u_vel_grad = np.gradient(u_vel, 0.262, edge_order=2, axis=1)
-            v_vel_grad = 0
+            u_vel_grad = np.gradient(u_vel, axis=0)
+            v_vel_grad = np.gradient(v_vel, axis=1)
 
-            if np.shape(data)[3] == 2:
-                v_vel = grid[:, :, 1]
-                v_vel_grad = np.gradient(v_vel, 0.262, edge_order=2, axis=0)
-
-            divergence = u_vel_grad + v_vel_grad
+            divergence = np.add(u_vel_grad, v_vel_grad)
 
             all_conv.append(np.sum(divergence))
 
@@ -349,61 +335,95 @@ class Model:
 
     @staticmethod
     def energy(nxnx2: np.array):
-        '''
-        returns the kinetic grid wise energy of one image without taking mass into account 
-        '''
-        u = nxnx2[:,:,0]
-        v = nxnx2[:,:,1]
+        """
+        returns the kinetic grid wise energy of one image without taking mass into account
+        """
+        u = nxnx2[:, :, 0]
+        v = nxnx2[:, :, 1]
         return 0.5 * np.add(np.multiply(u, u), np.multiply(v, v))
 
     @staticmethod
     def curl(nxnx2: np.array):
-        '''
+        """
         returns the curl over the grid of a picture -> curl is used to calculate lift/drag therefore significant
-        '''
-        u = nxnx2[:,:,0]
-        v = nxnx2[:,:,1]
+        """
+        u = nxnx2[:, :, 0]
+        v = nxnx2[:, :, 1]
 
-        return np.subtract(np.gradient(u, axis = 1), np.gradient(v, axis=0))
+        return np.subtract(np.gradient(u, axis=1), np.gradient(v, axis=0))
 
     @staticmethod
-    def plot_energy(nxnx2 : np.array):
-        '''
+    def plot_energy(nxnx2: np.array):
+        """
         plots energy/grid without mass/density
-        '''
-        plt.contourf(Model.energy(nxnx2), min = 0, max = 1.1)
+        """
+        plt.contourf(Model.energy(nxnx2), min=0, max=1.1)
         plt.show()
         return None
 
-    
     @staticmethod
-    def plot_vorticity(nxnx2 : np.array):
-        '''
+    def plot_vorticity(nxnx2: np.array):
+        """
         This method returns and shows a plot of the cross product of the velocity components
-        '''
-        plt.contourf(Model.curl(nxnx2),  min = -2.2, max = 2.2)
+        """
+        plt.contourf(Model.curl(nxnx2), min=-2.2, max=2.2)
         plt.show()
         return None
 
     @staticmethod
     def plot_velocity(nxnx2: np.array):
-        '''
+        """
         plots vectorfield
-        '''
+        """
         x = np.arange(24)
         y = np.arange(24)
-        
+
         X, Y = np.meshgrid(x, y)
-        
+
         # Creating plot
-        fig, ax = plt.subplots(figsize =(9, 9))
+        fig, ax = plt.subplots(figsize=(9, 9))
         ax.quiver(X, Y, nxnx2)
-        
+
         ax.xaxis.set_ticks([])
         ax.yaxis.set_ticks([])
         ax.set_aspect('equal')
         plt.show()
         return None
 
-    # END GENERAL METHODS
+    @staticmethod
+    def u_v_plot(nxnx2):
+        """
+        Plots velocity components x, y
+        :param nxnx2: Time frame for plotting
+        :return: None
+        """
+        fig = plt.figure()
+        ax1 = fig.add_subplot(121)
+        ax1.contourf(nxnx2[:, :, 0], vmin=0.0, vmax=1.1)
+        ax1.title.set_text('x_velocity')
 
+        ax2 = fig.add_subplot(122)
+        ax2.contourf(nxnx2[:, :, 1], vmin=0.0, vmax=1.1)
+        ax2.title.set_text('y_velocity')
+
+        fig.suptitle('Velocity Components')
+        plt.show()
+
+    @staticmethod
+    def plot_all(nxnx2):
+        Model.u_v_plot(nxnx2)
+        Model.plot_energy(nxnx2)
+        Model.plot_vorticity(nxnx2)
+        Model.plot_velocity(nxnx2)
+
+    def performance(self) -> dict[str, float]:
+        """
+        Checks reconstruction loss
+        :return: Dictionary
+        """
+        # TODO: define proper performance measure
+        d = dict()
+        d['mse'] = mean_squared_error(self.input, self.output)
+        self.dict_perf = d
+        return d
+    # END GENERAL METHODS

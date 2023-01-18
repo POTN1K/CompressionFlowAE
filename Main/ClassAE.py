@@ -17,9 +17,10 @@ import os
 
 # Local codes
 import sys
+
 sys.path.append('.')
 from Main import Model
-from Main.ExperimentsAE import Filter
+from Main.ExperimentsAE import Filter, custom_loss_function
 
 
 # Uncomment if keras does not run
@@ -29,82 +30,6 @@ from Main.ExperimentsAE import Filter
 
 # Autoencoder Model Class
 class AE(Model):
-
-    @staticmethod
-    def energy(nxnx2: np.array):
-        '''
-        returns the kinetic grid wise energy of one image without taking mass into account
-        '''
-        u = nxnx2[0]
-        v = nxnx2[1]
-        return 0.5 * np.add(np.multiply(u, u), np.multiply(v, v))
-
-    @staticmethod
-    def curl(nxnx2: np.array):
-        '''
-        returns the curl over the grid of a picture -> curl is used to calculate lift/drag therefore significant
-        '''
-        u = nxnx2[0]
-        v = nxnx2[1]
-
-        return np.subtract(np.gradient(u, axis=1), np.gradient(v, axis=0))
-
-    @staticmethod
-    def plot_energy(nxnx2: np.array):
-        '''
-        plots energy/grid without mass/density
-        '''
-        plt.contourf(AE.energy(nxnx2), min=0, max=1.1)
-        plt.title('Energy')
-        plt.show()
-        return None
-
-    @staticmethod
-    def plot_vorticity(nxnx2: np.array):
-        '''
-        This method returns and shows a plot of the cross product of the velocity components
-        '''
-        plt.contourf(AE.curl(nxnx2), min=0, max=2.2)
-        plt.title('Vorticity')
-        plt.show()
-        return None
-
-    @staticmethod
-    def plot_velocity(nxnx2: np.array):
-        '''
-        plots vectorfield
-        '''
-        x, y = np.meshgrid(np.linspace(0, 2 * np.pi, 24), np.linspace(0, 2 * np.pi, 24))
-        plt.quiver(x, y, nxnx2[:, :, 0], nxnx2[:, :, 1])
-        plt.title('Velocity')
-        plt.show()
-        return None
-
-    @staticmethod
-    def u_v_plot(nxnx2):
-        """
-        Plots velocity components x, y
-        :param nxnx2: Time frame for plotting
-        :return: None
-        """
-        fig = plt.figure()
-        ax1 = fig.add_subplot(121)
-        ax1.contourf(nxnx2[:, :, 0], vmin=0.0, vmax=1.1)
-        ax1.title.set_text('x_velocity')
-
-        ax2 = fig.add_subplot(122)
-        ax2.contourf(nxnx2[:, :, 1], vmin=0.0, vmax=1.1)
-        ax2.title.set_text('y_velocity')
-
-        fig.suptitle('Velocity Components')
-        plt.show()
-
-    @staticmethod
-    def plot_all(nxnx2):
-        AE.u_v_plot(nxnx2)
-        AE.plot_energy(nxnx2)
-        AE.plot_vorticity(nxnx2)
-        AE.plot_velocity(nxnx2)
 
     @staticmethod
     def create_trained(h=True):
@@ -183,7 +108,6 @@ class AE(Model):
             self.pooling_function = MaxPool2D
         else:
             self.pooling_function = AveragePooling2D
-
 
     # SKELETON FUNCTIONS
     def fit_model(self, train_array: np.array, val_array: np.array or None = None) -> None:  # skeleton
@@ -356,7 +280,7 @@ class AE(Model):
         # Fit the training and validation data to model, while saving a history. Verbose prints the epochs
         self.hist = self.autoencoder.fit(self.u_train, self.u_train, epochs=self.epochs, batch_size=self.batch,
                                          shuffle=False, validation_data=(self.u_val, self.u_val),
-                                         verbose=0,
+                                         verbose=1,
                                          callbacks=[early_stop_callback])
 
         # Predict model using test data
@@ -371,28 +295,27 @@ class AE(Model):
             # Set of predictions we are going to plot. We decided on the first 10 frames but it could be whatever
             image_to_plot = self.y_pred[i:i + 1, :, :, :]
 
-                # u velocity
+            # u velocity
 
             min_ = np.min(self.u_test[i, :, :, 0])
             max_ = np.max(self.u_test[i, :, :, 0])
 
             plt.subplot(121)
-            figure1x = plt.contourf(self.y_pred[i, :, :, 0], vmin= min_, vmax=max_)
+            figure1x = plt.contourf(self.y_pred[i, :, :, 0], vmin=min_, vmax=max_)
             plt.subplot(122)
-            figure2x = plt.contourf(self.u_test[i, :, :, 0], vmin= min_, vmax=max_)
+            figure2x = plt.contourf(self.u_test[i, :, :, 0], vmin=min_, vmax=max_)
             plt.colorbar(figure2x)
             plt.title("Velocity x-dir")
             plt.show()
 
             # v velocity
-                # v velocity
             min_ = np.min(self.u_test[i, :, :, 1])
             max_ = np.max(self.u_test[i, :, :, 1])
             if self.nu == 2:
                 plt.subplot(121)
-                figure1y = plt.contourf(self.y_pred[i, :, :, 1], vmin= min_, vmax=max_ )
+                figure1y = plt.contourf(self.y_pred[i, :, :, 1], vmin=min_, vmax=max_)
                 plt.subplot(122)
-                figure2y = plt.contourf(self.u_test[i, :, :, 1], vmin= min_, vmax=max_ )
+                figure2y = plt.contourf(self.u_test[i, :, :, 1], vmin=min_, vmax=max_)
                 plt.colorbar(figure2y)
                 plt.title("Velocity y-dir")
                 plt.show()
@@ -410,30 +333,29 @@ class AE(Model):
             plt.show()
 
     def vorticity_energy(self):
-
-        '''
+        """
         f, (ax1, ax2) = plt.subplots(1, 2, sharey=True)
         ax1.contourf(AE.curl(self.y_pred[0, :, :, 0]))
         ax1.set_title('predicted')
         ax2.contourf(AE.curl(self.u_test[0, :, :, 0]))
         ax1.set_title('true')
         plt.show()
-        '''
+        """
         min_ = np.min(AE.curl(self.u_test[0, :, :, :]))
         max_ = np.max(AE.curl(self.u_test[0, :, :, :]))
         plt.subplot(121)
-        plt.contourf(AE.curl(self.y_pred[0, :, :, :]), vmin= min_, vmax=max_)
+        plt.contourf(AE.curl(self.y_pred[0, :, :, :]), vmin=min_, vmax=max_)
         plt.subplot(122)
-        plt.contourf(AE.curl(self.u_test[0, :, :, :]), vmin= min_, vmax=max_)
+        plt.contourf(AE.curl(self.u_test[0, :, :, :]), vmin=min_, vmax=max_)
         plt.title("Vorticity")
         plt.show()
 
         min_ = np.min(AE.energy(self.u_test[0, :, :, :]))
         max_ = np.max(AE.energy(self.u_test[0, :, :, :]))
         plt.subplot(121)
-        plt.contourf(AE.energy(self.y_pred[0, :, :, :]), vmin= min_, vmax=max_)
+        plt.contourf(AE.energy(self.y_pred[0, :, :, :]), vmin=min_, vmax=max_)
         plt.subplot(122)
-        plt.contourf(AE.energy(self.u_test[0, :, :, :]), vmin= min_, vmax=max_)
+        plt.contourf(AE.energy(self.u_test[0, :, :, :]), vmin=min_, vmax=max_)
         plt.title("Energy")
         plt.show()
         return None
@@ -458,14 +380,14 @@ class AE(Model):
         self.dict_perf = d
         return d
 
+
 def run_model():
     """General function to run one model"""
 
     n = 2
     u_train, u_val, u_test = AE.preprocess(nu=n)
 
-
-    model = AE.create_trained(True)
+    model = AE.create_trained(False)
     # model = AE()
 
     model.u_train, model.u_val, model.u_test = u_train, u_val, u_test
@@ -482,8 +404,6 @@ def run_model():
 
     print(f'Absolute %: {round(perf["abs_percentage"], 3)} +- {round(perf["abs_std"], 3)}')
     print(f'Squared %: {round(perf["sqr_percentage"], 3)} +- {round(perf["sqr_std"], 3)}')
-
-
 
 
 if __name__ == '__main__':
