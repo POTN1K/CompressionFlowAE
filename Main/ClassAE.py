@@ -137,7 +137,7 @@ class AE(Model):
         :input_: time series code
         :return: time series output
         """
-        self.y_pred = self.decoder.predict(input_)
+        self.y_pred = self.decoder.predict(input_, verbose = 0)
         return self.y_pred
 
     # END SKELETONS

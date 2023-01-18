@@ -31,24 +31,29 @@ def create_art():
     # Isolate velocity components
     u_vel = frame_art[:, :, 0]
     # Partial derivatives (du/dx, dv/dy) step size set to 0.262 based on grid size
-    u_vel_grad = np.gradient(u_vel, 0.262, edge_order=2, axis=0)
+    u_vel_grad = np.gradient(u_vel, axis=0)
     v_vel = frame_art[:, :, 1]
-    v_vel_grad = np.gradient(v_vel, 0.262, edge_order=2, axis=1)
-    divergence = u_vel_grad + v_vel_grad
+    v_vel_grad = np.gradient(v_vel, axis=1)
+    divergence = np.add(u_vel_grad, v_vel_grad)
 
     physicality = reference_divergence * -1.1 < np.sum(divergence) < reference_divergence * 1.1
     return latent_art, divergence, physicality, frame_art
 
 
 latents = {}
-for i in tqdm(np.arange(0, 1001), colour='green'):
+count = 0
+total = 1000
+for i in tqdm(np.arange(0, total + 1), colour='green'):
     latents[f'{i}'] = create_art()
+    if latents[f'{i}'][2]:
+        count += 1
 
 
 latent_art, div_art, physical, frame_art = latents['630']
 letter = 'is' if physical else "isn't"
 print(f"The flow {letter} physical")
 print(f'Divergence: {np.sum(div_art)}')
+print(f'Physical accuracy: {count} - {count/total * 100}%')
 AE.u_v_plot(frame_art)
 
 
