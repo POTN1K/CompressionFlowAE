@@ -357,7 +357,7 @@ class Model:
         """
         plots energy/grid without mass/density
         """
-        plt.contourf(Model.energy(nxnx2), min=0, max=1.1)
+        plt.contourf(Model.energy(nxnx2), min=0, max=2)
         plt.show()
         return None
 
@@ -397,16 +397,59 @@ class Model:
         :param nxnx2: Time frame for plotting
         :return: None
         """
+        vel_max = np.max(nxnx2)
+        vel_min = np.min(nxnx2)
         fig = plt.figure()
         ax1 = fig.add_subplot(121)
-        ax1.contourf(nxnx2[:, :, 0], vmin=0.0, vmax=1.1)
+        ax1.contourf(nxnx2[:, :, 0], vmin=vel_min, vmax=vel_max)
         ax1.title.set_text('x_velocity')
 
         ax2 = fig.add_subplot(122)
-        ax2.contourf(nxnx2[:, :, 1], vmin=0.0, vmax=1.1)
+        ax2.contourf(nxnx2[:, :, 1], vmin=vel_min, vmax=vel_max)
         ax2.title.set_text('y_velocity')
 
-        fig.suptitle('Velocity Components')
+        plt.show()
+
+    def u_v_curl_plot(nxnx2, title):
+        """
+        Plots velocity components x, y
+        :param nxnx2: Time frame for plotting
+        :return: None
+        """
+        fig, axs = plt.subplots(1, 3)
+
+        vel_max = np.max(nxnx2)
+        vel_min = np.min(nxnx2)
+        abs_max = max(abs(vel_max), abs(vel_min))
+        fig.suptitle(title)
+        fig1 = axs[0].contourf(nxnx2[:, :, 0], vmin=vel_min, vmax=vel_max)
+        plt.colorbar(fig1)
+        axs[0].set_title('u')
+        fig2 = axs[1].contourf(nxnx2[:, :, 1], vmin=vel_min, vmax=vel_max)
+        plt.colorbar(fig2)
+        axs[1].set_title('v')
+        fig4 = axs[2].contourf(Model.curl(nxnx2))
+        plt.colorbar(fig4)
+        axs[2].set_title('curl')
+
+        '''
+        plt.subplot(121)
+        fig1 = plt.contourf(nxnx2[:, :, 0], vmin=vel_min, vmax=vel_max)
+        plt.colorbar(fig1)
+
+        plt.subplot(122)
+        fig2 = plt.contourf(nxnx2[:, :, 1], vmin=vel_min, vmax=vel_max)
+        plt.colorbar(fig2)
+
+        plt.subplot(123)
+        fig3 = plt.contourf(Model.energy(nxnx2), vmin=0, vmax=abs_max**2/2)
+        plt.colorbar(fig3)
+
+        plt.subplot(124)
+        fig4 = plt.contourf(Model.curl(nxnx2), vmin= - abs_max**2, vmax= abs_max**2)
+        plt.colorbar(fig4)'''
+
+
         plt.show()
 
     @staticmethod
