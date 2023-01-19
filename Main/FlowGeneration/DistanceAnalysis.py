@@ -36,7 +36,7 @@ def create_art():
     v_vel_grad = np.gradient(v_vel, axis=1)
     divergence = np.add(u_vel_grad, v_vel_grad)
 
-    physicality = reference_divergence * -1.1 < np.sum(divergence) < reference_divergence * 1.1
+    physicality = reference_divergence * -1.5 < np.sum(divergence) < reference_divergence * 1.5
     return latent_art, divergence, physicality, frame_art
 
 
@@ -57,6 +57,6 @@ print(f'Physical accuracy: {count} - {count/total * 100}%')
 AE.u_v_plot(frame_art)
 
 
-# distance > 0.4 --> 151/200 points are present 75.5%
-# distance > 0.35 --> 162/200 points are present 81%
-# distance > 0.3 --> 177/200 points are present 88.5%
+# at 1.25: 16.4%
+# at 1.5: 25.7%
+
