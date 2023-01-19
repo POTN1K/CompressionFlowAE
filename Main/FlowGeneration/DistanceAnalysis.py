@@ -36,25 +36,52 @@ def create_art():
     v_vel_grad = np.gradient(v_vel, axis=1)
     divergence = np.add(u_vel_grad, v_vel_grad)
 
-    physicality = reference_divergence * -1.1 < np.sum(divergence) < reference_divergence * 1.1
-    return latent_art, divergence, physicality, frame_art
+
+    return latent_art, np.sum(divergence), frame_art
 
 
-latents = {}
-count = 0
-total = 1000
-for i in tqdm(np.arange(0, total + 1), colour='green'):
-    latents[f'{i}'] = create_art()
-    if latents[f'{i}'][2]:
-        count += 1
+def thousands(total=1000):
+    latents = {}
+    for i in tqdm(np.arange(0, total + 1), colour='green'):
+        latents[f'{i}'] = create_art()
+    return latents
 
 
-latent_art, div_art, physical, frame_art = latents['630']
-letter = 'is' if physical else "isn't"
-print(f"The flow {letter} physical")
-print(f'Divergence: {np.sum(div_art)}')
-print(f'Physical accuracy: {count} - {count/total * 100}%')
-AE.u_v_plot(frame_art)
+def physicality(interval, latents):
+    lower_bound = - interval / 2
+    upper_bound = interval / 2
+    count = 0
+    for i in tqdm(latents, colour='yellow'):
+        if lower_bound < latents[i][1] < upper_bound:
+            count += 1
+    print(f'Rate of physicality {count / len(latents) * 100}% with an interval of {interval}')
+    return count / len(latents)
+
+
+if __name__ == '__main__':
+    latents = thousands()
+    percentages = []
+    for i in tqdm(np.arange(0.2, 2.2, 0.2), colour='blue'):
+        percentages.append(physicality(i, latents))
+    plt.plot(np.arange(0.1, 1.1, 0.1), percentages)
+    plt.xlabel('Divergence Interval')
+    plt.ylabel('Rate of Physicality')
+    plt.show()
+
+
+
+
+
+
+
+
+
+# latent_art, div_art, physical, frame_art = latents['630']
+# letter = 'is' if physical else "isn't"
+# print(f"The flow {letter} physical")
+# print(f'Divergence: {np.sum(div_art)}')
+# print(f'Physical accuracy: {count} - {count/total * 100}%')
+# AE.u_v_plot(frame_art)
 
 
 # distance > 0.4 --> 151/200 points are present 75.5%

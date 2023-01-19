@@ -391,22 +391,20 @@ class Model:
         return None
 
     @staticmethod
-    def u_v_plot(nxnx2):
+    def u_v_plot(nxnx2, vmin=-1.1, vmax=1.1, title=None, color='viridis'):
         """
         Plots velocity components x, y
         :param nxnx2: Time frame for plotting
         :return: None
         """
-        fig = plt.figure()
-        ax1 = fig.add_subplot(121)
-        ax1.contourf(nxnx2[:, :, 0], vmin=0.0, vmax=1.1)
-        ax1.title.set_text('x_velocity')
+        fig, axs = plt.subplots(1, 2)
+        fig0 = axs[0].contourf(nxnx2[:, :, 0], vmin=vmin, vmax=vmax, cmap=color)
+        fig1 = axs[1].contourf(nxnx2[:, :, 1], vmin=vmin, vmax=vmax, cmap=color)
+        plt.colorbar(fig1)
+        axs[0].set_title('u velocity')
+        axs[1].set_title('v velocity')
 
-        ax2 = fig.add_subplot(122)
-        ax2.contourf(nxnx2[:, :, 1], vmin=0.0, vmax=1.1)
-        ax2.title.set_text('y_velocity')
-
-        fig.suptitle('Velocity Components')
+        fig.suptitle(title)
         plt.show()
 
     @staticmethod

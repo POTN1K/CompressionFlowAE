@@ -107,11 +107,6 @@ def average(params: tuple):
     latent = np.genfromtxt(f'{params}_latent.csv', delimiter=',')
     print(np.average(latent[:,0:3]))
 
-
-def param_analysis(p1, p2, p3):
-    # Should return the mean surface for the shape
-    ...
-
 def stats(mode: list[float]):
     """
     :param mode: the values of the given mode in all latent spaces of a certain time series
@@ -166,8 +161,23 @@ def is_inside(p1: list[float], p2: list[float], p3: list[float]) -> [list[bool],
     return positions, points_inside
 
 
+# ------- ANALYSIS OF THE HIERARCHICAL AUTOENCODER ----
 
 
 
 if __name__ == '__main__':
-    original_ls_visual((0,1,2), u_test, True, False)
+    final_latent = model.encode(u_all[51])[0, 0, 0, :]
+    latent_1 = [final_latent[0], 0, 0, 0]
+    latent_2 = [final_latent[0], final_latent[1], 0, 0]
+    latent_3 = [final_latent[i] for i in range(3)] + [0]
+    m1_effect = generate(latent_1)
+    m2_effect = generate(latent_2) - m1_effect
+    m3_effect = generate(latent_3) - generate(latent_2)
+    m4_effect = generate(final_latent) - generate(latent_3)
+
+    print(generate(final_latent))
+    AE.u_v_plot(generate(final_latent))
+    AE.u_v_plot(m1_effect, title=f'Effect of mode 1 with latent {latent_1}')
+    AE.u_v_plot(m2_effect, title=f'Effect of mode 2 with latent {latent_2}', color='seismic')
+    AE.u_v_plot(m3_effect, title=f'Effect of mode 3 with latent {latent_3}', color='seismic')
+    AE.u_v_plot(m4_effect, title=f'Effect of mode 4 with latent {final_latent}', color='seismic')
