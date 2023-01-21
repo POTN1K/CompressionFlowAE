@@ -1,9 +1,10 @@
 # Script to analyze how the reconstructed flow changes due to disturbances to latent space components
-import sys
-sys.path.append('.')
 from Main.ClassAE import AE
 import numpy as np
 import matplotlib.pyplot as plt
+import sys
+sys.path.append('.')
+
 
 model = AE.create_trained(h=True)
 u_all = AE.preprocess(nu=2, split=False)
