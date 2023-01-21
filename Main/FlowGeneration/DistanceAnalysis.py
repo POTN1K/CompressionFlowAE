@@ -4,7 +4,7 @@ import random
 from FlowGeneration import *
 
 mode1, mode2, mode3, mode4 = np.transpose(generation_from_original(u_all))
-reference_divergence = AE.verification(u_all)[-1]
+max_div, min_div, reference_divergence = AE.verification(u_all)
 center = (stats(mode1)[0], stats(mode2)[0], stats(mode3)[0])
 
 # Taking into account all the points present
@@ -36,7 +36,7 @@ def create_art():
     v_vel_grad = np.gradient(v_vel, axis=1)
     divergence = np.add(u_vel_grad, v_vel_grad)
 
-    physicality = reference_divergence * -1.5 < np.sum(divergence) < reference_divergence * 1.5
+    physicality = min_div < np.sum(divergence) < max_div
     return latent_art, divergence, physicality, frame_art
 
 
@@ -45,18 +45,24 @@ count = 0
 total = 1000
 for i in tqdm(np.arange(0, total + 1), colour='green'):
     latents[f'{i}'] = create_art()
-    if latents[f'{i}'][2]:
+    if latents[f'{i}']:
         count += 1
 
+print(count)
 
-latent_art, div_art, physical, frame_art = latents['630']
-letter = 'is' if physical else "isn't"
-print(f"The flow {letter} physical")
-print(f'Divergence: {np.sum(div_art)}')
-print(f'Physical accuracy: {count} - {count/total * 100}%')
-AE.u_v_plot(frame_art)
+# domain = np.arange(0.1, 1.1, 0.1)
+# ratios = []
+# for i in domain:
+#     count = 0
+#     for j in latents:
+#         physicality = reference_divergence * (1 - i) < np.sum(latents[j][1]) < reference_divergence * (1 + i)
+#         if physicality:
+#             count += 1
+#     print(count)
+#     ratios.append(count / len(latents) * 100)
 
-
+# plt.plot(domain, ratios)
+# plt.show()
 # at 1.25: 16.4%
 # at 1.5: 25.7%
 

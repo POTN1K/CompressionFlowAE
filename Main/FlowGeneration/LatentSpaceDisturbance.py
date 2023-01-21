@@ -10,8 +10,8 @@ u_all = AE.preprocess(nu=2, split=False)
 values = []
 
 # Take one sample from data set and calculate latent space
-sample_latent = model.encode(u_all[0])
-domain = np.arange(-2.5, 0.7, 0.1)
+sample_latent = model.encode(u_all[51])
+domain = np.arange(-0.5, 0.2, 0.1)
 print(sample_latent)  # [[[[-0.03541018  0.24589653  0.5007892  -0.19181845]]]]
 AE.u_v_plot(model.decode(sample_latent))
 
@@ -24,15 +24,13 @@ print(np.average(function(u_all[0])))
 # Change mode 1
 for i in domain:
     disturbed_latent = np.copy(sample_latent)
-    print(1 + i)
-    print(sample_latent[0, 0, 0, 3])
     disturbed_latent[0, 0, 0, 3] = sample_latent[0, 0, 0, 3] * (1 + i)
-    print(disturbed_latent)
     img_disturbed = model.decode(disturbed_latent)
     img_sample = model.decode(sample_latent)
+    energy_difference = np.subtract(AE.energy(img_disturbed), AE.energy(img_sample))
     img = np.subtract(img_disturbed, img_sample)
     values.append(np.average(function(img)))
-    AE.u_v_curl_plot(img, f'Latent space change   {sample_latent[0][0][0]}   to   {disturbed_latent[0][0][0]}  ')
+    AE.u_v_curl_plot(img, energy_difference, f'Latent space change   {sample_latent[0][0][0]}   to   {disturbed_latent[0][0][0]}  ')
 plt.plot([k + 1.0 for k in domain], values)
 plt.show()
 # Observation:

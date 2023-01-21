@@ -166,18 +166,21 @@ def is_inside(p1: list[float], p2: list[float], p3: list[float]) -> [list[bool],
 
 
 if __name__ == '__main__':
-    final_latent = model.encode(u_all[51])[0, 0, 0, :]
-    latent_1 = [final_latent[0], 0, 0, 0]
-    latent_2 = [final_latent[0], final_latent[1], 0, 0]
-    latent_3 = [final_latent[i] for i in range(3)] + [0]
-    m1_effect = generate(latent_1)
-    m2_effect = generate(latent_2) - m1_effect
-    m3_effect = generate(latent_3) - generate(latent_2)
-    m4_effect = generate(final_latent) - generate(latent_3)
+    # final_latent = model.encode(u_all[51])[0, 0, 0, :]
+    # latent_1 = [final_latent[0], 0, 0, 0]
+    # latent_2 = [final_latent[0], final_latent[1], 0, 0]
+    # latent_3 = [final_latent[i] for i in range(3)] + [0]
+    # m1_effect = generate(latent_1)
+    # m2_effect = generate(latent_2) - m1_effect
+    # m3_effect = generate(latent_3) - generate(latent_2)
+    # m4_effect = generate(final_latent) - generate(latent_3)
+    #
+    # print(generate(final_latent))
+    # AE.u_v_plot(generate(final_latent))
+    # AE.u_v_plot(m1_effect, title=f'Effect of mode 1 with latent {latent_1}')
+    # AE.u_v_plot(m2_effect, title=f'Effect of mode 2 with latent {latent_2}', color='seismic')
+    # AE.u_v_plot(m3_effect, title=f'Effect of mode 3 with latent {latent_3}', color='seismic')
+    # AE.u_v_plot(m4_effect, title=f'Effect of mode 4 with latent {final_latent}', color='seismic')
 
-    print(generate(final_latent))
-    AE.u_v_plot(generate(final_latent))
-    AE.u_v_plot(m1_effect, title=f'Effect of mode 1 with latent {latent_1}')
-    AE.u_v_plot(m2_effect, title=f'Effect of mode 2 with latent {latent_2}', color='seismic')
-    AE.u_v_plot(m3_effect, title=f'Effect of mode 3 with latent {latent_3}', color='seismic')
-    AE.u_v_plot(m4_effect, title=f'Effect of mode 4 with latent {final_latent}', color='seismic')
+
+    AE.gene
