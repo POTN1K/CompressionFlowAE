@@ -443,6 +443,7 @@ if __name__ == '__main__':
     t = model.passthrough(u_test)
     # model.vorticity_energy()
     perf = model.performance()
+    AE.plot_all(t[0])
 
     model.verification(u_test)
     model.verification(model.y_pred)

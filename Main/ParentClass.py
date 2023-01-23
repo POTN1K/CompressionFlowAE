@@ -111,6 +111,7 @@ class Model:
         :return: None
         """
         self._encoded = np.copy(input_)
+
     # END PROPERTIES
 
     # BEGIN LOGIC METHODS
@@ -195,6 +196,7 @@ class Model:
         :return: numpy array, time series output
         """
         raise NotImplementedError("Skeleton not filled by subclass")
+
     # END SKELETONS
 
     # BEGIN GENERAL METHODS
@@ -302,7 +304,7 @@ class Model:
         param_grid = ParameterGrid(param_ranges)
 
         # Loop over model combinations
-        n = 0 # Counter
+        n = 0  # Counter
         dir_ = os.path.join(os.path.split(__file__)[0], 'TuningDivision')
         _name = f'_at_{datetime.now().strftime("%m.%d.%Y_%Hh%Mm")}.csv'
         flag = False
@@ -435,7 +437,7 @@ class Model:
 
         # Creating plot
         fig, ax = plt.subplots(figsize=(9, 9))
-        ax.quiver(X, Y, nxnx2)
+        ax.quiver(X, Y, nxnx2[:, :, 0], nxnx2[:, :, 1])
 
         ax.xaxis.set_ticks([])
         ax.yaxis.set_ticks([])
