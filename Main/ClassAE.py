@@ -164,7 +164,7 @@ class AE(Model):
         :return: numpy array, time series
         """
 
-        self.y_pred = self.decoder.predict(input_)
+        self.y_pred = self.decoder.predict(input_, verbose=0)
         return self.y_pred
 
     # END SKELETONS

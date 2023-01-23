@@ -365,7 +365,7 @@ class Model:
             v_vel_grad = np.gradient(v_vel, axis=1)
 
             divergence = np.add(u_vel_grad, v_vel_grad)
-
+            print(np.sum(divergence))
             all_conv.append(np.sum(divergence))
 
         max_div = max(all_conv)

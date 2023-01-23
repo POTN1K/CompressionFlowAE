@@ -39,9 +39,10 @@ def create_art():
 
     # Isolate velocity components
     u_vel = frame_art[:, :, 0]
-    # Partial derivatives (du/dx, dv/dy) step size set to 0.262 based on grid size
-    u_vel_grad = np.gradient(u_vel, axis=0)
     v_vel = frame_art[:, :, 1]
+    # Partial derivatives (du/dx, dv/dy) step size set to 0.262 based on grid size
+
+    u_vel_grad = np.gradient(u_vel, axis=0)
     v_vel_grad = np.gradient(v_vel, axis=1)
     divergence = np.add(u_vel_grad, v_vel_grad)
     physicality = reference_divergence * 0.1 < np.sum(divergence) < reference_divergence * 1.9
@@ -51,11 +52,15 @@ def create_art():
 latents = {}
 count = 0
 total = 1000
+divergences = []
 for i in tqdm(np.arange(0, total + 1), colour='green'):
     latents[f'{i}'] = create_art()
+    divergences.append(np.sum(latents[f'{i}'][1]))
     if latents[f'{i}'][2]:
         count += 1
 
+divergences = np.array(divergences)
+print(np.max(divergences), np.min(divergences), np.sum(np.abs(divergences)) / len(divergences))
 print(count)
 
 # domain = np.arange(0.1, 1.1, 0.1)
