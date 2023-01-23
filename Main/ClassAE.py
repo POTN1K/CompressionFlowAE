@@ -1,26 +1,26 @@
-# Code that defines the Autoencoder object. It has n principal methods:
-#               - network: creates the architecture of the NN
-#               - creator: which creates the encoder, decoder and autoencoder attributes
-#               - training: to train the autoencoder (it automatically trains the decoder and encoder too)
-#               - visual analysis: plots the first 10 reconstructed flows and the error evolution throught the epochs
-#               - performance: calculates mse of every image and transforms it into a percentage of accuracy
+""" Autoencoder Model class
 
+This file defines a class "AE", which is a subclass of Model. It creates a customizable Keras model,
+with different architectures and hyperparameters.
+"""
 
 # Libraries
-import numpy as np
-import tensorflow as tf
-import matplotlib.pyplot as plt
-from keras.layers import Input, Conv2D, MaxPool2D, AveragePooling2D, UpSampling2D, Conv2DTranspose
-from keras.optimizers import Adam
-from keras.models import load_model
+# Utils
 import os
-
-# Local codes
 import sys
 
 sys.path.append('.')
-from Main import Model
-from Main.ExperimentsAE import Filter, custom_loss_function
+# Numerics
+import numpy as np
+# Machine Learning
+import tensorflow as tf
+from keras.layers import Input, Conv2D, MaxPool2D, AveragePooling2D, UpSampling2D, Conv2DTranspose
+from keras.optimizers import Adam
+from keras.models import load_model
+# Plotting
+import matplotlib.pyplot as plt
+# Local Library
+from Main import Model, Filter, custom_loss_function
 
 
 # Uncomment if keras does not run
@@ -30,130 +30,162 @@ from Main.ExperimentsAE import Filter, custom_loss_function
 
 # Autoencoder Model Class
 class AE(Model):
+    """
+    Autoencoder class, subclass from Model. Creates an autoencoder object using a keras model.
 
-    @staticmethod
-    def create_trained(h=True):
-        # Load Models
-        dir_curr = os.path.split(__file__)[0]
-        if h:
-            model = AE(dimensions=[32, 16, 8, 4], l_rate=0.0005, epochs=100, batch=20)
-            model.h_network(4)
-            # Autoencoder
-            auto_rel = ('KerasModels', f'autoencoder_h.h5')
-            model.autoencoder = load_model(os.path.join(dir_curr, *auto_rel), custom_objects={'Filter': Filter})
-            # Encoder
-            enco_rel = ('KerasModels', f'encoder_h.h5')
-            model.encoder = load_model(os.path.join(dir_curr, *enco_rel), custom_objects={'Filter': Filter})
-            # Decoder
-            deco_rel = ('KerasModels', f'decoder_h.h5')
-            model.decoder = load_model(os.path.join(dir_curr, *deco_rel), custom_objects={'Filter': Filter})
-        else:
-            model = AE()
-            # Autoencoder
-            auto_rel = ('KerasModels', f'autoencoder_2D.h5')
-            model.autoencoder = load_model(os.path.join(dir_curr, *auto_rel))
-            # Encoder
-            enco_rel = ('KerasModels', f'encoder_2D.h5')
-            model.encoder = load_model(os.path.join(dir_curr, *enco_rel))
-            # Decoder
-            deco_rel = ('KerasModels', f'decoder_2D.h5')
-            model.decoder = load_model(os.path.join(dir_curr, *deco_rel))
-        model.trained = True
-        return model
+    Main attributes:
+    - Model hyperparameters: dimensions, activation_function, l_rate, epochs, batch, early_stopping, pooling, loss
+    - Data: u_train, u_val, u_test
+    - Keras models: autoencoder, encoder, decoder
+    - Other: hierarchical, re, nx, nu, y_pred
+
+    Parent methods:
+    - fit: trains model on training and validation data
+    - encode: returns latent space
+    - decode: returns decoded latent space
+    - passthrough: encodes and decodes flow
+    - performance: measures performance
+
+    Main methods:
+    - create_trained: static, loads a trained model
+    - network/h_network: initializes model architecture
+    - training: trains model
+    - plot_loss_history: plots the loss history after training
+    - vorticity_energy: plots energy and vorticity comparison
+    """
 
     # Initialize model
-    def __init__(self, dimensions=[32, 16, 8, 4], activation_function='tanh', l_rate=0.0005, epochs=500, batch=10,
-                 early_stopping=10, pooling='max', re=40.0, nu=2, nx=24, loss='mse', train_array=None, val_array=None,
-                 trained=False):
-        """ Ambiguous Inputs-
-            dimensions: Number of features per convolution layer, dimensions[-1] is dimension of latent space.
-            pooling: 'max' or 'ave', function to combine pixels.
-            nu: Number of velocity components, 1 -> 'x', 2 -> 'x','y'.
-            nx: Size of grid side."""
+    def __init__(self, dimensions: list[int] = [32, 16, 8, 4], l_rate: float = 0.0005, epochs: int = 500,
+                 batch: int = 10, early_stopping: int = 10, re: float = 40.0, nx: int = 24, nu: int = 2,
+                 activation_function: str = 'tanh', pooling: str = 'max', loss: str = 'mse',
+                 train_array: np.array or None = None, val_array: np.array or None = None,
+                 hierarchical: bool = False) -> None:
+        """
+        Initialize AE object
+        :param dimensions: list, sets the dimensionality of output for each convolution layer.
+                            dimensions[3] sets the size of the latent space
+        :param l_rate: float, learning rate
+        :param epochs: int, number of epochs
+        :param batch: int, number of batches
+        :param early_stopping: int, number of similar elements before stop training
+        :param re: float, Reynolds number
+        :param nx: int, size of the grid
+        :param nu: int, components of velocity vector (1,2)
+        :param activation_function: str
+        :param pooling: str, pooling technique ('max','ave')
+        :param loss: str, loss function
+        :param train_array: numpy array, optional, training data
+        :param val_array: numpy array, optional, validation data
+        :param hierarchical: bool, sets the model to be a hierarchical autoencoder or general
+        """
+
         self.dimensions = dimensions
-        self.activation_function = activation_function
         self.l_rate = l_rate
         self.epochs = epochs
         self.batch = batch
         self.early_stopping = early_stopping
         self.re = re
-        self.nu = nu
         self.nx = nx
+        self.nu = nu
+        self.activation_function = activation_function
         self.pooling = pooling
         self.loss = loss
-        self.trained = trained
+        self.hierarchical = hierarchical
+
         # Instantiating
-        self.u_all = None
-        self.u_train = None
-        self.u_val = None
-        self.u_test = None
-        self.hist = None
+        self.u_train, self.u_val, self.u_test = None, None, None
+        self.autoencoder, self.encoder, self.decoder = None, None, None
         self.image = None
-        self.autoencoder = None
-        self.encoder = None
-        self.decoder = None
         self.hist = None
         self.y_pred = None
 
-        self.network()
+        if self.hierarchical:
+            self.h_network()
+        else:
+            self.network()
+
         super().__init__(train_array=train_array, val_array=val_array)
 
+    # BEGIN PROPERTIES
     @property
     def pooling(self):
+        """
+        Return pooling function
+        :return: str, pooling function
+        """
         return self.pooling_function
 
     @pooling.setter
     def pooling(self, value):
+        """
+        Set pooling function
+        :param value: str, pooling function name ('max', 'ave')
+        :return: str, pooling function
+        """
         if value == 'max':
             self.pooling_function = MaxPool2D
-        else:
+        elif value == 'ave':
             self.pooling_function = AveragePooling2D
+        else:
+            raise ValueError("Use a valid pooling function")
+    # END PROPERTIES
 
     # SKELETON FUNCTIONS
-    def fit_model(self, train_array: np.array, val_array: np.array or None = None) -> None:  # skeleton
+    # Overwriting of low level codes for parent class
+    def _fit_model(self, train_array: np.array, val_array: np.array = None) -> None:
         """
         Fits the model on the training data: skeleton, overwrite
         val_array is optional; required by Keras for training
-        :param train_array: time series training data
-        :param val_array: optional, time series validation data
+        :param train_array: numpy array, time series training data
+        :param val_array: numpy array, time series validation data
+        :return: None
         """
+
         self.u_train = train_array
         self.u_val = val_array
 
         self.training()
 
-    def get_code(self, input_: np.array) -> np.array:  # skeleton
+    def _get_code(self, input_: np.array) -> np.array:
         """
-        Returns the encoded signal given data to encode
-        :input_: time series input
-        :return: time series code
+        Returns the latent space from the given input
+        :param input_: numpy array, time series input
+        :return: numpy array, time series latent space
         """
+
         self.u_test = input_
         return self.encoder.predict(input_, verbose=0)
 
-    def get_output(self, input_: np.array) -> np.array:  # skeleton
+    def _get_output(self, input_: np.array) -> np.array:  # skeleton
         """
-        Returns the decoded data given the encoded signal
-        :input_: time series code
-        :return: time series output
+        Returns the decoded latent space
+        :param input_: numpy array, latent space
+        :return: numpy array, time series
         """
+
         self.y_pred = self.decoder.predict(input_)
         return self.y_pred
 
     # END SKELETONS
 
-    def network(self):
-        """ This function defines the architecture of the neural network. Every layer of the NN presents a convolution
-            and a pooling. There are 8 layers in total, 4 for the encoder and 4 for the decoder.
-            Connv2D inputs:
+    # BEGIN MODEL FUNCTIONS
+    # Network creation methods
+    def network(self) -> None:
+        """
+        This function defines the architecture of the neural network. Every layer of the NN presents a convolution
+        and a pooling. There are 8 layers in total, 4 for the encoder and 4 for the decoder.
+            Conv2D inputs:
             - number of features to be extracted from the frame
             - (m, n) defines the size of the filter, x_size_filter = x_size_frame / m, y_size_filter = y_size_frame / n
             - how to behave when at the boundary of the frame, 'same' adds 0s to the left/right/up/down of the frame
             pooling_function inputs:
-            - size of the area of frame where the pooling is performed
+            - size of the area of the frame where the pooling is performed
             - padding (check Conv2D)
-            """
+        :return: None
+        """
+        # Input
         self.image = Input(shape=(self.nx, self.nx, self.nu))
+
         # Beginning of Autoencoder and Encoder
         x = Conv2D(self.dimensions[0], (3, 3), padding='same', activation=self.activation_function)(self.image)
         x = self.pooling_function((2, 2), padding='same')(x)
@@ -177,14 +209,11 @@ class AE(Model):
         decoded = Conv2DTranspose(self.nu, (3, 3), activation='linear', padding='same')(x)
         # End of Decoder and Autoencoder
 
-        """ Use previously defined architecture to build an untrained model.
-            It will create an autoencoder, encoder, and decoder. All three trained together."""
+        # Use the architecture to define an autoencoder, encoder, decoder
         # Creation of autoencoder
         self.autoencoder = tf.keras.models.Model(self.image, decoded)
-
-        # Creation of enconder
+        # Creation of encoder
         self.encoder = tf.keras.models.Model(self.image, encoded)
-
         # Creation of decoder
         encoded_input = Input(shape=(1, 1, encoded.shape[3]))  # latent vector definition
         deco = self.autoencoder.layers[-9](encoded_input)  # re-use the same layers as the ones of the autoencoder
@@ -192,7 +221,15 @@ class AE(Model):
             deco = self.autoencoder.layers[-8 + i](deco)
         self.decoder = tf.keras.models.Model(encoded_input, deco)
 
-    def h_network(self, n):
+    def h_network(self, n=4) -> None:
+        """
+        Creation of a 4 size latent space autoencoder. It has 4 different encoders,
+        so each mode is trained separately, ranked by importance. They share one decoder.
+        To train each encoder, the filter needs to be adapted, the weights locked, and the model recompiled.
+        Refer to hierarchicalGenerator.py for more information
+        :param n: Number of components allowed by the filter (1-4)
+        :return: None
+        """
         # Input
         self.image = Input(shape=(self.nx, self.nx, self.nu))
 
@@ -259,19 +296,25 @@ class AE(Model):
         x = UpSampling2D((2, 2))(x)
         decoded = Conv2DTranspose(self.nu, (3, 3), activation='linear', padding='same')(x)
 
-        # Complete model
+        # Use the architecture to define an autoencoder, encoder, decoder
+        # Creation of autoencoder
         self.autoencoder = tf.keras.models.Model(self.image, decoded)
+        # Creation of encoder
         self.encoder = tf.keras.models.Model(self.image, self.latent_filtered)
-
+        # Creation of decoder
         encoded_input = Input(shape=(1, 1, self.latent_filtered.shape[3]))  # latent vector definition
         deco = self.autoencoder.layers[-9](encoded_input)  # re-use the same layers as the ones of the autoencoder
         for i in range(8):
             deco = self.autoencoder.layers[-8 + i](deco)
         self.decoder = tf.keras.models.Model(encoded_input, deco)
 
-    def training(self):
-        """Function to train autoencoder, with checkpoints for checkpoints and early stopping"""
+    def training(self) -> None:
+        """
+        Function to train autoencoder, with early stopping
+        :return: None
+        """
 
+        # Compile of model
         self.autoencoder.compile(optimizer=Adam(learning_rate=self.l_rate), loss=self.loss)
 
         # Early stop callback creation
@@ -283,64 +326,32 @@ class AE(Model):
                                          verbose=1,
                                          callbacks=[early_stop_callback])
 
-        # Predict model using test data
-        # self.y_pred = self.autoencoder.predict(self.u_test[:, :, :, :], verbose=0)
-
-    def visual_analysis(self, n=1, plot_error=False):
-        """Function to visualize some samples of predictions in order to visually compare with the test set. Moreover,
-            the evolution of the error throughout the epochs is plotted"""
-
-        for i in range(n):
-
-            # Set of predictions we are going to plot. We decided on the first 10 frames but it could be whatever
-            image_to_plot = self.y_pred[i:i + 1, :, :, :]
-
-            # u velocity
-
-            min_ = np.min(self.u_test[i, :, :, 0])
-            max_ = np.max(self.u_test[i, :, :, 0])
-
-            plt.subplot(121)
-            figure1x = plt.contourf(self.y_pred[i, :, :, 0], vmin=min_, vmax=max_)
-            plt.subplot(122)
-            figure2x = plt.contourf(self.u_test[i, :, :, 0], vmin=min_, vmax=max_)
-            plt.colorbar(figure2x)
-            plt.title("Velocity x-dir")
-            plt.show()
-
-            # v velocity
-            min_ = np.min(self.u_test[i, :, :, 1])
-            max_ = np.max(self.u_test[i, :, :, 1])
-            if self.nu == 2:
-                plt.subplot(121)
-                figure1y = plt.contourf(self.y_pred[i, :, :, 1], vmin=min_, vmax=max_)
-                plt.subplot(122)
-                figure2y = plt.contourf(self.u_test[i, :, :, 1], vmin=min_, vmax=max_)
-                plt.colorbar(figure2y)
-                plt.title("Velocity y-dir")
-                plt.show()
-
-        if plot_error:
-            # Creation of a loss graph, comparing validation and training data.
-            loss_history = self.hist.history['loss']
-            val_history = self.hist.history['val_loss']
-            plt.plot(loss_history, 'b', label='Training loss')
-            plt.plot(val_history, 'r', label='Validation loss')
-            plt.title("Loss History")
-            plt.xlabel("Epoch")
-            plt.ylabel("Loss")
-            plt.legend()
-            plt.show()
-
-    def vorticity_energy(self):
+    def plot_loss_history(self) -> None:
         """
-        f, (ax1, ax2) = plt.subplots(1, 2, sharey=True)
-        ax1.contourf(AE.curl(self.y_pred[0, :, :, 0]))
-        ax1.set_title('predicted')
-        ax2.contourf(AE.curl(self.u_test[0, :, :, 0]))
-        ax1.set_title('true')
+        Plot of a loss graph, comparing validation and training data.
+        :return: None, plot of loss history
+        """
+
+        if self.hist is None:
+            raise ValueError("The model needs to be trained first")
+
+        loss_history = self.hist.history['loss']
+        val_history = self.hist.history['val_loss']
+        plt.plot(loss_history, 'b', label='Training loss')
+        plt.plot(val_history, 'r', label='Validation loss')
+        plt.title("Loss History")
+        plt.xlabel("Epoch")
+        plt.ylabel("Loss")
+        plt.legend()
         plt.show()
+
+    def vorticity_energy(self) -> None:
         """
+        Plot of vorticity and energy comparison between original and reconstructed flow
+        :return: None, Plot images
+        """
+
+        # Curl plot
         min_ = np.min(AE.curl(self.u_test[0, :, :, :]))
         max_ = np.max(AE.curl(self.u_test[0, :, :, :]))
         plt.subplot(121)
@@ -350,6 +361,7 @@ class AE(Model):
         plt.title("Vorticity")
         plt.show()
 
+        # Energy plot
         min_ = np.min(AE.energy(self.u_test[0, :, :, :]))
         max_ = np.max(AE.energy(self.u_test[0, :, :, :]))
         plt.subplot(121)
@@ -358,11 +370,13 @@ class AE(Model):
         plt.contourf(AE.energy(self.u_test[0, :, :, :]), vmin=min_, vmax=max_)
         plt.title("Energy")
         plt.show()
-        return None
 
-    def performance(self):
-        """Here we transform the mse into an accuracy value. Two different metrics are used, the absolute
-        error and the squared error. With those values, two different stds are calculated"""
+    def performance(self) -> dict[str, float]:
+        """
+        Function to create dictionary with various performance metrics.
+        Keys - 'mse', 'abs_percentage', 'abs_std', 'sqr_percentage', 'sqr_std'
+        :return: dict, performance metrics
+        """
 
         d = dict()
         # Calculation of MSE
@@ -380,22 +394,52 @@ class AE(Model):
         self.dict_perf = d
         return d
 
+    @staticmethod
+    def create_trained(h=True) -> object:
+        """
+        Function to load a trained model. It can load a hierarchical or standard model.
+        :param h: bool, if True it will load hierarchical AE
+        :return: AE object, trained model object
+        """
+        # Load Models
+        dir_curr = os.path.split(__file__)[0]
+        if h:
+            model = AE(dimensions=[32, 16, 8, 4], l_rate=0.0005, epochs=100, batch=20, hierarchical=True)
+            # Autoencoder
+            auto_rel = ('KerasModels', f'autoencoder_h.h5')
+            model.autoencoder = load_model(os.path.join(dir_curr, *auto_rel), custom_objects={'Filter': Filter})
+            # Encoder
+            enco_rel = ('KerasModels', f'encoder_h.h5')
+            model.encoder = load_model(os.path.join(dir_curr, *enco_rel), custom_objects={'Filter': Filter})
+            # Decoder
+            deco_rel = ('KerasModels', f'decoder_h.h5')
+            model.decoder = load_model(os.path.join(dir_curr, *deco_rel), custom_objects={'Filter': Filter})
+        else:
+            model = AE()
+            # Autoencoder
+            auto_rel = ('KerasModels', f'autoencoder_2D.h5')
+            model.autoencoder = load_model(os.path.join(dir_curr, *auto_rel))
+            # Encoder
+            enco_rel = ('KerasModels', f'encoder_2D.h5')
+            model.encoder = load_model(os.path.join(dir_curr, *enco_rel))
+            # Decoder
+            deco_rel = ('KerasModels', f'decoder_2D.h5')
+            model.decoder = load_model(os.path.join(dir_curr, *deco_rel))
+        model.trained = True
+        return model
 
-def run_model():
-    """General function to run one model"""
 
-    n = 2
-    u_train, u_val, u_test = AE.preprocess(nu=n)
+if __name__ == '__main__':
+    u_train, u_val, u_test = AE.preprocess()
 
-    model = AE.create_trained(False)
-    # model = AE()
+    # model = AE.create_trained(True) # -> Comment model = AE(), and model.fit() to run pre trained
+    model = AE()
 
     model.u_train, model.u_val, model.u_test = u_train, u_val, u_test
 
-    # model.fit(u_train, u_val)
+    model.fit(u_train, u_val)
 
     model.passthrough(u_test)
-    model.visual_analysis()
     model.vorticity_energy()
     perf = model.performance()
 
@@ -404,7 +448,3 @@ def run_model():
 
     print(f'Absolute %: {round(perf["abs_percentage"], 3)} +- {round(perf["abs_std"], 3)}')
     print(f'Squared %: {round(perf["sqr_percentage"], 3)} +- {round(perf["sqr_std"], 3)}')
-
-
-if __name__ == '__main__':
-    run_model()

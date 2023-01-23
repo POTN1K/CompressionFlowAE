@@ -1,18 +1,43 @@
-from Main import AE
-from Main.ExperimentsAE import custom_loss_function
+""" Hierarchical Autoencoder Generator
 
-# --------------------------------------------------------------------------------------------------
+This file creates a hierarchical autoencoder in a script style.
+It creates a 4 component latent space, where the components are organized by importance.
+
+The code does the following:
+    1. Preprocess the data and initializes an AE object
+    2. Sets the filter to train only using the necessary components
+    3. Unlocks the weights of the encoder to be trained
+    4. Trains encoder and decoder
+    5. Locks the trained weights of the encoder
+    6. Saves the weights and recompiles the model with a modified filter*
+    7. Loads the previously trained weights
+    8. Repeat steps 3 to 7 until completely trained
+
+* The filter is set in h_network(n), where n is the number of components to be used.
+For training it must be started with 1, since the principal component needs to be trained.
+The filter will block all output from the other three encoders, since they are not yet necessary.
+After one encoder is done, a new encoder should be unlocked.
+By doing this, the second encoder will be trained while still considering what the first encoder can reproduce.
+In this way, encoder2 will build on top of encoder1. Always remember to lock the weights of the already trained
+encoders to avoid overwriting what was already trained.
+
+The model presented here has an absolute accuracy of 91.76%, and a squared accuracy of 99.3%
+This model has already been trained and can be called using AE.create_trained()
+"""
+
+# Local Libraries
+from Main import AE, custom_loss_function
+
 # Preprocess Data
-train, val, test = AE.preprocess(nu=2)
-#train = train[:40]
-#val = val[:40]
-#test = test[:40]
+train, val, test = AE.preprocess()
 
+# Show image to be compared
 print("Original flow")
 AE.u_v_plot(test[0])
 
+# Instantiation of model
 model = AE(dimensions=[32, 16, 8, 4], l_rate=0.0005, epochs=50, batch=20)
-model.loss = custom_loss_function
+# model.loss = custom_loss_function -> Uncomment if want to train using other loss (not recommended, slow)
 
 # Train 1st component
 print("First component")
@@ -83,13 +108,11 @@ print(f'Squared %: {round(perf["sqr_percentage"], 3)} +- {round(perf["sqr_std"],
 AE.u_v_plot(t4[0])
 print(model.encode((test[0])))
 
-model.autoencoder.trainable = True
-model.autoencoder.save('autoencoder_hp.h5')
-model.encoder.save('encoder_hp.h5')
-model.decoder.save('decoder_hp.h5')
-
+# Divergence verification
 model.verification(model.y_pred)
 
-# Accuracy
-# Absolute - 91.76%
-# Squared - 99.3%
+# Uncomment to save model
+#model.autoencoder.trainable = True
+#model.autoencoder.save('autoencoder_hp.h5')
+#model.encoder.save('encoder_hp.h5')
+#model.decoder.save('decoder_hp.h5')

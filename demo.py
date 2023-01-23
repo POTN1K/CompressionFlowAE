@@ -1,6 +1,5 @@
-from Main import Model, AE, POD
+from Main import Model, AE, POD, custom_loss_function
 import numpy as np
-from Main.ExperimentsAE import custom_loss_function
 
 
 def run_model_AE():
@@ -15,12 +14,11 @@ def run_model_AE():
         print(set_radial.shape)
 
 
-#
-# def run_model_POD():
-#     data = POD.preprocess(split=False)
-#     model = POD(data)
-#     print(model.code)
-#     model.plot_contributions()
+def run_model_POD():
+    data = POD.preprocess(split=False)
+    model = POD(data)
+    print(model.code)
+    model.plot_contributions()
 
 
 def run_tune():
@@ -62,6 +60,7 @@ def tune_physical():
     model.autoencoder.save('autoencoder_p.h5')
     model.encoder.save('encoder_p.h5')
     model.decoder.save('decoder_p.h5')
+
 
 if __name__ == '__main__':
     tune_physical()

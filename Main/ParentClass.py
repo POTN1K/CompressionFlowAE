@@ -1,145 +1,77 @@
+""" Generic Model for Flow Compression Techniques
+
+This file defines a class "Model" which is used as a skeleton for the implementation of
+different autoencoders and principal orthogonal decomposition.
+
+The class's methods are divided into:
+    * Logic Methods - Called by the user, used to work with the model in a high level
+    * Skeleton functions - Used in subclasses. Handle errors and are lower level
+    * General methods - Static methods to generate models, or assess shared characteristics of models
+"""
+
 # Libraries
-import h5py
-import numpy as np
-import time
-from csv import DictWriter
-from sklearn.model_selection import ParameterGrid
-from sklearn.metrics import mean_squared_error  # pip3.10 install scikit-learn NOT sklearn
-from sklearn.utils import shuffle
-from datetime import datetime
+# Utils
 import os
+import time
+from datetime import datetime
+# File management
+from csv import DictWriter
+import h5py
+# Plot
 import matplotlib.pyplot as plt
+# Numerics
+import numpy as np
+# ScikitLearn -> pip3.10 install scikit-learn NOT sklearn
+from sklearn.metrics import mean_squared_error
+from sklearn.model_selection import ParameterGrid
+from sklearn.utils import shuffle
 
 
 # Generic Model
 class Model:
+    """
+    Generic Model used as a parent class for flow compression, it works as a skeleton
+    for the subclasses, it also handles exceptions.
+    """
+
     def __init__(self, train_array: np.array or None = None, val_array: np.array or None = None) -> None:
+        """
+        Initialize Model object
+        :param train_array: numpy array, optional, if provided then the model is hot-started and fit on this array
+        :param val_array: numpy array, optional, validation data for the training process
+        :return: None
+        """
+
+        # Attributes used throughout the code
         self._input = None  # tracks the input array
-        self.trained = False  # tracks if the model has been trained
         self._encoded = None  # tracks the encoded array
-        self.code_artificial = False  # tracks if the code follows from an input
         self._output = None  # tracks the output array
         self.dict_perf = None  # dictionary of performance for model
 
-        if train_array is not None:  # Hot start
+        if train_array is not None:  # Hot start - Start training immediately
             self.fit(train_array, val_array)
-
-    # BEGIN LOGIC METHODS
-    def fit(self, train_array: np.array or None, val_array: np.array or None = None) -> None:
-        """
-        Train the model on the input data; val_array is optional, see fit_model docstring
-        :input_: singular or time series to train the model on
-        """
-        if train_array is None:  # get stored input
-            raise ValueError("Training data not given")
-
-        self.fit_model(train_array, val_array)
-        self.trained = True
-
-    def encode(self, input_: np.array) -> np.array:
-        """
-        Encodes the input array; requires a trained model
-        :param input_: singular or time series input
-        :return: singular or time series code
-        """
-        # if not self.trained:
-        #     raise Exception('Called encode before fit')
-
-        self.input = input_
-        self.encoded = self.get_code(self.input)
-        self.code_artificial = False
-        return self.encoded
-
-    def decode(self, input_: np.array) -> np.array:
-        """
-        Returns the decoded input code
-        :param input_: singular or time series code
-        :return: result of decoding operations, singular or time series depending on input
-        """
-        if input_ is not self.encoded:
-            self.code_artificial = True
-        if not self.trained:
-            raise Exception('Called decode before fit')
-
-        self.encoded = input_
-        self.output = self.get_output(self.encoded)
-        return self.output
-
-    def passthrough(self, input_: np.array) -> np.array:
-        """
-        Passes the singular or time series input through the encoder and decoder
-        Returns the reconstructed form of the input
-        :param input_: singular or time series input
-        :return: singular or time series output
-        """
-        return self.decode(self.encode(input_))
-
-    # END LOGIC METHODS
-
-    # SKELETON FUNCTIONS: FILL (OVERWRITE) IN SUBCLASS
-    def fit_model(self, train_array: np.array, val_array: np.array or None = None) -> None:  # skeleton
-        """
-        Fits the model on the training data: skeleton, overwrite
-        val_array is optional; required by Keras for training
-        :param train_array: time series training data
-        :param val_array: optional, time series validation data
-        """
-        raise NotImplementedError("Skeleton not filled by subclass")
-
-    def get_code(self, input_: np.array) -> np.array:  # skeleton
-        """
-        Returns the encoded signal given data to encode
-        :input_: time series input
-        :return: time series code
-        """
-        raise NotImplementedError("Skeleton not filled by subclass")
-
-    def get_output(self, input_: np.array) -> np.array:  # skeleton
-        """
-        Returns the decoded data given the encoded signal
-        :input_: time series code
-        :return: time series output
-        """
-        raise NotImplementedError("Skeleton not filled by subclass")
-
-    # END SKELETONS
 
     # BEGIN PROPERTIES
     @property
-    def input(self) -> np.array:  # skeleton
+    def input(self) -> np.array:
         """
         Return the input data
-        :return: input time series
+        :return: numpy array, input time series
         """
         return self._input
 
     @input.setter
     def input(self, input_: np.array) -> None:
         """
-        Overwrite or set model input layer
-        :param input_: singular or time series input
+        Set model input or overwrite shape.
+        All models work with 4D arrays
+        :param input_:  numpy array, singular or time series input
+        :return: None
         """
         if input_ is not None:
             if len(input_.shape) != 4:
                 input_ = np.reshape(input_, (1, *input_.shape))
             self._input = np.copy(input_)
-
-    # TODO: Check compatability with singular inputs (not a priority, but partially implemented)
-
-    @property
-    def encoded(self) -> np.array:  # skeleton
-        """
-        Return the encoded data from the model, calling input as data
-        """
-        return self._encoded
-
-    @encoded.setter
-    def encoded(self, input_: np.array) -> None:
-        """
-        Sets the encoded attribute to the provided array
-        :param input_: code time series
-        """
-        self._encoded = np.copy(input_)
 
     @property
     def output(self) -> np.array:
@@ -157,25 +89,128 @@ class Model:
         """
         Sets the output
         :param input_: sets the output attribute to the given array
+        :return: None
         """
         # if input_.shape[0] == 1:
         #     input_ = input_[0]
         self._output = input_
 
+    @property
+    def encoded(self) -> np.array:  # skeleton
+        """
+        Generic variable of a singular or time series latent space
+        :return:  numpy array, latent space
+        """
+        return self._encoded
+
+    @encoded.setter
+    def encoded(self, input_: np.array) -> None:
+        """
+        Saves a copy of the latent space
+        :param input_: code time series
+        :return: None
+        """
+        self._encoded = np.copy(input_)
     # END PROPERTIES
 
+    # BEGIN LOGIC METHODS
+    # High level methods used by the user
+    def fit(self, train_array: np.array, val_array: np.array or None = None) -> None:
+        """
+        Train the model on the input data
+        :param train_array: numpy array, used to train the model
+        :param val_array: numpy array, optional, depending on the model it will need a validation set
+        :return: None
+        """
+
+        self._fit_model(train_array, val_array)
+
+    def encode(self, input_: np.array) -> np.array:
+        """
+        Encodes the input array using the model
+        :param input_: numpy array, singular or time series input
+        :return: numpy array, singular or time series latent space
+        """
+
+        self.input = input_
+        self.encoded = self._get_code(self.input)
+        return self.encoded
+
+    def decode(self, input_: np.array) -> np.array:
+        """
+        Returns the decoded input code using the model
+        :param input_: numpy array, singular or time series latent space. Size depends on each model
+        :return: numpy array, singular or time series depending on input
+        """
+
+        self.encoded = input_
+        self.output = self._get_output(self.encoded)
+        return self.output
+
+    def passthrough(self, input_: np.array) -> np.array:
+        """
+        Passes the singular or time series input through the encoder and decoder
+        Returns the reconstructed form of the input
+        :param input_: numpy array, singular or time series input
+        :return: numpy array, singular or time series output
+        """
+
+        return self.decode(self.encode(input_))
+
+    def performance(self) -> dict[str, float]:
+        """
+        Creates a dictionary with general metrics for measuring the accuracy of the model
+        :return: Dictionary with relevant accuracy metrics
+        """
+        d = dict()
+        d['mse'] = mean_squared_error(self.input, self.output)
+        self.dict_perf = d
+        return d
+
+    # END LOGIC METHODS
+
+    # SKELETON FUNCTIONS
+    # Function to be overwritten in subclasses, perform lower level operations
+    def _fit_model(self, train_array: np.array, val_array: np.array or None = None) -> None:
+        """
+        Fits the model on the training data: skeleton, overwritten in each subclass
+        val_array is optional; required by Keras for training
+        :param train_array: numpy array, time series training data
+        :param val_array: numpy array, optional, time series validation data
+        """
+        raise NotImplementedError("Skeleton not filled by subclass")
+
+    def _get_code(self, input_: np.array) -> np.array:  # skeleton
+        """
+        Returns the latent space from the given input: skeleton, overwritten in each subclass
+        :input_: numpy array, time series input
+        :return: numpy array, time series code
+        """
+        raise NotImplementedError("Skeleton not filled by subclass")
+
+    def _get_output(self, input_: np.array) -> np.array:  # skeleton
+        """
+        Returns the decoded data given the latent space: skeleton, overwritten in each subclass
+        :input_: numpy array, time series code
+        :return: numpy array, time series output
+        """
+        raise NotImplementedError("Skeleton not filled by subclass")
+    # END SKELETONS
+
     # BEGIN GENERAL METHODS
+    # Static functions used for all models
     @staticmethod
-    def data_reading(re, nx, nu):
+    def data_reading(re: float = 40.0, nx: int = 24, nu: int = 2, shuf: bool = True) -> np.array:
         """
-        Function to read the H5 files, can change Re to run for different flows
-        Re- Reynolds Number
-        Nu- Dimension of Velocity Vector
-        Nx- Size of grid
-        Final dimensions of output: [Time (number of frames), Nx, Nx, Nu]
+        Function to read H5 files with flow data, can change Re to run for different flows
+        :param re: float, Reynolds Number (20.0, 30.0, 40.0, 50.0, 60.0, 100.0, 180.0)
+        :param nx: int, size of the grid
+        :param nu: int, components of the velocity vector (1, 2)
+        :param shuf: boolean, if true returns shuffled data
+        :return: numpy array, Time series for given flow with shape [#frames, nx, nx, nu]
         """
+
         # File selection
-        # Re= 20.0, 30.0, 40.0, 50.0, 60.0, 100.0, 180.0
         # T has different values depending on Re
         if re == 20.0 or re == 30.0 or re == 40.0:
             T = 20000
@@ -184,10 +219,9 @@ class Model:
 
         dir_curr = os.path.split(__file__)[0]
         path_rel = ('SampleFlows', f'Kolmogorov_Re{re}_T{T}_DT01.h5')
-
         path = os.path.join(dir_curr, *path_rel)
 
-        # READ DATASET
+        # Read dataset
         hf = h5py.File(path, 'r')
         t = np.array(hf.get('t'))
         # Instantiating the velocities array with zeros
@@ -199,27 +233,32 @@ class Model:
             u_all[:, :, :, 1] = np.array(hf.get('v_refined'))
 
         # Transpose of u_all in order to make it easier to work with it
-        # New dimensions of u_all = [Time, Nx, Nx, Nu]
-        #       - Time: number of frames we have in our data set, which are always related to a different time moment
-        #       - Nx: size of the frame in the horizontal component
-        #       - Nx: size of the frame in the vertical component
-        #       - Nu: dimension of the velocity vector
+        # Old dimensions -> [nx, nx, frames, nu]
+        # New dimensions -> [frames, nx, nx, nu]
         u_all = np.transpose(u_all, [2, 0, 1, 3])
         hf.close()
 
         # Shuffle of the data in order to make sure that there is heterogeneity throughout the test set
-        u_all = shuffle(u_all, random_state=42)
+        if shuf:
+            u_all = shuffle(u_all, random_state=42)
+
         return u_all
 
     @staticmethod
-    def preprocess(u_all=None, re=40.0, nx=24, nu=1, split=True, norm=True):
+    def preprocess(u_all: np.array or None = None, re: float = 40.0, nx: int = 24, nu: int = 2,
+                   split: bool = True, norm: bool = True) -> np.array or tuple[np.array]:
         """
-        Function to scale the data set and split it into train, validation and test sets.
-        nx: Size of the grid side
-        nu: Number of velocity components, 1-> 'x', 2 -> 'x','y'
+        Function to preprocess the dataset. It can split into train validation and test, and normalize the values
+        :param u_all: numpy array, optional, time series flow velocities
+        :param re: float, Reynolds Number (20.0, 30.0, 40.0, 50.0, 60.0, 100.0, 180.0)
+        :param nx: int, size of the grid
+        :param nu: int, components of the velocity vector (1, 2)
+        :param split: bool, if True the data will be divided among train (75%), validation (20%) and test (5%)
+        :param norm: bool, if True the data will be normalized for values between 0 and 1
+        :return: numpy array(s), depending on "split" it will return the velocity time series after processing
         """
 
-        # Run data reading to avoid errors
+        # Scenario where no data is provided by the user
         if u_all is None:
             u_all = Model.data_reading(re, nx, nu)
 
@@ -236,29 +275,34 @@ class Model:
 
         # Division of training, validation and testing data
         if split:
-            val_ratio = int(np.round(0.75 * len(u_all)))  # Amount of data used for validation
-            test_ratio = int(np.round(0.95 * len(u_all)))  # Amount of data used for testing
+            val_ratio = int(np.round(0.75 * len(u_all)))
+            test_ratio = int(np.round(0.95 * len(u_all)))
 
             u_train = u_all[:val_ratio, :, :, :].astype('float32')
             u_val = u_all[val_ratio:test_ratio, :, :, :].astype('float32')
             u_test = u_all[test_ratio:, :, :, :].astype('float32')
             return u_train, u_val, u_test
+
         return u_all
 
     @staticmethod
-    def train_test_batch(param_ranges: dict, model) -> None:
+    def train_test_batch(param_ranges: dict, model: object) -> None:
         """
+        Function to tune a model using different hyperparameters
         Trains, evaluates and writes results to file for a model and with hyperparameter ranges
-        :param param_ranges: dict with hyperparameters as keys, ranges as items
-        :param model: subclass model
-        :return: None; results written to timestamped file
+        :param param_ranges: dict, Hyperparameters to tune as keys, with their ranges as values
+        :param model: Model object, subclass model that needs to be tuned
+        :return: None, results written to timestamped file
         """
-        u_train, u_val, u_test = Model.preprocess(nu=2)  # get split data
 
-        param_grid = ParameterGrid(param_ranges)  # Flattened grid of all combinations
+        # Preprocess dataset
+        u_train, u_val, u_test = Model.preprocess()
 
-        # loop over models
-        n = 0
+        # Flattened grid of all combinations
+        param_grid = ParameterGrid(param_ranges)
+
+        # Loop over model combinations
+        n = 0 # Counter
         dir_ = os.path.join(os.path.split(__file__)[0], 'TuningDivision')
         _name = f'_at_{datetime.now().strftime("%m.%d.%Y_%Hh%Mm")}.csv'
         flag = False
@@ -295,19 +339,18 @@ class Model:
             n += 1
 
     @staticmethod
-    def verification(data: np.array, print_res: bool = True) -> tuple:
+    def verification(data: np.array, print_res: bool = True) -> tuple[float]:
         """
         Function to check conservation of mass
-        :param data: time series 2D velocity grid
-        :param print_res: bool; true to print results
-        :return: max, min, and avg of divergence of velocity with control volume as entire grid
+        :param data: numpy array, time series 2D velocity grid
+        :param print_res: bool, if True results are printed
+        :return: tuple of floats -> max, min, and avg of divergence of velocity
         """
 
         # List to store values of divergence
         all_conv = []
 
         for t in range(np.shape(data)[0]):
-
             # Isolate time components
             grid = data[t, :, :, :]
 
@@ -334,50 +377,60 @@ class Model:
         return max_div, min_div, avg_div
 
     @staticmethod
-    def energy(nxnx2: np.array):
+    def energy(nxnx2: np.array) -> np.array:
         """
-        returns the kinetic grid wise energy of one image without taking mass into account
+        Function to calculate energy of a singular frame
+        :param nxnx2: numpy array, time frame of velocities with shape [nx,nx,2]
+        :return: numpy array, kinetic grid wise energy of one image without taking mass into account
         """
+
         u = nxnx2[:, :, 0]
         v = nxnx2[:, :, 1]
         return 0.5 * np.add(np.multiply(u, u), np.multiply(v, v))
 
     @staticmethod
-    def curl(nxnx2: np.array):
+    def curl(nxnx2: np.array) -> np.array:
         """
-        returns the curl over the grid of a picture -> curl is used to calculate lift/drag therefore significant
+        Function to calculate curl of a single time frame
+        :param nxnx2:  numpy array, time frame of velocities with shape [nx,nx,2]
+        :return: numpy array, curl over the grid of a picture
         """
         u = nxnx2[:, :, 0]
         v = nxnx2[:, :, 1]
-
         return np.subtract(np.gradient(u, axis=1), np.gradient(v, axis=0))
 
     @staticmethod
-    def plot_energy(nxnx2: np.array):
+    def plot_energy(nxnx2: np.array) -> None:
         """
-        plots energy/grid without mass/density
+        Function to plot energy/grid without mass/density
+        :param nxnx2: numpy array, time frame of velocities with shape [nx,nx,2]
+        :return: None, plots image
         """
         plt.contourf(Model.energy(nxnx2), min=0, max=1.1)
         plt.show()
-        return None
 
     @staticmethod
-    def plot_vorticity(nxnx2: np.array):
+    def plot_vorticity(nxnx2: np.array) -> None:
         """
-        This method returns and shows a plot of the cross product of the velocity components
+        Function to plot vorticity of a time frame
+        :param nxnx2: numpy array, time frame of velocities with shape [nx,nx,2]
+        :return: None, plots image
         """
         plt.contourf(Model.curl(nxnx2), min=-2.2, max=2.2)
         plt.show()
-        return None
 
     @staticmethod
-    def plot_velocity(nxnx2: np.array):
+    def plot_velocity(nxnx2: np.array) -> None:
         """
-        plots vectorfield
+        Function to plot velocity in a vector field
+        :param nxnx2: numpy array, time frame of velocities with shape [nx,nx,2]
+        :return: None, plots image
         """
-        x = np.arange(24)
-        y = np.arange(24)
 
+        n = np.shape(nxnx2)[0]
+
+        x = np.arange(n)
+        y = np.arange(n)
         X, Y = np.meshgrid(x, y)
 
         # Creating plot
@@ -388,14 +441,13 @@ class Model:
         ax.yaxis.set_ticks([])
         ax.set_aspect('equal')
         plt.show()
-        return None
 
     @staticmethod
-    def u_v_plot(nxnx2):
+    def u_v_plot(nxnx2: np.array) -> None:
         """
-        Plots velocity components x, y
-        :param nxnx2: Time frame for plotting
-        :return: None
+        Plots velocity components x, y in different plots
+        :param nxnx2: numpy array, time frame of velocities with shape [nx,nx,2]
+        :return: None, plots images
         """
         fig = plt.figure()
         ax1 = fig.add_subplot(121)
@@ -410,20 +462,14 @@ class Model:
         plt.show()
 
     @staticmethod
-    def plot_all(nxnx2):
+    def plot_all(nxnx2: np.array) -> None:
+        """
+        Function combining different plotting options for a single time frame
+        :param nxnx2: numpy array, time frame of velocities with shape [nx,nx,2]
+        :return: None, plots images
+        """
         Model.u_v_plot(nxnx2)
         Model.plot_energy(nxnx2)
         Model.plot_vorticity(nxnx2)
         Model.plot_velocity(nxnx2)
-
-    def performance(self) -> dict[str, float]:
-        """
-        Checks reconstruction loss
-        :return: Dictionary
-        """
-        # TODO: define proper performance measure
-        d = dict()
-        d['mse'] = mean_squared_error(self.input, self.output)
-        self.dict_perf = d
-        return d
     # END GENERAL METHODS

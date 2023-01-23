@@ -32,7 +32,7 @@ class POD(Model):
         super().__init__(train_array, val_array)
 
     # SKELETON FUNCTIONS: FILL (OVERWRITE) IN SUBCLASS
-    def fit_model(self, train_array: np.array, val_array: np.array or None = None) -> None:  # skeleton
+    def _fit_model(self, train_array: np.array, val_array: np.array or None = None) -> None:  # skeleton
         """
         Fits the model on the training data: skeleton, overwrite
         val_array is optional; required by Keras for training
@@ -41,19 +41,19 @@ class POD(Model):
         """
         self.compute(train_array)
 
-    def get_code(self, input_: np.array) -> np.array:  # skeleton
+    def _get_code(self, input_: np.array) -> np.array:  # skeleton
         """
         Passes self.input through the model, returns code
-        :input_: time series input
+        :param input_: time series input
         :return: time series code
         """
         # TODO: Implement this properly; need to get new V, compatible with old mode matrix but new data
         return np.copy(self.a)
 
-    def get_output(self, input_: np.array) -> np.array:  # skeleton
+    def _get_output(self, input_: np.array) -> np.array:  # skeleton
         """
         Passes self.code through the model, returns output
-        :input_: time series code
+        :param input_: time series code
         :return: time series output
         """
         self.a = input_
@@ -63,6 +63,7 @@ class POD(Model):
     def compute(self, input_: np.array) -> None:
         """
         Compute and store the sigma, spacial mode, and temporal mode matrices
+        :param input_: time series input
         :return: None
         """
         dim = input_.shape  # get dimensions
@@ -113,6 +114,7 @@ class POD(Model):
     def plot_contributions(self) -> None:
         """
         Plot the energy of each mode
+        :return: None, plot energy
         """
         plt.figure()
         plt.semilogy(np.diag(self.mode_energy))
@@ -120,8 +122,9 @@ class POD(Model):
 
     def plot_mode(self, n: int) -> None:
         """
-        :param n: int, node ID to plot
         Plot the components of a specific spatial modes
+        :param n: int, node ID to plot
+        :return: None
         """
         phi = self.phi
         dim = self.dim
