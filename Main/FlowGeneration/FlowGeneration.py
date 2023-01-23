@@ -1,4 +1,4 @@
-from Main.ClassAE import AE
+from Main import AE
 import numpy as np
 import matplotlib.pyplot as plt
 import pickle
@@ -10,8 +10,8 @@ from mpl_toolkits import mplot3d
 # Physical conditions of the flow: Check the values for vorticity (curl), energy, cross product, resultant velocity
 # The characteristics of latent space: check changes in latent space due to different Re
 domain = np.arange(-0.5, 0.5, 0.05)
-model = AE.create_trained(h=True)
-u_all = AE.preprocess(nu=2, split=False)
+model = AE.create_trained()
+u_all = AE.preprocess(split=False)
 
 
 def generation_from_original(time_series):
@@ -63,10 +63,9 @@ def original_ls_visual(params: tuple, time_series, plotting=True, saving=False):
         x, y, z = spheroid(p1, p2, p3)
         inside, number = is_inside(p1, p2, p3)
         print(np.size(p1), number)
-        p1_inside = p1[inside == True]
-        p2_inside = p2[inside == True]
-        p3_inside = p3[inside == True]
-
+        p1_inside = p1[inside is True]
+        p2_inside = p2[inside is True]
+        p3_inside = p3[inside is True]
 
         ax.plot_surface(x, y, z)
 
@@ -74,6 +73,7 @@ def original_ls_visual(params: tuple, time_series, plotting=True, saving=False):
         plt.show()
     if saving is True:
         pickle.dump(fig, open(f'{params}_plot.fig.pickle', 'wb'))
+
 
 def stats(mode: list[float]):
     """
@@ -84,6 +84,7 @@ def stats(mode: list[float]):
     mx = np.max(mode)
     mn = np.min(mode)
     return (mx + mn) / 2, (mx - mn) / 2, mx, mn, np.average(mode)
+
 
 # ------- ANALYSIS OF THE HIERARCHICAL AUTOENCODER ----
 
@@ -119,4 +120,3 @@ def hierarchical_visual(time_series, n_frame):
 
 if __name__ == '__main__':
     hierarchical_visual(u_all, 51)
-

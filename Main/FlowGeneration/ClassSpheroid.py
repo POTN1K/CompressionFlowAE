@@ -13,7 +13,6 @@ class Spheroid:
         self.b = stats(mode2)[1]
         self.c = stats(mode3)[1]
 
-
     @property
     def a(self):
         return self._a
@@ -48,7 +47,8 @@ class Spheroid:
     def is_inside(self):
         positions = np.zeros(np.shape(self.mode1))
         for i in range(len(self.mode1)):
-            z_spheroid = self.c ** 2 * (1 - ((self.mode1[i] - self.center[0]) / self.a) ** 2 - ((self.mode2[i] - self.center[1]) / self.b) ** 2)
+            z_spheroid = self.c ** 2 * (1 - ((self.mode1[i] - self.center[0]) / self.a) ** 2 - (
+                        (self.mode2[i] - self.center[1]) / self.b) ** 2)
             k = self.mode3[i] - stats(self.mode3)[0]
             if z_spheroid > k ** 2:
                 positions[i] = True
@@ -98,9 +98,6 @@ if __name__ == '__main__':
     print(new_distance)
     std, mean = np.std(new_distance), np.mean(new_distance)
     print(std, mean)
-
-
-
 
     # Maximum ratio for having all the points inside (taking 10% outliers) = 1.2
     # Minimum ratio for having all the points outside (taking 10% outliers) = 0.4

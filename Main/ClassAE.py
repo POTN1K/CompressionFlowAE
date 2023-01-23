@@ -444,9 +444,6 @@ if __name__ == '__main__':
     # model.vorticity_energy()
     perf = model.performance()
 
-    AE.u_v_plot(u_test[2])
-    AE.u_v_plot(t[2])
-
     model.verification(u_test)
     model.verification(model.y_pred)
 
