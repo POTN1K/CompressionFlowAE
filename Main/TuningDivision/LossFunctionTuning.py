@@ -1,8 +1,6 @@
-from ClassAE import AE
 import time
 from csv import DictWriter
-from ClassAE import custom_loss_function
-import numpy as np
+from Main import AE, custom_loss_function
 from sklearn.model_selection import ParameterGrid  # pip3.10 -U scikit-learn
 
 param_ranges_dict = {'l_rate': [0.01],

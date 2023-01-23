@@ -38,6 +38,7 @@ class POD(Model):
         val_array is optional; required by Keras for training
         :param train_array: time series training data
         :param val_array: optional, time series validation data
+        :return: None
         """
         self.compute(train_array)
 
