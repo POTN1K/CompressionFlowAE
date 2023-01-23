@@ -6,14 +6,13 @@ from FlowGeneration import *
 mode1, mode2, mode3, mode4 = np.transpose(generation_from_original(u_all))
 max_div, min_div, reference_divergence = AE.verification(u_all)
 center = (stats(mode1)[0], stats(mode2)[0], stats(mode3)[0])
-print(center)
+
 # Taking into account all the points present
 d = np.sqrt((mode1 - center[0])**2 + (mode2 - center[1])**2 + (mode3 - center[2])**2)[0, 0, :]
 phi = np.arctan2(np.sqrt(mode1 ** 2 + mode2 ** 2), mode3)[0, 0, :]
 theta = np.arctan2(mode1, mode2)[0, 0, :]
 mu = np.mean(d)
 sigma = np.std(d)
-print(mu, sigma)
 
 def plot_scatter(mode1, mode2, mode3):
     fig = plt.figure()
@@ -45,8 +44,7 @@ def create_art():
     v_vel = frame_art[:, :, 1]
     v_vel_grad = np.gradient(v_vel, axis=1)
     divergence = np.add(u_vel_grad, v_vel_grad)
-
-    physicality = min_div < np.sum(divergence) < max_div
+    physicality = reference_divergence * 0.1 < np.sum(divergence) < reference_divergence * 1.9
     return latent_art, divergence, physicality, frame_art
 
 
@@ -55,7 +53,7 @@ count = 0
 total = 1000
 for i in tqdm(np.arange(0, total + 1), colour='green'):
     latents[f'{i}'] = create_art()
-    if latents[f'{i}']:
+    if latents[f'{i}'][2]:
         count += 1
 
 print(count)
