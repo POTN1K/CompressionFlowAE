@@ -6,13 +6,23 @@ from FlowGeneration import *
 mode1, mode2, mode3, mode4 = np.transpose(generation_from_original(u_all))
 max_div, min_div, reference_divergence = AE.verification(u_all)
 center = (stats(mode1)[0], stats(mode2)[0], stats(mode3)[0])
-
+print(center)
 # Taking into account all the points present
 d = np.sqrt((mode1 - center[0])**2 + (mode2 - center[1])**2 + (mode3 - center[2])**2)[0, 0, :]
 phi = np.arctan2(np.sqrt(mode1 ** 2 + mode2 ** 2), mode3)[0, 0, :]
 theta = np.arctan2(mode1, mode2)[0, 0, :]
 mu = np.mean(d)
 sigma = np.std(d)
+print(mu, sigma)
+
+def plot_scatter(mode1, mode2, mode3):
+    fig = plt.figure()
+    ax = plt.axes(projection='3d')
+    ax.scatter3D(mode1, mode2, mode3)
+    ax.set_xlabel('m1')
+    ax.set_ylabel('m2')
+    ax.set_zlabel('m3')
+    plt.show()
 
 
 def create_art():
