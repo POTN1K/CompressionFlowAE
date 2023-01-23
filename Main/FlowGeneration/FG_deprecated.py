@@ -109,3 +109,71 @@
 #     with open(path, 'rb') as file:
 #         figx = pickle.load(file)
 #         plt.show()
+
+# GENERATE LATENT SPACES FROM A GIVEN TIME SERIES, LOADS IT IN CASE FILE IS ALREADY PRESENT
+# def generate_from_original_all(time_series):
+#     if path.exists(f'(0, 1, 2)_latent.csv'):
+#         latent = np.genfromtxt(f'(0, 1, 2)_latent.csv', delimiter=',')
+#     else:
+#         latent = generation_from_original(time_series)[0, 0, 0, :]
+#         for i in tqdm(range(1, np.shape(time_series)[0]), colour='green'):
+#             latent = np.vstack((latent, generation_from_original(time_series, i)[0, 0, 0, :]))
+#     return latent
+
+
+# DETERMINES THE MAXIMUM AND MINIMUM OF ALL LATENT SPACES CREATED FROM TIME SERIES (LOADS SAVED FILE)
+# def ranges(params: tuple):
+#     latent = np.genfromtxt(f'{params}_latent.csv', delimiter=',')
+#     values = []
+#     for i in tqdm(range(len(params))):
+#         values.append((np.max(latent[:, params[i]]), np.min(latent[:, params[i]])))
+#     print(values)
+
+# GIVES AVERAGE OF A CERTAIN FRAME OF THE TIME SERIES
+# def average(params: tuple):
+#     latent = np.genfromtxt(f'{params}_latent.csv', delimiter=',')
+#     print(np.average(latent[:,0:3]))
+
+
+# TRANSFORMS LATENT SPACE MODES VALUES INTO SPHERICAL COORDINATES
+# def spheroid(p1: list[float], p2: list[float], p3: list[float]) -> tuple[list[float], ...]:
+#     """
+#     Transforms latent space modes into spherical coordinates
+#     :param p1: the values of this mode in all latent spaces of a certain time series
+#     :param p2: the values of this mode in all latent spaces of a certain time series
+#     :param p3: the values of this mode in all latent spaces of a certain time series
+#     :return: tuple containing the values for x, y, and z which can be used for plotting
+#     """
+#
+#     a, b, c = stats(p1)[1], stats(p2)[1], stats(p3)[1]
+#     phi = np.linspace(0, 2 * np.pi, 256).reshape(256, 1)  # the angle of the projection in the xy-plane
+#     theta = np.linspace(0, np.pi, 256).reshape(-1, 256)  # the angle from the polar axis, ie the polar angle
+#     x = a * np.sin(theta) * np.cos(phi) + stats(p1)[0]
+#     y = b * np.sin(theta) * np.sin(phi) + stats(p2)[0]
+#     z = c * np.cos(theta)
+#
+#     return x, y, z
+
+
+# CHECKS THE AMOUNT OF POINTS THAT ARE PRESENT INSIDE THE SPHEROID GENERATED WITH THE GIVEN LATENT SPACES
+# def is_inside(p1: list[float], p2: list[float], p3: list[float]) -> [list[bool], int]:
+#     """
+#     :param p1: the values of this mode in all latent spaces of a certain time series
+#     :param p2: the values of this mode in all latent spaces of a certain time series
+#     :param p3: the values of this mode in all latent spaces of a certain time series
+#     :return:
+#         - list of bool indicating if point is inside or outside the spheroid
+#         - number of points inside the spheroid
+#
+#     """
+#     positions = np.zeros(np.shape(p1))
+#     a, b, c = stats(p1)[1], stats(p2)[1], stats(p3)[1]
+#     for i in range(len(p1)):
+#         z_spheroid = c ** 2 * (1 - ((p1[i] - stats(p1)[0]) / a) ** 2 - ((p2[i] - stats(p2)[0]) / b) ** 2)
+#         k = p3[i] - stats(p3)[0]
+#         if z_spheroid > k ** 2:
+#             positions[i] = True
+#         else:
+#             positions[i] = False
+#     points_inside = np.count_nonzero(positions)
+#     return positions, points_inside

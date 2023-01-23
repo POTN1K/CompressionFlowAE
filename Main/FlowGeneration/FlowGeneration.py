@@ -16,24 +16,17 @@ u_all = AE.preprocess(nu=2, split=False)
 
 def generation_from_original(time_series):
     """
-    n_element: One time frame array, shape = [24,24,2]
-    :return: None"""
-    # One real element
-
-    # Plot original data set
-    #AE.u_v_plot(test_element)
-
+    Generate latent spaces given a certain time series of flows
+    :param time_series: series of frame taken from the data set provided by the client
+    :return: array of all the latent spaces related to such time frames
+    """
     latent_space_original = model.encode(time_series)
     return latent_space_original
-
-    #reconstructed_original = model.decode(latent_space_original)
-    # Plot vorticity
-    #AE.plot_all(reconstructed_original)
 
 
 def generate(latent_space):
     """
-    Generate artificial flow
+    Generate artificial flow from a given latent space
     :param latent_space: [m1,m2,m3,m4], values between -1 to 1
     :return: artificial flow [24,24,2]
     """
@@ -41,25 +34,17 @@ def generate(latent_space):
     return artificial
 
 
-def generate_from_original_all(time_series):
-    if path.exists(f'(0, 1, 2)_latent.csv'):
-        latent = np.genfromtxt(f'(0, 1, 2)_latent.csv', delimiter=',')
-    else:
-        latent = generation_from_original(time_series, 0)[0, 0, 0, :]
-        for i in tqdm(range(1, np.shape(time_series)[0]), colour='green'):
-            latent = np.vstack((latent, generation_from_original(time_series, i)[0, 0, 0, :]))
-    return latent
-
 def original_ls_visual(params: tuple, time_series, plotting=True, saving=False):
     """
-    Function to visualiz the first three parameters of all latent spaces of a time seires
+    Function to visualize the first three parameters of all latent spaces of a time series
     :param params: modes for which we want to visualize the values
+    :param time_series: time series from which to generate the latent spaces
     :param plotting: bool to determine is plotting of the results is needed
     :param saving: bool to determine if saving the plot is needed
     :return: None
     """
     if not path.exists(f'{params}_latent.csv'):
-        latent = generate_from_original_all(time_series)
+        latent = generation_from_original(time_series)
         np.savetxt(f'{params}_latent.csv', latent, delimiter=',')
     else:
         latent = np.genfromtxt(f'{params}_latent.csv', delimiter=',')
@@ -84,31 +69,15 @@ def original_ls_visual(params: tuple, time_series, plotting=True, saving=False):
 
 
         ax.plot_surface(x, y, z)
-        # Polar
-        #r = np.sqrt(p1 ** 2 + p2 ** 2)
-        #theta = np.arctan2(p1, p2)
-        #print(r)
 
         ax.scatter3D(p1_inside, p2_inside, p3_inside, '*')
         plt.show()
     if saving is True:
         pickle.dump(fig, open(f'{params}_plot.fig.pickle', 'wb'))
 
-
-def ranges(params: tuple):
-    latent = np.genfromtxt(f'{params}_latent.csv', delimiter=',')
-    values = []
-    for i in tqdm(range(len(params))):
-        values.append((np.max(latent[:, params[i]]), np.min(latent[:, params[i]])))
-    print(values)
-
-
-def average(params: tuple):
-    latent = np.genfromtxt(f'{params}_latent.csv', delimiter=',')
-    print(np.average(latent[:,0:3]))
-
 def stats(mode: list[float]):
     """
+    Determines statistics of a list of values related to one mode of the latent space
     :param mode: the values of the given mode in all latent spaces of a certain time series
     :return: a list of 5 statistics: midpoint, radius, maximum, minimum, average
     """
@@ -116,71 +85,38 @@ def stats(mode: list[float]):
     mn = np.min(mode)
     return (mx + mn) / 2, (mx - mn) / 2, mx, mn, np.average(mode)
 
-
-def spheroid(p1: list[float], p2: list[float], p3: list[float]) -> tuple[list[float], ...]:
-    """
-    :param p1: the values of this mode in all latent spaces of a certain time series
-    :param p2: the values of this mode in all latent spaces of a certain time series
-    :param p3: the values of this mode in all latent spaces of a certain time series
-    :return: tuple containing the values for x, y, and z which can be used for plotting
-    """
-    # x**2 / a**2 + y**2 / b**2 + z**2/c**2 = 1
-    #fig = plt.figure()
-    #ax = fig.add_subplot(projection='3d')
-
-    a, b, c = stats(p1)[1], stats(p2)[1], stats(p3)[1]
-    phi = np.linspace(0, 2 * np.pi, 256).reshape(256, 1)  # the angle of the projection in the xy-plane
-    theta = np.linspace(0, np.pi, 256).reshape(-1, 256)  # the angle from the polar axis, ie the polar angle
-    x = a * np.sin(theta) * np.cos(phi) + stats(p1)[0]
-    y = b * np.sin(theta) * np.sin(phi) + stats(p2)[0]
-    z = c * np.cos(theta)
-
-    return x, y, z
-
-
-def is_inside(p1: list[float], p2: list[float], p3: list[float]) -> [list[bool], int]:
-    """
-    :param p1: the values of this mode in all latent spaces of a certain time series
-    :param p2: the values of this mode in all latent spaces of a certain time series
-    :param p3: the values of this mode in all latent spaces of a certain time series
-    :return:
-        - list of bool indicating if point is inside or outside the spheroid
-        - number of points inside the spheroid
-
-    """
-    positions = np.zeros(np.shape(p1))
-    a, b, c = stats(p1)[1], stats(p2)[1], stats(p3)[1]
-    for i in range(len(p1)):
-        z_spheroid = c ** 2 * (1 - ((p1[i] - stats(p1)[0]) / a) ** 2 - ((p2[i] - stats(p2)[0]) / b) ** 2)
-        k = p3[i] - stats(p3)[0]
-        if z_spheroid > k ** 2:
-            positions[i] = True
-        else:
-            positions[i] = False
-    points_inside = np.count_nonzero(positions)
-    return positions, points_inside
-
-
 # ------- ANALYSIS OF THE HIERARCHICAL AUTOENCODER ----
 
+def hierarchical_visual(time_series, n_frame):
+    """
+    Plots the reconstruction effects of the different modes given an initial frame to reconstruct
+    :param time_series: time series of frame where to choose from
+    :param n_frame: fram number which should be used as a starting point for the reconstruction
+    :return: None
+    """
+    # Generate latent space related to the frame selected
+    final_latent = model.encode(u_all[51])[0, 0, 0, :]
+
+    # To see the effect of every mode, every previous component should take the value from 'final_latent' while the
+    # next components should be 0
+    latent_1 = [final_latent[0], 0, 0, 0]
+    latent_2 = [final_latent[0], final_latent[1], 0, 0]
+    latent_3 = [final_latent[i] for i in range(3)] + [0]
+
+    # generate flow with each personalized latent. Subtraction is needed to eliminate effects of previous modes
+    m1_effect = generate(latent_1)
+    m2_effect = generate(latent_2) - m1_effect
+    m3_effect = generate(latent_3) - generate(latent_2)
+    m4_effect = generate(final_latent) - generate(latent_3)
+
+    # Plot the reconstructed flow and the effects of each mode (different cmap for m2, m3, m4 because both + and -
+    AE.u_v_plot(generate(final_latent))
+    AE.u_v_plot(m1_effect, title=f'Effect of mode 1 with latent {latent_1}')
+    AE.u_v_plot(m2_effect, title=f'Effect of mode 2 with latent {latent_2}', color='seismic')
+    AE.u_v_plot(m3_effect, title=f'Effect of mode 3 with latent {latent_3}', color='seismic')
+    AE.u_v_plot(m4_effect, title=f'Effect of mode 4 with latent {final_latent}', color='seismic')
 
 
 if __name__ == '__main__':
-    # final_latent = model.encode(u_all[51])[0, 0, 0, :]
-    # latent_1 = [final_latent[0], 0, 0, 0]
-    # latent_2 = [final_latent[0], final_latent[1], 0, 0]
-    # latent_3 = [final_latent[i] for i in range(3)] + [0]
-    # m1_effect = generate(latent_1)
-    # m2_effect = generate(latent_2) - m1_effect
-    # m3_effect = generate(latent_3) - generate(latent_2)
-    # m4_effect = generate(final_latent) - generate(latent_3)
-    #
-    # print(generate(final_latent))
-    # AE.u_v_plot(generate(final_latent))
-    # AE.u_v_plot(m1_effect, title=f'Effect of mode 1 with latent {latent_1}')
-    # AE.u_v_plot(m2_effect, title=f'Effect of mode 2 with latent {latent_2}', color='seismic')
-    # AE.u_v_plot(m3_effect, title=f'Effect of mode 3 with latent {latent_3}', color='seismic')
-    # AE.u_v_plot(m4_effect, title=f'Effect of mode 4 with latent {final_latent}', color='seismic')
+    hierarchical_visual(u_all, 51)
 
-
-    AE.gene
