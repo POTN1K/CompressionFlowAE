@@ -50,7 +50,7 @@ def gen_val_curve(u_train_, u_test_):
     return x_, y_
 
 
-# generate
+# generate POD data. WARNING if file exists, delete original
 generate = False
 if generate:
     u_all = POD.preprocess(split=False, nu=2)
@@ -104,6 +104,8 @@ if load:
             if flag:
                 mse, abs_med, abs_mean, div_max, div_min, div_avg = row[0], row[2], row[3], row[5], row[6], row[7]
                 n = row[-1]
+                if n == 'n':
+                    raise Exception('Duplicate data in file. Delete file and run generate 1 time to fix')
                 lst = [float(n), float(mse), float(abs_med), float(abs_mean), float(div_max), float(div_min),
                        float(div_avg)]
                 i = 0
