@@ -10,7 +10,7 @@ from mpl_toolkits import mplot3d
 # Physical conditions of the flow: Check the values for vorticity (curl), energy, cross product, resultant velocity
 # The characteristics of latent space: check changes in latent space due to different Re
 domain = np.arange(-0.5, 0.5, 0.05)
-model = AE.create_trained()
+model = AE.create_trained(2)
 u_all = AE.preprocess(split=False)
 
 

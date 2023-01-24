@@ -55,7 +55,7 @@ class AE(Model):
     """
 
     # Initialize model
-    def __init__(self, dimensions: list[int] = [32, 16, 8, 4], l_rate: float = 0.0005, epochs: int = 500,
+    def __init__(self, dimensions: list[int] = [32, 16, 8, 4], l_rate: float = 0.0005, epochs: int = 200,
                  batch: int = 10, early_stopping: int = 10, re: float = 40.0, nx: int = 24, nu: int = 2,
                  activation_function: str = 'tanh', pooling: str = 'max', loss: str = 'mse',
                  train_array: np.array or None = None, val_array: np.array or None = None,
@@ -396,36 +396,50 @@ class AE(Model):
         return d
 
     @staticmethod
-    def create_trained(h=True) -> object:
+    def create_trained(type: int = 1) -> object:
         """
         Function to load a trained model. It can load a hierarchical or standard model.
-        :param h: bool, if True it will load hierarchical AE
+        :param type: int, selects trained model (1-Physical, 2-Hierarchical, 3-TunedIntermediate)
         :return: AE object, trained model object
         """
         # Load Models
         dir_curr = os.path.split(__file__)[0]
-        if h:
-            model = AE(dimensions=[32, 16, 8, 4], l_rate=0.0005, epochs=100, batch=20, hierarchical=True)
-            # Autoencoder
-            auto_rel = ('KerasModels', f'autoencoder_h.h5')
-            model.autoencoder = load_model(os.path.join(dir_curr, *auto_rel), custom_objects={'Filter': Filter})
-            # Encoder
-            enco_rel = ('KerasModels', f'encoder_h.h5')
-            model.encoder = load_model(os.path.join(dir_curr, *enco_rel), custom_objects={'Filter': Filter})
-            # Decoder
-            deco_rel = ('KerasModels', f'decoder_h.h5')
-            model.decoder = load_model(os.path.join(dir_curr, *deco_rel), custom_objects={'Filter': Filter})
-        else:
-            model = AE()
-            # Autoencoder
-            auto_rel = ('KerasModels', f'autoencoder_2D.h5')
-            model.autoencoder = load_model(os.path.join(dir_curr, *auto_rel))
-            # Encoder
-            enco_rel = ('KerasModels', f'encoder_2D.h5')
-            model.encoder = load_model(os.path.join(dir_curr, *enco_rel))
-            # Decoder
-            deco_rel = ('KerasModels', f'decoder_2D.h5')
-            model.decoder = load_model(os.path.join(dir_curr, *deco_rel))
+        match type:
+            case 1:
+                model = AE(hierarchical=False)
+                # Autoencoder
+                auto_rel = ('KerasModels', f'autoencoder_p.h5')
+                model.autoencoder = load_model(os.path.join(dir_curr, *auto_rel), custom_objects={'custom_loss_function': custom_loss_function})
+                # Encoder
+                enco_rel = ('KerasModels', f'encoder_p.h5')
+                model.encoder = load_model(os.path.join(dir_curr, *enco_rel), custom_objects={'custom_loss_function': custom_loss_function})
+                # Decoder
+                deco_rel = ('KerasModels', f'decoder_p.h5')
+                model.decoder = load_model(os.path.join(dir_curr, *deco_rel), custom_objects={'custom_loss_function': custom_loss_function})
+            case 2:
+                model = AE(hierarchical=True)
+                # Autoencoder
+                auto_rel = ('KerasModels', f'autoencoder_h.h5')
+                model.autoencoder = load_model(os.path.join(dir_curr, *auto_rel), custom_objects={'Filter': Filter})
+                # Encoder
+                enco_rel = ('KerasModels', f'encoder_h.h5')
+                model.encoder = load_model(os.path.join(dir_curr, *enco_rel), custom_objects={'Filter': Filter})
+                # Decoder
+                deco_rel = ('KerasModels', f'decoder_h.h5')
+                model.decoder = load_model(os.path.join(dir_curr, *deco_rel), custom_objects={'Filter': Filter})
+            case 3:
+                model = AE(hierarchical=False)
+                # Autoencoder
+                auto_rel = ('KerasModels', f'autoencoder_2D.h5')
+                model.autoencoder = load_model(os.path.join(dir_curr, *auto_rel))
+                # Encoder
+                enco_rel = ('KerasModels', f'encoder_2D.h5')
+                model.encoder = load_model(os.path.join(dir_curr, *enco_rel))
+                # Decoder
+                deco_rel = ('KerasModels', f'decoder_2D.h5')
+                model.decoder = load_model(os.path.join(dir_curr, *deco_rel))
+            case _:
+                raise ValueError("Give a valid number for model")
         model.trained = True
         return model
 
@@ -433,7 +447,7 @@ class AE(Model):
 if __name__ == '__main__':
     u_train, u_val, u_test = AE.preprocess()
 
-    model = AE.create_trained(False)  # -> Comment model = AE(), and model.fit() to run pre trained
+    model = AE.create_trained(1)  # -> Comment model = AE(), and model.fit() to run pre trained
     # model = AE()
 
     model.u_train, model.u_val, model.u_test = u_train, u_val, u_test

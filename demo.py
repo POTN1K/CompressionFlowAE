@@ -35,7 +35,7 @@ def tune_physical():
     n = 2
     u_train, u_val, u_test = AE.preprocess(nu=n)
 
-    model = AE.create_trained(True)
+    model = AE.create_trained(2)
     model.u_train, model.u_val, model.u_test = u_train, u_val, u_test
     model.loss, model.l_rate, model.epochs = custom_loss_function, 0.0000000001, 20
 

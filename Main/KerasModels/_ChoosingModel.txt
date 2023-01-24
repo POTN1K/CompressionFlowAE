@@ -1,0 +1,24 @@
+All models here can be called using create_trained()
+The models here introduced are divided in the following way:
+
+- autoencoder_2D, encoder_2D, decoder_2D
+    HYPERPARAMETERS:
+        dimensions: list[int] = [32, 16, 8, 4], l_rate: float = 0.0005, epochs: int = 200,
+        batch: int = 10, early_stopping: int = 10, re: float = 40.0, nx: int = 24, nu: int = 2,
+        activation_function: str = 'tanh', pooling: str = 'max', loss: str = 'mse'
+    Intermediate model, standard architecture, tuned hyperparameters
+
+- autoencoder_h, encoder_h, decoder_h
+    HYPERPARAMETERS:
+        dimensions: list[int] = [32, 16, 8, 4], l_rate: float = 0.0005, epochs: int = 50,
+        batch: int = 20, early_stopping: int = 10, re: float = 40.0, nx: int = 24, nu: int = 2,
+        activation_function: str = 'tanh', pooling: str = 'max', loss: str = 'mse'
+    Final model for flow generation and characterization, hierarchical architecture, tuned hyperparameters
+
+- autoencoder_p, encoder_p, decoder_p
+    HYPERPARAMETERS:
+        dimensions: list[int] = [32, 16, 8, 4], l_rate: float = 0.00001, epochs: int = 100,
+        batch: int = 50, early_stopping: int = 10, re: float = 40.0, nx: int = 24, nu: int = 2,
+        activation_function: str = 'tanh', pooling: str = 'max', loss: str = 'custom_loss_function'
+    Final model for flow compression, standard architecture, trained on top of intermediate model using custom
+    loss function, most physical model

@@ -6,7 +6,7 @@ import sys
 sys.path.append('.')
 
 
-model = AE.create_trained()
+model = AE.create_trained(2)
 u_all = AE.preprocess(split=False)
 values = []
 
