@@ -166,6 +166,9 @@ class Model:
         d = dict()
         d['mse'] = mean_squared_error(self.input, self.output)
         self.dict_perf = d
+
+        # Verification results
+        d['div_max'], d['div_min'], d['div_avg'] = Model.verification(self.output, print_res=False)
         return d
 
     # END LOGIC METHODS
@@ -341,7 +344,7 @@ class Model:
             n += 1
 
     @staticmethod
-    def verification(data: np.array, print_res: bool = True) -> tuple[float]:
+    def verification(data: np.array, print_res: bool = True) -> tuple[float, float, float]:
         """
         Function to check conservation of mass
         :param data: numpy array, time series 2D velocity grid
