@@ -1,6 +1,6 @@
 import numpy as np
 
-from FlowCompression import AE
+from Main import AE
 
 from keras.layers import Layer
 from keras.layers import Input, Conv2D, UpSampling2D, Conv2DTranspose

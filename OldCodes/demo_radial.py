@@ -1,4 +1,4 @@
-from FlowCompression import AE
+from Main import AE
 import numpy as np
 
 data_cartesian = AE.preprocess(nu=2)
