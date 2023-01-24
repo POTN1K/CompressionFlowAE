@@ -51,7 +51,7 @@ def gen_val_curve(u_train_, u_test_):
 
 
 # generate
-generate = True
+generate = False
 if generate:
     u_all = POD.preprocess(split=False, nu=2)
     for train_size in [0.95]:
@@ -61,7 +61,6 @@ if generate:
 # load AE data from txt      #bad function, hard coded
 load = True
 if load:
-    flag = False
     with open(r'C:\Users\Jan Grobusch\PycharmProjects\CompressionFlowAE\Main\TuningDivision\Raw\AE_at_01.24.2023_11h46m.csv', newline='')\
             as csvfile:
         rows = reader(csvfile, delimiter=',')
@@ -73,6 +72,7 @@ if load:
             'div_min': [],
             'div_avg': []
         }
+        flag = False
         for row in rows:
             if flag:
                 mse, abs_med, div_max, div_min, div_avg = row[0], row[1], row[6], row[7], row[8]
@@ -87,7 +87,6 @@ if load:
                 flag = True
 
     # load POD data from txt
-    flag = False
     with open(r'C:\Users\Jan Grobusch\PycharmProjects\CompressionFlowAE\Main\TuningDivision\POD_0.95.csv', newline='')\
             as csvfile:
         rows = reader(csvfile, delimiter=',')
@@ -100,6 +99,7 @@ if load:
             'div_min': [],
             'div_avg': []
         }
+        flag = False
         for row in rows:
             if flag:
                 mse, abs_med, abs_mean, div_max, div_min, div_avg = row[0], row[2], row[3], row[5], row[6], row[7]
