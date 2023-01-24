@@ -15,7 +15,7 @@ The models here introduced are divided in the following way:
         activation_function: str = 'tanh', pooling: str = 'max', loss: str = 'mse'
     Final model for flow generation and characterization, hierarchical architecture, tuned hyperparameters
 
-- autoencoder_p, encoder_p, decoder_p
+- autoencoder_ph, encoder_ph, decoder_ph
     HYPERPARAMETERS:
         dimensions: list[int] = [32, 16, 8, 4], l_rate: float = 0.00001, epochs: int = 100,
         batch: int = 50, early_stopping: int = 10, re: float = 40.0, nx: int = 24, nu: int = 2,

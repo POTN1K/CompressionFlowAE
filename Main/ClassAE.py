@@ -408,13 +408,13 @@ class AE(Model):
             case 1:
                 model = AE(hierarchical=False)
                 # Autoencoder
-                auto_rel = ('KerasModels', f'autoencoder_p.h5')
+                auto_rel = ('KerasModels', f'autoencoder_ph.h5')
                 model.autoencoder = load_model(os.path.join(dir_curr, *auto_rel), custom_objects={'custom_loss_function': custom_loss_function})
                 # Encoder
-                enco_rel = ('KerasModels', f'encoder_p.h5')
+                enco_rel = ('KerasModels', f'encoder_ph.h5')
                 model.encoder = load_model(os.path.join(dir_curr, *enco_rel), custom_objects={'custom_loss_function': custom_loss_function})
                 # Decoder
-                deco_rel = ('KerasModels', f'decoder_p.h5')
+                deco_rel = ('KerasModels', f'decoder_ph.h5')
                 model.decoder = load_model(os.path.join(dir_curr, *deco_rel), custom_objects={'custom_loss_function': custom_loss_function})
             case 2:
                 model = AE(hierarchical=True)

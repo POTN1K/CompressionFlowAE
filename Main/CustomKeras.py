@@ -125,4 +125,4 @@ def custom_loss_function(y_true, y_pred):
     u_mse = tf.math.reduce_mean(tf.math.multiply(u_diff, u_diff), axis=[1, 2])
     v_mse = tf.math.reduce_mean(tf.math.multiply(v_diff, v_diff), axis=[1, 2])
 
-    return divergence, energy_difference, curl_difference, u_mse, v_mse
+    return energy_difference, curl_difference, u_mse, v_mse, divergence
