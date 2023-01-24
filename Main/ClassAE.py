@@ -354,9 +354,10 @@ def run_model():
     print(f'Absolute %: {round(perf["abs_percentage"], 3)} +- {round(perf["abs_std"], 3)}')
     print(f'Squared %: {round(perf["sqr_percentage"], 3)} +- {round(perf["sqr_std"], 3)}')
     print('II')
-    model.autoencoder.save('autoencoder_custom_loss.h5')
-    model.encoder.save('encoder_custom_loss.h5')
-    model.decoder.save('decoder_custom_loss.h5')
+    model.autoencoder.save('autoencoder_ph.h5')
+    model.encoder.save('encoder_ph.h5')
+    model.decoder.save('decoder_ph.h5')
+    print('saved')
 
 if __name__ == '__main__':
     run_model()
