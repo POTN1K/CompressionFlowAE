@@ -323,7 +323,8 @@ class Model:
 
             # initialise model with parameters, specify training set for hot start
             model_ = model(**params, train_array=u_train, val_array=u_val)
-            model_.passthrough(u_val)  # sets input and output
+            model_.u_test = u_test
+            model_.passthrough(u_test)  # sets input and output
 
             end_time = time.time()  # get end time
             t_time = end_time-start_time

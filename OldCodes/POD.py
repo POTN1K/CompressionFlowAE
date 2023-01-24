@@ -2,7 +2,7 @@
 import numpy as np
 from numpy import linalg as LA
 import matplotlib.pyplot as plt
-from Main import Model
+from FlowCompression import Model
 
 import os
 

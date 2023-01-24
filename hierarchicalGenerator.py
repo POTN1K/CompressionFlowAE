@@ -113,6 +113,6 @@ model.verification(model.y_pred)
 
 # Uncomment to save model
 #model.autoencoder.trainable = True
-#model.autoencoder.save('autoencoder_hp.h5')
-#model.encoder.save('encoder_hp.h5')
-#model.decoder.save('decoder_hp.h5')
+#model.autoencoder.save('autoencoder_h.h5')
+#model.encoder.save('encoder_h.h5')
+#model.decoder.save('decoder_h.h5')

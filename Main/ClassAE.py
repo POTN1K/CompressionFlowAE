@@ -384,10 +384,9 @@ class AE(Model):
         d['mse'] = self.autoencoder.evaluate(self.u_test, self.u_test, self.batch, verbose=0)
 
         # Absolute percentage metric
-        percentage = 100 * (1 - (np.abs((self.input - self.output) / self.input)))  # get array; we use it 3 times
-        d['abs_percentage_median'] = np.median(percentage)
-        d['abs_percentage_mean'] = np.mean(percentage)  # tends to break
-        d['abs_percentage_std'] = np.std(percentage)
+        d['abs_percentage'] = np.average(1 - np.abs(self.y_pred - self.u_test) / self.u_test) * 100
+        sqr_average_images = np.average((1 - np.abs(self.y_pred - self.u_test) / self.u_test), axis=(1, 2)) * 100
+        d['abs_std'] = np.std(sqr_average_images)
 
         # Squared percentage metric, along with std
         d['sqr_percentage'] = np.average(1 - (self.y_pred - self.u_test) ** 2 / self.u_test) * 100
@@ -414,13 +413,16 @@ class AE(Model):
                 model = AE(hierarchical=False)
                 # Autoencoder
                 auto_rel = ('KerasModels', f'autoencoder_ph.h5')
-                model.autoencoder = load_model(os.path.join(dir_curr, *auto_rel), custom_objects={'custom_loss_function': custom_loss_function})
+                model.autoencoder = load_model(os.path.join(dir_curr, *auto_rel),
+                                               custom_objects={'custom_loss_function': custom_loss_function})
                 # Encoder
                 enco_rel = ('KerasModels', f'encoder_ph.h5')
-                model.encoder = load_model(os.path.join(dir_curr, *enco_rel), custom_objects={'custom_loss_function': custom_loss_function})
+                model.encoder = load_model(os.path.join(dir_curr, *enco_rel),
+                                           custom_objects={'custom_loss_function': custom_loss_function})
                 # Decoder
                 deco_rel = ('KerasModels', f'decoder_ph.h5')
-                model.decoder = load_model(os.path.join(dir_curr, *deco_rel), custom_objects={'custom_loss_function': custom_loss_function})
+                model.decoder = load_model(os.path.join(dir_curr, *deco_rel),
+                                           custom_objects={'custom_loss_function': custom_loss_function})
             case 2:
                 model = AE(hierarchical=True)
                 # Autoencoder
@@ -462,10 +464,14 @@ if __name__ == '__main__':
     t = model.passthrough(u_test)
     # model.vorticity_energy()
     perf = model.performance()
-    AE.plot_all(t[0])
+    # AE.plot_all(t[0])
 
     model.verification(u_test)
     model.verification(model.y_pred)
 
     print(f'Absolute %: {round(perf["abs_percentage"], 3)} +- {round(perf["abs_std"], 3)}')
     print(f'Squared %: {round(perf["sqr_percentage"], 3)} +- {round(perf["sqr_std"], 3)}')
+
+    # model.autoencoder.save('autoencoder_ph.h5')
+    # model.encoder.save('encoder_ph.h5')
+    # model.decoder.save('decoder_ph.h5')
