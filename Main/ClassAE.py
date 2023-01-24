@@ -392,6 +392,10 @@ class AE(Model):
         d['sqr_percentage'] = np.average(1 - (self.y_pred - self.u_test) ** 2 / self.u_test) * 100
         sqr_average_images = np.average((1 - (self.y_pred - self.u_test) ** 2 / self.u_test), axis=(1, 2)) * 100
         d['sqr_std'] = np.std(sqr_average_images)
+
+        # Verification results
+        d['div_max'], d['div_min'], d['div_avg'] = Model.verification(self.y_pred, print_res=False)
+
         self.dict_perf = d
         return d
 
