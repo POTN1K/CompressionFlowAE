@@ -355,6 +355,8 @@ class Model:
                     dir_2 = os.path.join(os.path.split(__file__)[0], 'KerasModels', 'Raw')
                     name_ = f'autoencoder_s_dim={np.shape(model_.encoded)[-1]}.h5'
                     path = os.path.join(os.path.join(dir_2, name_))
+                    model_.encoder.save(path)
+                    model_.decoder.save(path)
                     model_.autoencoder.save(path)
                     print(f'Saved: {name_} with dim {np.shape(model_.encoded)[-1]} to {dir_2}')
                 else:
