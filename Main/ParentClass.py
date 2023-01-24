@@ -167,6 +167,12 @@ class Model:
         d['mse'] = mean_squared_error(self.input, self.output)
         self.dict_perf = d
 
+        # Absolute percentage metric
+        percentage = 100 * (1 - (np.abs((self.input - self.output) / self.input)))  # get array; we use it 3 times
+        d['abs_percentage_median'] = np.median(percentage)
+        d['abs_percentage_mean'] = np.mean(percentage)  # tends to break
+        d['abs_percentage_std'] = np.std(percentage)
+
         # Verification results
         d['div_max'], d['div_min'], d['div_avg'] = Model.verification(self.output, print_res=False)
         return d
