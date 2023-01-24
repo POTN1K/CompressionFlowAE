@@ -291,12 +291,13 @@ class Model:
         return u_all
 
     @staticmethod
-    def train_test_batch(param_ranges: dict, model: object) -> None:
+    def train_test_batch(param_ranges: dict, model: object, save: bool = False) -> None:
         """
         Function to tune a model using different hyperparameters
         Trains, evaluates and writes results to file for a model and with hyperparameter ranges
         :param param_ranges: dict, Hyperparameters to tune as keys, with their ranges as values
-        :param model: Model object, subclass model that needs to be tuned
+        :param model: Model object, subclass model that needs to be tuned # not sure object is the correct type hint
+        :param save: bool, saves the model (only implemented for AE)
         :return: None, results written to timestamped file
         """
 
@@ -308,7 +309,7 @@ class Model:
 
         # Loop over model combinations
         n = 0  # Counter
-        dir_ = os.path.join(os.path.split(__file__)[0], 'TuningDivision')
+        dir_ = os.path.join(os.path.split(__file__)[0], 'TuningDivision', 'Raw')
         _name = f'_at_{datetime.now().strftime("%m.%d.%Y_%Hh%Mm")}.csv'
         flag = False
         for params in param_grid:
@@ -319,17 +320,18 @@ class Model:
             model_.passthrough(u_val)  # sets input and output
 
             end_time = time.time()  # get end time
-            t_time = end_time - start_time
+            t_time = end_time-start_time
             # compute loss
             perf = model_.performance()
 
             # write to file
-            write = {'Accuracy': perf["abs_percentage"], 'Running Time': t_time, 'Loss': perf["mse"]
+            write = {**perf
                      }
             write.update(params)
 
             columns = write.keys()
-            with open(os.path.join(dir_, f'{model_.__class__.__name__}{_name}'), 'a', newline='') as f:
+            with open(os.path.join(dir_, f'{model_.__class__.__name__}{_name}')
+                      , 'a', newline='') as f:
                 writer = DictWriter(f, columns)
 
                 if not flag:  # write column names, its ugly im sorry
@@ -342,6 +344,14 @@ class Model:
                 writer.writerow(write)  # write results
             print(f'Model {n}')
             n += 1
+
+            print(f'DEBUG: {model_.__class__.__name__}')
+            print(f'DEBUG: {np.shape(model_.encoded)[-1]}')
+            if save:
+                if model_.__class__.__name__ == 'AE':
+                    model_.autoencoder.save(f'autoencoder_s_dim={np.shape(model_.encoded)[-1]}.h5')
+                else:
+                    print('Save model setting exclusive to AE')
 
     @staticmethod
     def verification(data: np.array, print_res: bool = True) -> tuple[float, float, float]:
