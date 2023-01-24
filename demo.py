@@ -22,13 +22,21 @@ def run_model_POD():
 
 
 def run_tune():
-    param_ranges_dict = {'l_rate': [0.01],
-                         'epochs': [10],
-                         'batch': [1000],
-                         'early_stopping': [5],
-                         'dimensions': [[16, 8, 4, 2], [24, 12, 6, 3]]}
+    dim = None
+    # dim = [[16, 8, 4, 2], [24, 12, 6, 3]]
 
-    Model.train_test_batch(param_ranges_dict, AE)
+    if dim is None:
+        dim = []
+        for latent_dim in range(1, 4+1):
+            dim.append([8*latent_dim, 4*latent_dim, 2*latent_dim, 2])
+
+    param_ranges_dict = {'l_rate': [0.0005],
+                         'epochs': [500],
+                         'batch': [10],
+                         'early_stopping': [10],
+                         'dimensions': dim}
+
+    Model.train_test_batch(param_ranges_dict, AE, save=True)
 
 
 def tune_physical():
@@ -57,13 +65,13 @@ def tune_physical():
     print(f'Absolute %: {round(perf["abs_percentage"], 3)} +- {round(perf["abs_std"], 3)}')
     print(f'Squared %: {round(perf["sqr_percentage"], 3)} +- {round(perf["sqr_std"], 3)}')
 
-    model.autoencoder.save('autoencoder_p.h5')
-    model.encoder.save('encoder_p.h5')
-    model.decoder.save('decoder_p.h5')
+    # model.autoencoder.save('autoencoder_p.h5')
+    # model.encoder.save('encoder_p.h5')
+    # model.decoder.save('decoder_p.h5')
 
 
 if __name__ == '__main__':
-    tune_physical()
+    run_tune()
 
 #
 # import os
