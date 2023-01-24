@@ -187,7 +187,9 @@ if plot_divergence:
 
     plt.show()
 
-    plt.errorbar(data_AE['n'], data_AE['div_avg'], np.abs(np.array([data_AE['div_min'], data_AE['div_max']])),
+    y_err_below = np.abs(np.array(data_AE['div_max']) - np.array(data_AE['div_avg']))
+    y_err_above = np.array(data_AE['div_avg']) - np.array(data_AE['div_min'])
+    plt.errorbar(data_AE['n'], data_AE['div_avg'], [y_err_below, y_err_above],
                  label='AE', color='black', ecolor='b', marker='+')
 
     plt.ylabel('Divergence of the Velocity Field')
