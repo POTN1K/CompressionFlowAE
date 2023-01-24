@@ -164,8 +164,17 @@ class Model:
         :return: Dictionary with relevant accuracy metrics
         """
         d = dict()
-        d['mse'] = mean_squared_error(self.input, self.output)
+        d['mse'] = np.mean(self.output-self.input)**2
         self.dict_perf = d
+
+        # Absolute percentage metric
+        percentage = 100 * (1 - (np.abs((self.input - self.output) / self.input)))  # get array; we use it 3 times
+        d['abs_percentage_median'] = np.median(percentage)
+        d['abs_percentage_mean'] = np.mean(percentage)  # tends to break
+        d['abs_percentage_std'] = np.std(percentage)
+
+        # Verification results
+        d['div_max'], d['div_min'], d['div_avg'] = Model.verification(self.output, print_res=False)
         return d
 
     # END LOGIC METHODS
@@ -288,12 +297,13 @@ class Model:
         return u_all
 
     @staticmethod
-    def train_test_batch(param_ranges: dict, model: object) -> None:
+    def train_test_batch(param_ranges: dict, model: object, save: bool = False) -> None:
         """
         Function to tune a model using different hyperparameters
         Trains, evaluates and writes results to file for a model and with hyperparameter ranges
         :param param_ranges: dict, Hyperparameters to tune as keys, with their ranges as values
-        :param model: Model object, subclass model that needs to be tuned
+        :param model: Model object, subclass model that needs to be tuned # not sure object is the correct type hint
+        :param save: bool, saves the model (only implemented for AE)
         :return: None, results written to timestamped file
         """
 
@@ -305,7 +315,7 @@ class Model:
 
         # Loop over model combinations
         n = 0  # Counter
-        dir_ = os.path.join(os.path.split(__file__)[0], 'TuningDivision')
+        dir_ = os.path.join(os.path.split(__file__)[0], 'TuningDivision', 'Raw')
         _name = f'_at_{datetime.now().strftime("%m.%d.%Y_%Hh%Mm")}.csv'
         flag = False
         for params in param_grid:
@@ -316,17 +326,17 @@ class Model:
             model_.passthrough(u_val)  # sets input and output
 
             end_time = time.time()  # get end time
-            t_time = end_time - start_time
+            t_time = end_time-start_time
             # compute loss
             perf = model_.performance()
 
             # write to file
-            write = {'Accuracy': perf["abs_percentage"], 'Running Time': t_time, 'Loss': perf["mse"]
-                     }
+            write = {**perf}
             write.update(params)
 
             columns = write.keys()
-            with open(os.path.join(dir_, f'{model_.__class__.__name__}{_name}'), 'a', newline='') as f:
+            with open(os.path.join(dir_, f'{model_.__class__.__name__}{_name}')
+                      , 'a', newline='') as f:
                 writer = DictWriter(f, columns)
 
                 if not flag:  # write column names, its ugly im sorry
@@ -337,11 +347,21 @@ class Model:
                     flag = True
 
                 writer.writerow(write)  # write results
-            print(f'Model {n}')
+            print(f'{model_.__class__.__name__} {n} tuned')
             n += 1
 
+            if save:
+                if model_.__class__.__name__ == 'AE':
+                    dir_2 = os.path.join(os.path.split(__file__)[0], 'KerasModels', 'Raw')
+                    name_ = f'autoencoder_s_dim={np.shape(model_.encoded)[-1]}.h5'
+                    path = os.path.join(os.path.join(dir_2, name_))
+                    model_.autoencoder.save(path)
+                    print(f'Saved: {name_} with dim {np.shape(model_.encoded)[-1]} to {dir_2}')
+                else:
+                    print('Save model setting exclusive to AE')
+
     @staticmethod
-    def verification(data: np.array, print_res: bool = True) -> tuple[float]:
+    def verification(data: np.array, print_res: bool = True) -> tuple[float, float, float]:
         """
         Function to check conservation of mass
         :param data: numpy array, time series 2D velocity grid
@@ -369,7 +389,7 @@ class Model:
 
         max_div = max(all_conv)
         min_div = min(all_conv)
-        avg_div = sum(np.abs(all_conv)) / len(all_conv)
+        avg_div = np.mean(all_conv)
         if print_res:
             print(f'max: {max_div}')
             print(f'min: {min_div}')
