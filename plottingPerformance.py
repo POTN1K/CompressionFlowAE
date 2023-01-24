@@ -51,10 +51,10 @@ def gen_val_curve(u_train_, u_test_):
 
 
 # generate
-generate = False
+generate = True
 if generate:
     u_all = POD.preprocess(split=False, nu=2)
-    for train_size in [0.5, 0.95]:
+    for train_size in [0.95]:
         u_train, u_test = train_test_split(u_all, train_size=train_size)
         gen_val_curve(u_train, u_test)
 
@@ -114,7 +114,7 @@ if load:
             if not flag:
                 flag = True
 
-plot_abs_med = True
+plot_abs_med = False
 if plot_abs_med:
     if not load:
         raise Exception('load is false')

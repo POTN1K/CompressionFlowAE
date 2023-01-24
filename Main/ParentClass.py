@@ -164,7 +164,7 @@ class Model:
         :return: Dictionary with relevant accuracy metrics
         """
         d = dict()
-        d['mse'] = mean_squared_error(self.input, self.output)
+        d['mse'] = np.mean(self.output-self.input)**2
         self.dict_perf = d
 
         # Absolute percentage metric
