@@ -1,0 +1,2 @@
+mse,abs_percentage_median,abs_percentage_mean,abs_percentage_std,sqr_percentage,sqr_std,div_max,div_min,div_avg,batch,dimensions,early_stopping,epochs,l_rate
+0.006557495333254337,90.33011,-inf,nan,-inf,nan,-0.18135047,-0.88398767,0.4662979164719582,10,"[8, 4, 2, 2]",10,500,0.0005

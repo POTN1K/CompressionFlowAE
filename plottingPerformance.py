@@ -61,7 +61,8 @@ if generate:
 # load AE data from txt      #bad function, hard coded
 load = True
 if load:
-    with open(r'C:\Users\Jan Grobusch\PycharmProjects\CompressionFlowAE\Main\TuningDivision\Raw\AE_at_01.24.2023_11h46m.csv', newline='')\
+    path = os.path.join(os.path.split(__file__)[0], 'Main', 'TuningDivision', 'AE_at_01.24.2023_11h51m.csv')
+    with open(path, newline='')\
             as csvfile:
         rows = reader(csvfile, delimiter=',')
         data_AE = {
@@ -87,7 +88,8 @@ if load:
                 flag = True
 
     # load POD data from txt
-    with open(r'C:\Users\Jan Grobusch\PycharmProjects\CompressionFlowAE\Main\TuningDivision\POD_0.95.csv', newline='')\
+    path = os.path.join(os.path.split(__file__)[0], 'Main', 'TuningDivision', 'POD_0.95.csv')
+    with open(path, newline='')\
             as csvfile:
         rows = reader(csvfile, delimiter=',')
         data_POD = {
