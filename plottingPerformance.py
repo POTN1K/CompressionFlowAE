@@ -176,11 +176,11 @@ if plot_divergence:
 
     y_err_below = np.abs(np.array(data_POD['div_max'])-np.array(data_POD['div_avg']))
     y_err_above = np.array(data_POD['div_avg'])-np.array(data_POD['div_min'])
-    plt.errorbar(data_POD['n'], data_POD['div_avg'], [y_err_below, y_err_above],
+    plt.errorbar(data_POD['n'], data_POD['div_avg'], [y_err_above, y_err_below],
                  label='POD', color='black', ecolor='r', marker='.')
 
     plt.ylabel('Divergence of the Velocity Field')
-
+    plt.ylim(top=0.5, bottom=-1.5)
 
     plt.xlabel('Dimension of Encoded Flow (Orig: 1152)')
     plt.xlim(left=0, right=62.5)
@@ -189,10 +189,11 @@ if plot_divergence:
 
     y_err_below = np.abs(np.array(data_AE['div_max']) - np.array(data_AE['div_avg']))
     y_err_above = np.array(data_AE['div_avg']) - np.array(data_AE['div_min'])
-    plt.errorbar(data_AE['n'], data_AE['div_avg'], [y_err_below, y_err_above],
+    plt.errorbar(data_AE['n'], data_AE['div_avg'], [y_err_above, y_err_below],
                  label='AE', color='black', ecolor='b', marker='+')
 
     plt.ylabel('Divergence of the Velocity Field')
+    plt.ylim(top=0.5, bottom=-1.5)
 
     plt.xlabel('Dimension of Encoded Flow (Orig: 1152)')
     plt.xlim(left=0, right=62.5)

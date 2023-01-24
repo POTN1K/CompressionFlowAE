@@ -27,8 +27,8 @@ def run_tune():
 
     if dim is None:
         dim = []
-        for latent_dim in range(1, 4+1):
-            dim.append([8*latent_dim, 4*latent_dim, 2*latent_dim, 2])
+        for latent_dim in range(2, 4+1):
+            dim.append([8*latent_dim, 4*latent_dim, 2*latent_dim, latent_dim])
 
     param_ranges_dict = {'l_rate': [0.0005],
                          'epochs': [500],
