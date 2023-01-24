@@ -49,6 +49,9 @@ class POD(Model):
         :return: time series code
         """
         # TODO: Implement this properly; need to get new V, compatible with old mode matrix but new data
+        dim = input_.shape
+        UU = np.reshape(input_, (dim[0], dim[1] * dim[2] * dim[3]))
+        self.a = np.matmul(UU, self.phi)
         return np.copy(self.a)
 
     def _get_output(self, input_: np.array) -> np.array:  # skeleton
@@ -102,7 +105,7 @@ class POD(Model):
         """
         if n_modes is None:  # overwrite if not given
             n_modes = self.n
-        dim = self.dim
+        dim = self.input.shape
 
         print(self.phi.shape, self.a.shape, self.dim)
         # self.a = self.a[0, 0]
