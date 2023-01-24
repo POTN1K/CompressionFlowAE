@@ -104,7 +104,7 @@ if load:
         flag = False
         for row in rows:
             if flag:
-                mse, abs_med, abs_mean, div_max, div_min, div_avg = row[0], row[2], row[3], row[5], row[6], row[7]
+                mse, abs_med, abs_mean, div_max, div_min, div_avg = row[0], row[1], row[2], row[4], row[5], row[6]
                 n = row[-1]
                 if n == 'n':
                     raise Exception('Duplicate data in file. Delete file and run generate 1 time to fix')
@@ -174,10 +174,11 @@ if plot_divergence:
     # plt.scatter(data_AE['n'], data_AE['div_avg'], label='AE', color='b', marker='+')
     # plt.scatter(data_AE['n'], data_AE['div_max'], label='AE', color='b', marker='+')
 
-    plt.errorbar(data_POD['n'], data_POD['div_avg'], np.abs(np.array([data_POD['div_min'], data_POD['div_max']])),
+    y_err_below = np.abs(np.array(data_POD['div_max'])-np.array(data_POD['div_avg']))
+    y_err_above = np.array(data_POD['div_avg'])-np.array(data_POD['div_min'])
+    plt.errorbar(data_POD['n'], data_POD['div_avg'], [y_err_below, y_err_above],
                  label='POD', color='black', ecolor='r', marker='.')
 
-    plt.ylim(bottom=-5E-4, top=5E-4)
     plt.ylabel('Divergence of the Velocity Field')
 
 
@@ -189,7 +190,6 @@ if plot_divergence:
     plt.errorbar(data_AE['n'], data_AE['div_avg'], np.abs(np.array([data_AE['div_min'], data_AE['div_max']])),
                  label='AE', color='black', ecolor='b', marker='+')
 
-    # plt.ylim(bottom=-1.5E-12, top=1.5E-12)
     plt.ylabel('Divergence of the Velocity Field')
 
     plt.xlabel('Dimension of Encoded Flow (Orig: 1152)')
