@@ -1,4 +1,5 @@
-
+"""This file presents all the functions that were created for the flow generation but not used in the final version of
+the code"""
 
 # def curl_analysis(k, dictionary):
 #     """
@@ -177,3 +178,44 @@
 #             positions[i] = False
 #     points_inside = np.count_nonzero(positions)
 #     return positions, points_inside
+
+# FUNCTION TO TRANSFORM MODES INTO SPHERICAL COORDS AND PLOT THEM IN 3D PLOT
+# def original_ls_visual(params: tuple, time_series, plotting=True, saving=False):
+#     """
+#     Function to visualize the first three parameters of all latent spaces of a time series
+#     :param params: modes for which we want to visualize the values
+#     :param time_series: time series from which to generate the latent spaces
+#     :param plotting: bool to determine is plotting of the results is needed
+#     :param saving: bool to determine if saving the plot is needed
+#     :return: None
+#     """
+#     if not path.exists(f'{params}_latent.csv'):
+#         latent = generation_from_original(time_series)
+#         np.savetxt(f'{params}_latent.csv', latent, delimiter=',')
+#     else:
+#         latent = np.genfromtxt(f'{params}_latent.csv', delimiter=',')
+#     if plotting is True:
+#         fig = plt.figure()
+#         ax = plt.axes(projection='3d')
+#
+#         ax.set_xlabel(f'mode {params[0]}')
+#         ax.set_ylabel(f'mode {params[1]}')
+#         ax.set_zlabel(f'mode {params[2]}')
+#
+#         p1 = latent[:, params[0]]
+#         p2 = latent[:, params[1]]
+#         p3 = latent[:, params[2]]
+#
+#         x, y, z = spheroid(p1, p2, p3)
+#         inside, number = is_inside(p1, p2, p3)
+#         print(np.size(p1), number)
+#         p1_inside = p1[inside is True]
+#         p2_inside = p2[inside is True]
+#         p3_inside = p3[inside is True]
+#
+#         ax.plot_surface(x, y, z)
+#
+#         ax.scatter3D(p1_inside, p2_inside, p3_inside, '*')
+#         plt.show()
+#     if saving is True:
+#         pickle.dump(fig, open(f'{params}_plot.fig.pickle', 'wb'))

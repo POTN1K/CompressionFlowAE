@@ -33,48 +33,6 @@ def generate(latent_space):
     artificial = model.decode(np.array([[[latent_space]]]))
     return artificial
 
-
-def original_ls_visual(params: tuple, time_series, plotting=True, saving=False):
-    """
-    Function to visualize the first three parameters of all latent spaces of a time series
-    :param params: modes for which we want to visualize the values
-    :param time_series: time series from which to generate the latent spaces
-    :param plotting: bool to determine is plotting of the results is needed
-    :param saving: bool to determine if saving the plot is needed
-    :return: None
-    """
-    if not path.exists(f'{params}_latent.csv'):
-        latent = generation_from_original(time_series)
-        np.savetxt(f'{params}_latent.csv', latent, delimiter=',')
-    else:
-        latent = np.genfromtxt(f'{params}_latent.csv', delimiter=',')
-    if plotting is True:
-        fig = plt.figure()
-        ax = plt.axes(projection='3d')
-
-        ax.set_xlabel(f'mode {params[0]}')
-        ax.set_ylabel(f'mode {params[1]}')
-        ax.set_zlabel(f'mode {params[2]}')
-
-        p1 = latent[:, params[0]]
-        p2 = latent[:, params[1]]
-        p3 = latent[:, params[2]]
-
-        x, y, z = spheroid(p1, p2, p3)
-        inside, number = is_inside(p1, p2, p3)
-        print(np.size(p1), number)
-        p1_inside = p1[inside is True]
-        p2_inside = p2[inside is True]
-        p3_inside = p3[inside is True]
-
-        ax.plot_surface(x, y, z)
-
-        ax.scatter3D(p1_inside, p2_inside, p3_inside, '*')
-        plt.show()
-    if saving is True:
-        pickle.dump(fig, open(f'{params}_plot.fig.pickle', 'wb'))
-
-
 def stats(mode: list[float]):
     """
     Determines statistics of a list of values related to one mode of the latent space
@@ -113,9 +71,9 @@ def hierarchical_visual(time_series, n_frame):
     # Plot the reconstructed flow and the effects of each mode (different cmap for m2, m3, m4 because both + and -
     AE.u_v_plot(generate(final_latent))
     AE.u_v_plot(m1_effect, title=f'Effect of mode 1 with latent {latent_1}')
-    AE.u_v_plot(m2_effect, title=f'Effect of mode 2 with latent {latent_2}', color='seismic')
-    AE.u_v_plot(m3_effect, title=f'Effect of mode 3 with latent {latent_3}', color='seismic')
-    AE.u_v_plot(m4_effect, title=f'Effect of mode 4 with latent {final_latent}', color='seismic')
+    AE.u_v_plot(m2_effect, title=f'Effect of mode 2 with latent {latent_2}', color='seismic', vmin=None, vmax=None)
+    AE.u_v_plot(m3_effect, title=f'Effect of mode 3 with latent {latent_3}', color='seismic', vmin=None, vmax=None)
+    AE.u_v_plot(m4_effect, title=f'Effect of mode 4 with latent {final_latent}', color='seismic', vmin=None, vmax=None)
 
 
 if __name__ == '__main__':

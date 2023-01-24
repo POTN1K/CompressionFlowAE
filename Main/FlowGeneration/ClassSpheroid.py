@@ -1,8 +1,21 @@
+"""
+This code presents the class Spheroid that could be used to parametrize the latent space domain. If the spheroid is
+plotted in 3D together with the £d scatter plot of the different latent spaces, the similarities become clear. Pay
+attention to the fact that theta and phi are defined differently than in the file 'DistanceAnalysis'.
+"""
+
+import numpy as np
 from FlowGeneration import *
 
 
 class Spheroid:
     def __init__(self, mode1: list[float], mode2: list[float], mode3: list[float]) -> None:
+        """
+        Initialize Spheroid object
+        :param mode1: list of all the values for the first latent space mode coming from the frame time series
+        :param mode2: list of all the values for the second latent space mode coming from the frame time series
+        :param mode3: list of all the values for the third latent space mode coming from the frame time series
+        """
         self.mode1 = mode1
         self.mode2 = mode2
         self.mode3 = mode3
@@ -13,6 +26,7 @@ class Spheroid:
         self.b = stats(mode2)[1]
         self.c = stats(mode3)[1]
 
+    # BEGIN PROPERTIES
     @property
     def a(self):
         return self._a
@@ -44,7 +58,14 @@ class Spheroid:
     def distance(self):
         return np.sqrt((self.x - self.center[0]) ** 2 + (self.y - self.center[1]) ** 2 + (self.z - self.center[2]) ** 2)
 
+    # END PROPERTIES
+
+    # BEGIN MODEL METHODS
     def is_inside(self):
+        """
+        Function to determine how many latent space points lay inside the generated spheroid
+        :return: tuple of floats, percentage and number of points inside the spheroid
+        """
         positions = np.zeros(np.shape(self.mode1))
         for i in range(len(self.mode1)):
             z_spheroid = self.c ** 2 * (1 - ((self.mode1[i] - self.center[0]) / self.a) ** 2 - (
@@ -58,6 +79,10 @@ class Spheroid:
         return points_inside / len(positions), points_inside
 
     def plot_spheroid(self):
+        """
+        Plots the shperoid together with the latent space points in a 3D plot
+        :return: None, plots image
+        """
         fig = plt.figure()
         ax = plt.axes(projection='3d')
         ax.set_xlabel(f'mode 0')
@@ -69,6 +94,14 @@ class Spheroid:
 
 
 def dims_analysis(orb: Spheroid):
+    """
+    Function that modifies the main parameter of the spheroid in order to determine the optimal sizing based on the
+    percentage of points inside its volume
+    :param orb: object Spheroid
+    :return: tuple (float, float, tuple(float, float, float)), first two are the ratios to multiply the parameters of
+    the spheroid with in case you want 10% or 90% of the points inside the volume. Last term are the original parameters
+    of the spheroid.
+    """
     a, b, c = orb.a, orb.b, orb.c
     original = (a, b, c)
     percentage = 0.0
@@ -87,17 +120,13 @@ def dims_analysis(orb: Spheroid):
 
 
 if __name__ == '__main__':
-    latent = generate_from_original_all(u_test)
+    model = AE.create_trained(2)
+    u_all = AE.preprocess(split=False)
+    latent = generation_from_original(u_all)
     p1 = latent[:, 0]
     p2 = latent[:, 1]
     p3 = latent[:, 2]
     spheroid = Spheroid(p1, p2, p3)
-    new_distance = np.sort(spheroid.distance)
-    print(spheroid.x)
-    print(spheroid.theta)
-    print(new_distance)
-    std, mean = np.std(new_distance), np.mean(new_distance)
-    print(std, mean)
 
     # Maximum ratio for having all the points inside (taking 10% outliers) = 1.2
     # Minimum ratio for having all the points outside (taking 10% outliers) = 0.4

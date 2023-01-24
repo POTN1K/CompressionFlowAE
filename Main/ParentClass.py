@@ -444,7 +444,7 @@ class Model:
         plt.show()
 
     @staticmethod
-    def u_v_plot(nxnx2: np.array) -> None:
+    def u_v_plot(nxnx2: np.array, vmin=0.0, vmax=1.1, title=None, color='viridis') -> None:
         """
         Plots velocity components x, y in different plots
         :param nxnx2: numpy array, time frame of velocities with shape [nx,nx,2]
@@ -452,14 +452,14 @@ class Model:
         """
         fig = plt.figure()
         ax1 = fig.add_subplot(121)
-        ax1.contourf(nxnx2[:, :, 0], vmin=0.0, vmax=1.1)
-        ax1.title.set_text('x_velocity')
+        ax1.contourf(nxnx2[:, :, 0], vmin=vmin, vmax=vmax, cmap=color)
+        ax1.title.set_text('u velocity')
 
         ax2 = fig.add_subplot(122)
-        ax2.contourf(nxnx2[:, :, 1], vmin=0.0, vmax=1.1)
-        ax2.title.set_text('y_velocity')
+        ax2.contourf(nxnx2[:, :, 1], vmin=vmin, vmax=vmax, cmap=color)
+        ax2.title.set_text('v velocity')
 
-        fig.suptitle('Velocity Components')
+        fig.suptitle(title)
         plt.show()
 
     @staticmethod
