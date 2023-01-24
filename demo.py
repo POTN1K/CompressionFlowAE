@@ -23,7 +23,7 @@ def run_model_POD():
 
 def run_tune():
     dim = None
-    # dim = [[16, 8, 4, 2], [24, 12, 6, 3]]
+    # dim = [[16, 8, 4, 2], [24, 12, 6, 3]]       # comment to generate simple structure from latent space dim range
 
     if dim is None:
         dim = []
