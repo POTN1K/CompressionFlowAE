@@ -348,14 +348,16 @@ class Model:
                     flag = True
 
                 writer.writerow(write)  # write results
-            print(f'Model {n}')
+            print(f'{model_.__class__.__name__} {n} tuned')
             n += 1
 
-            print(f'DEBUG: {model_.__class__.__name__}')
-            print(f'DEBUG: {np.shape(model_.encoded)[-1]}')
             if save:
                 if model_.__class__.__name__ == 'AE':
-                    model_.autoencoder.save(f'autoencoder_s_dim={np.shape(model_.encoded)[-1]}.h5')
+                    dir_2 = os.path.join(os.path.split(__file__)[0], 'KerasModels', 'Raw')
+                    name_ = f'autoencoder_s_dim={np.shape(model_.encoded)[-1]}.h5'
+                    path = os.path.join(os.path.join(dir_2, name_))
+                    model_.autoencoder.save(path)
+                    print(f'Saved: {name_} with dim {np.shape(model_.encoded)[-1]} to {dir_2}')
                 else:
                     print('Save model setting exclusive to AE')
 
@@ -384,7 +386,6 @@ class Model:
             v_vel_grad = np.gradient(v_vel, axis=1)
 
             divergence = np.add(u_vel_grad, v_vel_grad)
-            print(np.sum(divergence))
             all_conv.append(np.sum(divergence))
 
         max_div = max(all_conv)
