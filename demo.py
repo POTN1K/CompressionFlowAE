@@ -1,4 +1,4 @@
-from Main import Model, AE, POD, custom_loss_function
+from FlowCompression import Model, AE, POD, custom_loss_function
 import numpy as np
 
 

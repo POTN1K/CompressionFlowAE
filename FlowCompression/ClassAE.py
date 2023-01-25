@@ -8,8 +8,6 @@ with different architectures and hyperparameters.
 # Utils
 import os
 import sys
-
-sys.path.append('.')
 # Numerics
 import numpy as np
 # Machine Learning
@@ -22,6 +20,7 @@ import matplotlib.pyplot as plt
 # Local Library
 from FlowCompression import Model, Filter, custom_loss_function
 
+sys.path.append('.')
 
 # Uncomment if keras does not run
 # import os
@@ -167,6 +166,14 @@ class AE(Model):
         self.y_pred = self.decoder.predict(input_, verbose=0)
         return self.y_pred
 
+    def passthrough(self, input_: np.array) -> np.array:
+        """
+        Prediction for a reconstructed flow
+        :param input_: numpy array, time series
+        :return: numpy array, reconstructed flows
+        """
+        self.y_pred = self.autoencoder.predict(input_)
+        return self.y_pred
     # END SKELETONS
 
     # BEGIN MODEL FUNCTIONS
@@ -315,8 +322,12 @@ class AE(Model):
         :return: None
         """
 
+        w = self.autoencoder.get_weights
+
         # Compile of model
         self.autoencoder.compile(optimizer=Adam(learning_rate=self.l_rate), loss=self.loss)
+
+        self.autoencoder.set_weight(w)
 
         # Early stop callback creation
         early_stop_callback = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=self.early_stopping)
@@ -410,7 +421,7 @@ class AE(Model):
         dir_curr = os.path.split(__file__)[0]
         match type:
             case 1:
-                model = AE(hierarchical=False)
+                model = AE(hierarchical=False, loss=custom_loss_function)
                 # Autoencoder
                 auto_rel = ('KerasModels', f'autoencoder_ph.h5')
                 model.autoencoder = load_model(os.path.join(dir_curr, *auto_rel),
@@ -462,12 +473,13 @@ if __name__ == '__main__':
     # model.fit(u_train, u_val)
 
     t = model.passthrough(u_test)
+
     # model.vorticity_energy()
     perf = model.performance()
     # AE.plot_all(t[0])
 
-    model.verification(u_test)
-    model.verification(model.y_pred)
+    Model.verification(u_test)
+    Model.verification(t)
 
     print(f'Absolute %: {round(perf["abs_percentage"], 3)} +- {round(perf["abs_std"], 3)}')
     print(f'Squared %: {round(perf["sqr_percentage"], 3)} +- {round(perf["sqr_std"], 3)}')

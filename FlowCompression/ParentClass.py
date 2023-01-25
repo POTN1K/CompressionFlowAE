@@ -388,9 +388,9 @@ class Model:
             divergence = np.add(u_vel_grad, v_vel_grad)
             all_conv.append(np.sum(divergence))
 
-        max_div = max(all_conv)
-        min_div = min(all_conv)
-        avg_div = np.mean(all_conv)
+        max_div = np.max(all_conv)
+        min_div = np.min(all_conv)
+        avg_div = np.sum(np.abs(all_conv))/len(all_conv)
         if print_res:
             print(f'max: {max_div}')
             print(f'min: {min_div}')

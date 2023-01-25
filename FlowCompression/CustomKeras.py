@@ -110,19 +110,19 @@ def custom_loss_function(y_true, y_pred):
     energy_true = tf.math.add(tf.multiply(u_true, u_true), (tf.multiply(v_true, v_true)))
     energy_pred = tf.math.add(tf.multiply(u_pred, u_pred), (tf.multiply(v_pred, v_pred)))
 
-    energy_difference = tf.math.reduce_mean(tf.math.abs(tf.subtract(energy_true, energy_pred)), axis=[1, 2])
+    energy_difference = tf.math.reduce_mean(tf.math.squared_difference(energy_true, energy_pred), axis=[1, 2])
 
     curl_true = tf.math.subtract(custom_gradient(u_true, axis=1), custom_gradient(v_true, axis=0))
     curl_pred = tf.math.subtract(custom_gradient(u_pred, axis=1), custom_gradient(v_pred, axis=0))
 
-    curl_difference = tf.math.reduce_mean(tf.math.abs(tf.subtract(curl_true, curl_pred)), axis=[1, 2])
+    curl_difference = tf.math.reduce_mean(tf.math.squared_difference(curl_true, curl_pred), axis=[1, 2])
 
     divergence = tf.math.abs(
         tf.math.reduce_mean(tf.math.add(custom_gradient(u_pred, axis=0), custom_gradient(v_pred, axis=1)), axis=[1, 2]))
 
     u_diff = tf.math.subtract(u_true, u_pred)
     v_diff = tf.math.subtract(v_true, v_pred)
-    u_mse = tf.math.reduce_mean(tf.math.multiply(u_diff, u_diff), axis=[1, 2])
-    v_mse = tf.math.reduce_mean(tf.math.multiply(v_diff, v_diff), axis=[1, 2])
+    u_mse = tf.math.reduce_mean(tf.math.squared_difference(u_true, u_pred), axis=[1, 2])
+    v_mse = tf.math.reduce_mean(tf.math.squared_difference(v_true, v_pred), axis=[1, 2])
 
     return energy_difference, curl_difference, u_mse, v_mse, divergence
