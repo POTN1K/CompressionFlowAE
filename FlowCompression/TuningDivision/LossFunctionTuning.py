@@ -1,6 +1,6 @@
 import time
 from csv import DictWriter
-from Main import AE, custom_loss_function
+from FlowCompression import AE, custom_loss_function
 from sklearn.model_selection import ParameterGrid  # pip3.10 -U scikit-learn
 
 param_ranges_dict = {'l_rate': [0.01],

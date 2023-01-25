@@ -1,4 +1,4 @@
-from Main import Model, AE, POD, custom_loss_function
+from FlowCompression import Model, AE, POD, custom_loss_function
 import numpy as np
 
 
@@ -27,7 +27,7 @@ def run_tune():
 
     if dim is None:
         dim = []
-        for latent_dim in range(24, 65, 2):
+        for latent_dim in [24]:
             dim.append([8 * latent_dim, 4 * latent_dim, 2 * latent_dim, latent_dim])
 
     param_ranges_dict = {'l_rate': [0.0005],
@@ -77,7 +77,7 @@ if __name__ == '__main__':
 # import os
 #
 # dir_curr = os.getcwd()
-# path_rel = ('Main', 'SampleFlows')
+# path_rel = ('FlowCompression', 'SampleFlows')
 #
 # path = os.path.join(dir_curr, *path_rel)
 #

@@ -1,4 +1,4 @@
-from Main import AE
+from FlowCompression import AE
 import numpy as np
 import matplotlib.pyplot as plt
 import pickle

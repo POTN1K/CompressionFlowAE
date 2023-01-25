@@ -26,7 +26,7 @@ This model has already been trained and can be called using AE.create_trained()
 """
 
 # Local Libraries
-from Main import AE, custom_loss_function
+from FlowCompression import AE, custom_loss_function
 
 # Preprocess Data
 train, val, test = AE.preprocess()

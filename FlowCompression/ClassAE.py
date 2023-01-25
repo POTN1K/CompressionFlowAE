@@ -20,7 +20,7 @@ from keras.models import load_model
 # Plotting
 import matplotlib.pyplot as plt
 # Local Library
-from Main import Model, Filter, custom_loss_function
+from FlowCompression import Model, Filter, custom_loss_function
 
 
 # Uncomment if keras does not run
@@ -33,7 +33,7 @@ class AE(Model):
     """
     Autoencoder class, subclass from Model. Creates an autoencoder object using a keras model.
 
-    Main attributes:
+    FlowCompression attributes:
     - Model hyperparameters: dimensions, activation_function, l_rate, epochs, batch, early_stopping, pooling, loss
     - Data: u_train, u_val, u_test
     - Keras models: autoencoder, encoder, decoder
@@ -46,7 +46,7 @@ class AE(Model):
     - passthrough: encodes and decodes flow
     - performance: measures performance
 
-    Main methods:
+    FlowCompression methods:
     - create_trained: static, loads a trained model
     - network/h_network: initializes model architecture
     - training: trains model

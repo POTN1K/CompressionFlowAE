@@ -9,15 +9,15 @@ __pycache__/ClassAE.cpython-310.pyc
 __pycache__/ClassAE.cpython-39.pyc
 __pycache__/DataReading.cpython-310.pyc
 *.pyc
-/Main/Models/checkpoint.index
-/Main/Models/checkpoint.data-00000-of-00001
-/Main/Models/checkpoint
-/Main/TuningDivision/tuning.csv
+/FlowCompression/Models/checkpoint.index
+/FlowCompression/Models/checkpoint.data-00000-of-00001
+/FlowCompression/Models/checkpoint
+/FlowCompression/TuningDivision/tuning.csv
 .gitignore
 /Models/checkpoint.index
 /Models/checkpoint.data-00000-of-00001
 /Models/checkpoint
 /TuningDivision/iter_1_analysis.csv
 /TuningDivision/iter_1_analysis.xlsx
-Main/(0, 1, 2)_plot.fig.pickle
-Main/(0, 1, 3)_latent.csv
+FlowCompression/(0, 1, 2)_plot.fig.pickle
+FlowCompression/(0, 1, 3)_latent.csv

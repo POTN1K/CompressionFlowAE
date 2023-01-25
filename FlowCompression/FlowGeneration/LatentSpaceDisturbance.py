@@ -2,7 +2,7 @@
 Script to analyze how the reconstructed flow changes due to disturbances to latent space components
 """
 
-from Main import AE
+from FlowCompression import AE
 import numpy as np
 import matplotlib.pyplot as plt
 import sys

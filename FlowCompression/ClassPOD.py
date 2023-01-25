@@ -1,6 +1,6 @@
 import numpy as np
 from numpy import linalg as la
-from Main import Model
+from FlowCompression import Model
 import matplotlib.pyplot as plt
 
 import os

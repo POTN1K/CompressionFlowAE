@@ -1,7 +1,7 @@
 # Comparison of POD & AE compressive performance
 import numpy as np
 
-from Main import POD
+from FlowCompression import POD
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 import os
@@ -27,7 +27,7 @@ def gen_val_curve(u_train_, u_test_):
 
         columns = write.keys()
 
-        rel_strs = ('Main', 'TuningDivision', f'POD_{train_size}.csv')
+        rel_strs = ('FlowCompression', 'TuningDivision', f'POD_{train_size}.csv')
         path = os.path.join(os.path.join(os.path.split(__file__)[0], *rel_strs))
         with open(path, 'a', newline='') as f:
 
@@ -61,7 +61,7 @@ if generate:
 # load AE data from txt      #bad function, hard coded
 load = True
 if load:
-    path = os.path.join(os.path.split(__file__)[0], 'Main', 'TuningDivision', 'AE_0.95.csv')
+    path = os.path.join(os.path.split(__file__)[0], 'FlowCompression', 'TuningDivision', 'AE_0.95.csv')
     with open(path, newline='')\
             as csvfile:
         rows = reader(csvfile, delimiter=',')
@@ -88,7 +88,7 @@ if load:
                 flag = True
 
     # load POD data from txt
-    path = os.path.join(os.path.split(__file__)[0], 'Main', 'TuningDivision', 'POD_0.95.csv')
+    path = os.path.join(os.path.split(__file__)[0], 'FlowCompression', 'TuningDivision', 'POD_0.95.csv')
     with open(path, newline='')\
             as csvfile:
         rows = reader(csvfile, delimiter=',')
