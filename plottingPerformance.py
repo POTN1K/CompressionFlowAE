@@ -61,7 +61,7 @@ if generate:
 # load AE data from txt      #bad function, hard coded
 load = True
 if load:
-    path = os.path.join(os.path.split(__file__)[0], 'Main', 'TuningDivision', 'AE_at_01.24.2023_11h51m.csv')
+    path = os.path.join(os.path.split(__file__)[0], 'Main', 'TuningDivision', 'AE_0.95.csv')
     with open(path, newline='')\
             as csvfile:
         rows = reader(csvfile, delimiter=',')
@@ -76,8 +76,8 @@ if load:
         flag = False
         for row in rows:
             if flag:
-                mse, abs_med, div_max, div_min, div_avg = row[0], row[1], row[6], row[7], row[8]
-                n = row[10].strip('][').split(', ')[3]
+                mse, abs_med, div_max, div_min, div_avg = row[0], row[2], row[5], row[6], row[7]
+                n = row[9].strip('][').split(', ')[3]
                 lst = [float(n), float(mse), float(abs_med), float(div_max), float(div_min), float(div_avg)]
                 i = 0
                 for key in data_AE.keys():
@@ -180,7 +180,7 @@ if plot_divergence:
                  label='POD', color='black', ecolor='r', marker='.')
 
     plt.ylabel('Divergence of the Velocity Field')
-    plt.ylim(top=0.5, bottom=-1.5)
+    plt.ylim(top=2, bottom=-2)
 
     plt.xlabel('Dimension of Encoded Flow (Orig: 1152)')
     plt.xlim(left=0, right=62.5)
@@ -193,7 +193,7 @@ if plot_divergence:
                  label='AE', color='black', ecolor='b', marker='+')
 
     plt.ylabel('Divergence of the Velocity Field')
-    plt.ylim(top=0.5, bottom=-1.5)
+    plt.ylim(top=2, bottom=-2)
 
     plt.xlabel('Dimension of Encoded Flow (Orig: 1152)')
     plt.xlim(left=0, right=62.5)
