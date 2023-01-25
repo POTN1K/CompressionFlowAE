@@ -33,19 +33,26 @@ print(np.average(function(u_all[0])))
 # disturbed
 mode = 1
 for i in domain:
+    # take the sample latent, disturb one of its modes and decode it into an artificial flow
     disturbed_latent = np.copy(sample_latent)
     disturbed_latent[0, 0, 0, mode] = sample_latent[0, 0, 0, mode] * (1 + i)
     img_disturbed = model.decode(disturbed_latent)
-    # img_sample = model.decode(sample_latent)
-    # energy_difference = np.subtract(AE.energy(img_disturbed), AE.energy(img_sample))
-    # img = np.subtract(img_disturbed, img_sample)
+
+    # decode the sample latent and then calculate difference in energy and velocity
+    img_sample = model.decode(sample_latent)
+    energy_difference = np.subtract(AE.energy(img_disturbed), AE.energy(img_sample))
+    img = np.subtract(img_disturbed, img_sample)
     values.append(np.average(function(img_disturbed)))
-    # AE.u_v_curl_plot(img, energy_difference, f'Latent space change   {sample_latent[0][0][0]}   to   {disturbed_latent[0][0][0]}  ')
+
+    # plot the difference in velocity, curl and energy between disturbed and sample flow field
+    AE.u_v_curl_plot(img, energy_difference, f'Latent space change   {sample_latent[0][0][0]}   to   {disturbed_latent[0][0][0]}  ')
+
+# additional plot of how the energy/curl (depending on function()) changes based on disturbance.
 plt.plot([1 + k for k in domain], values)
 plt.show()
 
 
-# Observations:
+# -- OBSERVATION FROM PLOTS --
 
 # MODE 1
 # - v, u velocity increases but not too much
