@@ -1,40 +1,53 @@
-# Script to analyze how the reconstructed flow changes due to disturbances to latent space components
+"""
+Script to analyze how the reconstructed flow changes due to disturbances to latent space components
+"""
+
 from Main import AE
 import numpy as np
 import matplotlib.pyplot as plt
 import sys
 sys.path.append('.')
 
-
+# Import trained model from parent class and draw data from files
 model = AE.create_trained(2)
 u_all = AE.preprocess(split=False)
+
+# Determine the domain over which the disturbance will be taken
+domain = np.arange(-1, 1, 0.1)
 values = []
 
 # Take one sample from data set and calculate latent space
-sample_latent = model.encode(u_all[0])
-domain = np.arange(-1, 1, 0.1)
-print(sample_latent)  # [[[[-0.03541018  0.24589653  0.5007892  -0.19181845]]]]
+sample_latent = model.encode(u_all[0])  # [[[[-0.03541018  0.24589653  0.5007892  -0.19181845]]]]
+
+# Plot the original reconstructed flow
 AE.u_v_plot(model.decode(sample_latent))
 
-
+# Define a function to use to analyze the properties of the reconstructed flows (either energy or curl)
 def function(frame):
     return AE.curl(frame)
 
 print(np.average(function(u_all[0])))
 
-# Change mode 1
+
+# For loop to disturbe the latent space, by changing the index of disturbed_latent, you can change which mode is
+# disturbed
+mode = 1
 for i in domain:
     disturbed_latent = np.copy(sample_latent)
-    disturbed_latent[0, 0, 0, 1] = sample_latent[0, 0, 0, 1] * (1 + i)
+    disturbed_latent[0, 0, 0, mode] = sample_latent[0, 0, 0, mode] * (1 + i)
     img_disturbed = model.decode(disturbed_latent)
     # img_sample = model.decode(sample_latent)
     # energy_difference = np.subtract(AE.energy(img_disturbed), AE.energy(img_sample))
     # img = np.subtract(img_disturbed, img_sample)
     values.append(np.average(function(img_disturbed)))
-    #AE.u_v_curl_plot(img, energy_difference, f'Latent space change   {sample_latent[0][0][0]}   to   {disturbed_latent[0][0][0]}  ')
+    # AE.u_v_curl_plot(img, energy_difference, f'Latent space change   {sample_latent[0][0][0]}   to   {disturbed_latent[0][0][0]}  ')
 plt.plot([1 + k for k in domain], values)
 plt.show()
-# Observation:
+
+
+# Observations:
+
+# MODE 1
 # - v, u velocity increases but not too much
 # - u velocity seems to be creating multiple isolated areas
 # - Vorticity goes from negative to positive
@@ -52,8 +65,7 @@ plt.show()
 # x velocity waves move right, don't change in intensity or magnitude or direction
 
 
-# Change mode 2
-
+# MODE 2
 # Hierarchical:
 # takes inverse of y-velocity: shifted right and negative
 # reverses orientation of 'waves' in x velocity, but keeps the sign / orientation
@@ -63,7 +75,7 @@ plt.show()
 # - Y- velocity remains relatively constant
 
 
-# Change Mode 3
+# MODE 3
 # Hierarchical:
 # not much change in v velocity at all
 # only change in x velocity: generally pos and neg areas are flipped in orientation
@@ -74,8 +86,8 @@ plt.show()
 # x velocity becomes 'muddied', no real distinct areas can be spotted
 # y velocity gets more bundled together and higher in magnitude
 
-# Mode 4
 
+# MODE 4
 # hierarchical
 # almost no change in y velocity
 # pos becomes neg and neg becomes pos in x velocity, wave shapes stays same
