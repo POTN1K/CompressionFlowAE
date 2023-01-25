@@ -465,7 +465,7 @@ class AE(Model):
 if __name__ == '__main__':
     u_train, u_val, u_test = AE.preprocess()
 
-    model = AE.create_trained(1)  # -> Comment model = AE(), and model.fit() to run pre trained
+    model = AE.create_trained(3)  # -> Comment model = AE(), and model.fit() to run pre trained
     # model = AE()
 
     model.u_train, model.u_val, model.u_test = u_train, u_val, u_test
