@@ -1,3 +1,10 @@
+""" POD Model class
+
+This file defines a class "POD", which is a subclass of Model.
+It creates a POD encoder/decoder with variable latent space dimension.
+"""
+
+# Libraries
 import numpy as np
 from numpy import linalg as la
 from FlowCompression import Model
