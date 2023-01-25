@@ -8,7 +8,7 @@ os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 
 class POD(Model):
-    def __init__(self, train_array: np.array or None, val_array:  None = None, n: int = 5) -> None:
+    def __init__(self, train_array: np.array or None = None, val_array:  None = None, n: int = 5) -> None:
         """
         Initialise an instance of the POD model inheriting from the Model superclass.
         val_array should always be none for the POD; passed only for method compatability.
@@ -107,7 +107,6 @@ class POD(Model):
             n_modes = self.n
         dim = self.input.shape
 
-        print(self.phi.shape, self.a.shape, self.dim)
         # self.a = self.a[0, 0]
         # print(self.phi.shape, self.a.shape, self.dim)
         recons = np.matmul(self.a[:, :n_modes], np.transpose(self.phi[:, :n_modes]))
