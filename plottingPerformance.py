@@ -142,6 +142,7 @@ if plot_all:
             plt.xlim(left=0, right=62.5)
             plt.legend()
             plt.show()
+
 if plot_div:
     if not load:
         raise Exception('load is false')
