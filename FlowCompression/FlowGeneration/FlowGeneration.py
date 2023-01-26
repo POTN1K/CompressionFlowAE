@@ -37,7 +37,7 @@ def stats(mode: list[float]):
     """
     Determines statistics of a list of values related to one mode of the latent space
     :param mode: the values of the given mode in all latent spaces of a certain time series
-    :return: a list of 5 statistics: midpoint, radius, maximum, minimum, average
+    :return: a tuple of 5 statistics: midpoint, radius, maximum, minimum, average
     """
     mx = np.max(mode)
     mn = np.min(mode)

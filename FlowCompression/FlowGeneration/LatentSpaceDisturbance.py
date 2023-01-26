@@ -14,7 +14,7 @@ u_all = AE.preprocess(split=False)
 
 # Determine the domain over which the disturbance will be taken
 domain = np.arange(-1, 1, 0.1)
-values = []
+
 
 # Take one sample from data set and calculate latent space
 sample_latent = model.encode(u_all[0])  # [[[[-0.03541018  0.24589653  0.5007892  -0.19181845]]]]
@@ -26,30 +26,36 @@ AE.u_v_plot(model.decode(sample_latent))
 def function(frame):
     return AE.curl(frame)
 
-print(np.average(function(u_all[0])))
+print(np.average(AE.energy(u_all[0])))
+print(np.average(AE.curl(u_all[0])))
 
 
 # For loop to disturbe the latent space, by changing the index of disturbed_latent, you can change which mode is
 # disturbed
-mode = 1
-for i in domain:
-    # take the sample latent, disturb one of its modes and decode it into an artificial flow
-    disturbed_latent = np.copy(sample_latent)
-    disturbed_latent[0, 0, 0, mode] = sample_latent[0, 0, 0, mode] * (1 + i)
-    img_disturbed = model.decode(disturbed_latent)
+def disturbance_effects(mode):
+    energies = []
+    curls = []
+    for i in domain:
+        # take the sample latent, disturb one of its modes and decode it into an artificial flow
+        disturbed_latent = np.copy(sample_latent)
+        disturbed_latent[0, 0, 0, mode] = sample_latent[0, 0, 0, mode] * (1 + i)
+        img_disturbed = model.decode(disturbed_latent)
 
-    # decode the sample latent and then calculate difference in energy and velocity
-    img_sample = model.decode(sample_latent)
-    energy_difference = np.subtract(AE.energy(img_disturbed), AE.energy(img_sample))
-    img = np.subtract(img_disturbed, img_sample)
-    values.append(np.average(function(img_disturbed)))
+        # decode the sample latent and then calculate difference in energy and velocity
+        img_sample = model.decode(sample_latent)
+        energy_difference = np.subtract(AE.energy(img_disturbed), AE.energy(img_sample))
+        img = np.subtract(img_disturbed, img_sample)
+        energies.append(np.average(AE.energy(img_disturbed)))
+        curls.append(np.average(AE.curl(img_disturbed)))
+        # plot the difference in velocity, curl and energy between disturbed and sample flow field
+        AE.u_v_curl_plot(img, energy_difference, f'Latent space change   {sample_latent[0][0][0]}   to   {disturbed_latent[0][0][0]}  ')
 
-    # plot the difference in velocity, curl and energy between disturbed and sample flow field
-    AE.u_v_curl_plot(img, energy_difference, f'Latent space change   {sample_latent[0][0][0]}   to   {disturbed_latent[0][0][0]}  ')
 
+disturbance_effects(1)
 # additional plot of how the energy/curl (depending on function()) changes based on disturbance.
-plt.plot([1 + k for k in domain], values)
-plt.show()
+#plt.plot([1 + k for k in domain], energies)
+#plt.plot([1 + k for k in domain], curls)
+#plt.show()
 
 
 # -- OBSERVATION FROM PLOTS --

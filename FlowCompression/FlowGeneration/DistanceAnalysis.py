@@ -29,6 +29,13 @@ theta = np.arctan2(mode1, mode2)[0, 0, :]
 mu = np.mean(d)
 sigma = np.std(d)
 
+plt.hist(d, 20)
+plt.show()
+plt.hist(phi, 20)
+plt.show()
+plt.hist(theta, 20)
+plt.show()
+
 def plot_scatter(mode1: list[float], mode2: list[float], mode3: list[float]):
     """
     Function to create the scatter plot of three different modes
