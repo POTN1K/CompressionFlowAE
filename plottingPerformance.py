@@ -21,7 +21,6 @@ def gen_val_curve(u_train_, u_test_):
 
         pod.passthrough(u_test_)
         perf = pod.performance()
-        print(perf['div_avg'])
         write = {**perf}
         write.update({'n': pod.n})
 
@@ -50,16 +49,19 @@ def gen_val_curve(u_train_, u_test_):
     return x_, y_
 
 
-# generate POD data. WARNING if file exists, delete original
+# generate POD data. WARNING if file exists, need to delete original
 generate = False
+load = True
+plot_all = True
+plot_div = False
+
 if generate:
     u_all = POD.preprocess(split=False, nu=2)
     for train_size in [0.95]:
         u_train, u_test = train_test_split(u_all, train_size=train_size)
         gen_val_curve(u_train, u_test)
 
-# load AE data from txt      #bad function, hard coded
-load = True
+# load AE data from txt
 if load:
     path = os.path.join(os.path.split(__file__)[0], 'FlowCompression', 'TuningDivision', 'AE_0.95.csv')
     with open(path, newline='')\
@@ -68,7 +70,8 @@ if load:
         data_AE = {
             'n': [],
             'mse': [],
-            'abs_med': [],
+            'abs_mean': [],
+            'sqr_mean': [],
             'div_max': [],
             'div_min': [],
             'div_avg': []
@@ -76,9 +79,10 @@ if load:
         flag = False
         for row in rows:
             if flag:
-                mse, abs_med, div_max, div_min, div_avg = row[0], row[2], row[5], row[6], row[7]
-                n = row[9].strip('][').split(', ')[3]
-                lst = [float(n), float(mse), float(abs_med), float(div_max), float(div_min), float(div_avg)]
+                mse, abs_mean, _, sqr_mean, _, div_max, div_min, div_avg, _, dim, _, _, _ = row
+                n = dim.strip('][').split(', ')[3]
+                lst = [float(n), float(mse), float(abs_mean), float(sqr_mean), float(div_max), float(div_min),
+                       float(div_avg)]
                 i = 0
                 for key in data_AE.keys():
                     data_AE[key].append(lst[i])
@@ -95,8 +99,8 @@ if load:
         data_POD = {
             'n': [],
             'mse': [],
-            'abs_med': [],
             'abs_mean': [],
+            'sqr_mean': [],
             'div_max': [],
             'div_min': [],
             'div_avg': []
@@ -104,11 +108,10 @@ if load:
         flag = False
         for row in rows:
             if flag:
-                mse, abs_med, abs_mean, div_max, div_min, div_avg = row[0], row[1], row[2], row[4], row[5], row[6]
-                n = row[-1]
+                mse, _, abs_mean, _, sqr_mean, _, _, div_max, div_min, div_avg, n = row
                 if n == 'n':
                     raise Exception('Duplicate data in file. Delete file and run generate 1 time to fix')
-                lst = [float(n), float(mse), float(abs_med), float(abs_mean), float(div_max), float(div_min),
+                lst = [float(n), float(mse), float(abs_mean), float(sqr_mean), float(div_max), float(div_min),
                        float(div_avg)]
                 i = 0
                 for key in data_POD.keys():
@@ -118,55 +121,28 @@ if load:
             if not flag:
                 flag = True
 
-plot_abs_med = False
-if plot_abs_med:
-    if not load:
-        raise Exception('load is false')
-    # Scatter data
-    plt.scatter(data_AE['n'], data_AE['abs_med'], label='AE', color='b', marker='+')
-    plt.scatter(data_POD['n'], data_POD['abs_med'], label='POD', color='r', marker='.')
+# plotting
+if plot_all:
+    data = {'AE': data_AE,
+            'POD': data_POD}
 
-    # Set y axis
-    # plt.yscale('log')
-    # plt.ylim(bottom=1E-6)
-    plt.ylabel('Median Absolute Percentage Accuracy (%)')
-    plt.ylim(top=100, bottom=80)
+    for key in data_POD:
+        if key != 'n':
+            for label in ['AE', 'POD']:
+                if label == 'AE':
+                    color = 'b'
+                    marker = '+'
+                else:
+                    color = 'r'
+                    marker = '.'
 
-
-    # Set x axis
-    # plt.xscale()
-    plt.xlabel('Dimension of Encoded Flow (Orig: 1152)')
-    plt.xlim(left=0, right=62.5)
-
-    # Title
-    # plt.title('POD and AutoEncoder Accuracy, trained on 3800 flow instances')
-
-    # Plot
-    plt.legend()
-    plt.show()
-    # plt.savefig('POD_AE_abs_med', format='PDF')
-
-plot_med_mean = False
-if plot_med_mean:
-    if not load:
-        raise Exception('load is false')
-    # 1st axis
-    fig, ax = plt.subplots()
-    ax.plot(data_POD['n'], data_POD['abs_med'], label='AE', color='b') #, marker='+')
-    ax.set_ylabel('abs_med')
-
-    ax.set_xlabel('Dimension of Encoded Flow (Orig: 1152)')
-    ax.set_xlim(left=0, right=62.5)
-
-    # 2nd
-    ax2 = ax.twinx()
-    ax2.plot(data_POD['n'], data_POD['abs_mean'], label='POD', color='r') #, marker='.')
-    ax2.set_ylabel('abs_mean')
-
-    plt.show()
-
-plot_divergence = True
-if plot_divergence:
+                plt.scatter(data[label]['n'], data[label][key], label=label, color=color, marker=marker)
+            plt.ylabel(key)
+            plt.xlabel('Dimension of Encoded Flow (Orig: 1152)')
+            plt.xlim(left=0, right=62.5)
+            plt.legend()
+            plt.show()
+if plot_div:
     if not load:
         raise Exception('load is false')
     # Scatter data

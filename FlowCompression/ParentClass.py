@@ -164,17 +164,23 @@ class Model:
         :return: Dictionary with relevant accuracy metrics
         """
         d = dict()
-        d['mse'] = np.mean(self.output-self.input)**2
-        self.dict_perf = d
+        d['mse'] = np.mean((self.output-self.input)**2)
 
         # Absolute percentage metric
         percentage = 100 * (1 - (np.abs((self.input - self.output) / self.input)))  # get array; we use it 3 times
-        d['abs_percentage_median'] = np.median(percentage)
-        d['abs_percentage_mean'] = np.mean(percentage)  # tends to break
-        d['abs_percentage_std'] = np.std(percentage)
+        d['abs_median'] = np.median(percentage)
+        d['abs_mean'] = np.mean(percentage)  # tends to break
+        d['abs_std'] = np.std(percentage)
+
+        # Square percentage metric
+        sqr_percentage = (1 - (self.output - self.input) ** 2 / self.input) * 100
+        d['sqr_mean'] = np.mean(sqr_percentage)
+        d['sqr_med'] = np.median(sqr_percentage)
+        d['sqr_std'] = np.std(sqr_percentage)
 
         # Verification results
         d['div_max'], d['div_min'], d['div_avg'] = Model.verification(self.output, print_res=False)
+        self.dict_perf = d
         return d
 
     # END LOGIC METHODS

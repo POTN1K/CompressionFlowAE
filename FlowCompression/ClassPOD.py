@@ -107,7 +107,6 @@ class POD(Model):
             n_modes = self.n
         dim = self.input.shape
 
-        print(self.phi.shape, self.a.shape, self.dim)
         # self.a = self.a[0, 0]
         # print(self.phi.shape, self.a.shape, self.dim)
         recons = np.matmul(self.a[:, :n_modes], np.transpose(self.phi[:, :n_modes]))
