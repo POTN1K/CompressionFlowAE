@@ -172,6 +172,7 @@ class AE(Model):
         :param input_: numpy array, time series
         :return: numpy array, reconstructed flows
         """
+        self.u_test = input_
         self.y_pred = self.autoencoder.predict(input_)
         return self.y_pred
     # END SKELETONS
@@ -322,12 +323,12 @@ class AE(Model):
         :return: None
         """
 
-        w = self.autoencoder.get_weights
+        w = self.autoencoder.get_weights()
 
         # Compile of model
         self.autoencoder.compile(optimizer=Adam(learning_rate=self.l_rate), loss=self.loss)
 
-        self.autoencoder.set_weight(w)
+        self.autoencoder.set_weights(w)
 
         # Early stop callback creation
         early_stop_callback = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=self.early_stopping)
@@ -465,12 +466,12 @@ class AE(Model):
 if __name__ == '__main__':
     u_train, u_val, u_test = AE.preprocess()
 
-    model = AE.create_trained(3)  # -> Comment model = AE(), and model.fit() to run pre trained
-    # model = AE()
+    # model = AE.create_trained(3)  # -> Comment model = AE(), and model.fit() to run pre trained
+    model = AE()
 
     model.u_train, model.u_val, model.u_test = u_train, u_val, u_test
 
-    # model.fit(u_train, u_val)
+    model.fit(u_train, u_val)
 
     t = model.passthrough(u_test)
 
