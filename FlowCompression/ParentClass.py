@@ -535,6 +535,8 @@ class Model:
 
 
         plt.show()
+
+
     @staticmethod
     def plot_all(nxnx2: np.array) -> None:
         """
