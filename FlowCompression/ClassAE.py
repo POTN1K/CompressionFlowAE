@@ -9,7 +9,6 @@ with different architectures and hyperparameters.
 import os
 import sys
 
-sys.path.append('.')
 # Numerics
 import numpy as np
 # Machine Learning
@@ -22,6 +21,7 @@ import matplotlib.pyplot as plt
 # Local Library
 from FlowCompression import Model, Filter, custom_loss_function
 
+sys.path.append('.')
 
 # Uncomment if keras does not run
 # import os
