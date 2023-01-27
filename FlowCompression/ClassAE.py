@@ -323,6 +323,7 @@ class AE(Model):
         :return: None
         """
 
+        # Extra process of getting weights and setting, in case of a recompiling of a previously trained model.
         w = self.autoencoder.get_weights()
 
         # Compile of model
