@@ -78,7 +78,6 @@ model.autoencoder.set_weights(w2)
 
 # Train 3rd component
 print("Third component")
-model.n = 3
 model.encoder3.trainable = True
 model.fit(train, val)
 model.encoder3.trainable = False

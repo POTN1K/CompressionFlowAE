@@ -1,3 +1,10 @@
+""" POD Model class
+
+This file defines a class "POD", which is a subclass of Model.
+It creates a POD encoder/decoder with variable latent space dimension.
+"""
+
+# Libraries
 import numpy as np
 from numpy import linalg as la
 from FlowCompression import Model
@@ -8,7 +15,7 @@ os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 
 class POD(Model):
-    def __init__(self, train_array: np.array or None, val_array:  None = None, n: int = 5) -> None:
+    def __init__(self, train_array: np.array or None = None, val_array:  None = None, n: int = 5) -> None:
         """
         Initialise an instance of the POD model inheriting from the Model superclass.
         val_array should always be none for the POD; passed only for method compatability.
