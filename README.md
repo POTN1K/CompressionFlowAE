@@ -66,8 +66,10 @@ is archived in the <code>TuningDivision</code> folder. As with
 model saving, there is a default <code>Raw</code> subdirectory to
 avoid clutter.
 
-### Required Libraries
-The environment can be installed using the following lines of code 
+
+## Required Libraries
+___
+The environment can be installed with the following lines of code 
 using conda or pip. It should be run using python 3.10 or higher.
 
 <code>
@@ -152,3 +154,6 @@ wcwidth==0.2.6
 Werkzeug==2.2.2
 wrapt==1.14.1
 </code>
+
+---
+Last updated: Jan. 27, 2023
