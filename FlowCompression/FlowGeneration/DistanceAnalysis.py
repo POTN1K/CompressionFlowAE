@@ -85,7 +85,7 @@ def create_art():
     divergence = np.add(u_vel_grad, v_vel_grad)
 
     # check if flow is physical based on a range determined by looking at original time series average divergence
-    physicality = reference_divergence * 0.1 < np.sum(divergence) < reference_divergence * 1.9
+    physicality = min_div < np.sum(divergence) < max_div
     return latent_art, divergence, physicality, frame_art
 
 
@@ -94,7 +94,7 @@ latents: dict[str, tuple[list, list, bool, list]] = {}
 count = 0
 total = 1000
 divergences = []
-for i in tqdm(np.arange(0, total + 1), colour='green'):
+for i in tqdm(np.arange(0, total), colour='green'):
     latents[f'{i}'] = create_art()
     divergences.append(np.sum(latents[f'{i}'][1]))
     if latents[f'{i}'][2]:
@@ -104,5 +104,5 @@ divergences = np.array(divergences)
 
 # print statistics of the artificially generated flow field series
 print(np.max(divergences), np.min(divergences), np.sum(np.abs(divergences)) / len(divergences))
-print(count)
+print(f'Out of {total} generated frames, {count} are physical. \nPhysical: divergence is between {min_div} and {max_div}.')
 
