@@ -360,10 +360,10 @@ class Model:
             if save:
                 if model_.__class__.__name__ == 'AE':
                     dir_2 = os.path.join(os.path.split(__file__)[0], 'KerasModels', 'Raw')
-                    model_.encoder.save(os.path.join(dir_2, f'encoder_s_dim={np.shape(model_.encoded)[-1]}.h5'))
-                    model_.decoder.save(os.path.join(dir_2, f'decoder_s_dim={np.shape(model_.encoded)[-1]}.h5'))
-                    model_.autoencoder.save(os.path.join(dir_2, f'autoencoder_s_dim={np.shape(model_.encoded)[-1]}.h5'))
-                    print(f'Saved: {model_.__class__.__name__} with dim {np.shape(model_.encoded)[-1]} to {dir_2}')
+                    model_.encoder.save(os.path.join(dir_2, f'encoder_s_dim={model_.dimensions[-1]}.h5'))
+                    model_.decoder.save(os.path.join(dir_2, f'decoder_s_dim={model_.dimensions[-1]}.h5'))
+                    model_.autoencoder.save(os.path.join(dir_2, f'autoencoder_s_dim={model_.dimensions[-1]}.h5'))
+                    print(f'Saved: {model_.__class__.__name__} with dim {model_.dimensions[-1]} to {dir_2}')
                 else:
                     print('Save model setting exclusive to AE')
 
