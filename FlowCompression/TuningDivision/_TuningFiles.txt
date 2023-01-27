@@ -1,0 +1,8 @@
+The files in this directory were used for tuning.
+
+iter_1_analysis.csv, uses one velocity component to get a rough estimation of the hyperparameters
+iter_2_analysis.csv, creates a more refined tuning still using one component but including accuracy metrics developed
+iter_3_analysis.csv, final iteration to find the best hyperparameters for the model, using 2D velocities
+
+AE_metrics.csv, gives relevant information about the tuned models using different latent spaces
+POD_metrics.csv, gives information for the number of modes considered when reconstructing the flow

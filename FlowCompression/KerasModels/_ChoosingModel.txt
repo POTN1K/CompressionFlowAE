@@ -22,3 +22,6 @@ The models here introduced are divided in the following way:
         activation_function: str = 'tanh', pooling: str = 'max', loss: str = 'custom_loss_function'
     Final model for flow compression, standard architecture, trained on top of intermediate model using custom
     loss function, most physical model
+
+Models in StandardDims include tuned models for latent space dimensions from 1 to 64. They were used for plotting
+purposes only. There is no function to call them. Refer to create_trained() for a guide.
